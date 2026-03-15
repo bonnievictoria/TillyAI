@@ -125,3 +125,11 @@
   -ms-overflow-style: none;
   scrollbar-width: none;
 }
+
+/* Allocation slider thumb — uses CSS var for dynamic color */
+.alloc-slider::-webkit-slider-thumb {
+  border-color: var(--slider-fill, #1A3A6B) !important;
+}
+.alloc-slider::-moz-range-thumb {
+  border-color: var(--slider-fill, #1A3A6B) !important;
+}
