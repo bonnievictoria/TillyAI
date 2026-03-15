@@ -5,6 +5,7 @@ import NewOnboardingFlow from "@/components/onboarding/NewOnboardingFlow";
 import PortfolioDashboard from "@/components/dashboard/PortfolioDashboard";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
+import { X } from "lucide-react";
 
 type Screen = "onboarding" | "dashboard";
 
@@ -34,7 +35,6 @@ const OTP = () => {
 
   const handleConsent = () => {
     setShowPopup(false);
-    // Navigate to main onboarding
     navigate("/");
   };
 
@@ -53,52 +53,85 @@ const OTP = () => {
         )}
       </AnimatePresence>
 
-      {/* Account Aggregator Popup */}
+      {/* Account Aggregator Modal */}
       <AnimatePresence>
         {showPopup && (
           <>
             <motion.div
-              className="fixed inset-0 z-50 bg-black/60"
+              className="fixed inset-0 z-50"
+              style={{ backgroundColor: "rgba(0,0,0,0.45)" }}
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               onClick={() => setShowPopup(false)}
             />
             <motion.div
-              className="fixed left-1/2 top-1/2 z-50 w-[92%] max-w-md -translate-x-1/2 -translate-y-1/2 rounded-2xl border bg-card p-6 shadow-xl"
+              className="fixed left-1/2 top-1/2 z-50 -translate-x-1/2 -translate-y-1/2 bg-card shadow-xl"
+              style={{
+                width: "88%",
+                maxWidth: 340,
+                borderRadius: 16,
+                padding: 24,
+              }}
               initial={{ opacity: 0, scale: 0.92, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 10 }}
               transition={{ type: "spring", damping: 25, stiffness: 350 }}
             >
-              <h2 className="text-lg font-semibold text-foreground">We found your accounts</h2>
-              <p className="mt-1 text-sm text-muted-foreground">Linked via Account Aggregator</p>
+              {/* Close button */}
+              <button
+                onClick={() => setShowPopup(false)}
+                className="absolute right-4 top-4 rounded-sm text-muted-foreground transition-opacity hover:text-foreground"
+              >
+                <X className="h-4 w-4" />
+              </button>
 
-              <div className="mt-5 flex flex-col gap-3">
+              {/* Heading */}
+              <h2 className="font-medium text-foreground" style={{ fontSize: 17 }}>
+                We found your accounts
+              </h2>
+              <p className="text-muted-foreground" style={{ fontSize: 12, marginTop: 4 }}>
+                Linked via Account Aggregator
+              </p>
+
+              {/* Account cards */}
+              <div className="flex flex-col gap-2" style={{ marginTop: 8 }}>
                 {MOCK_ACCOUNTS.map((account) => (
                   <label
                     key={account.id}
-                    className="flex cursor-pointer items-center gap-3 rounded-xl border bg-background p-4 transition-colors hover:bg-accent/40"
+                    className="flex cursor-pointer items-center justify-between rounded-lg border bg-background transition-colors hover:bg-accent/40"
+                    style={{ padding: "12px 14px" }}
                     htmlFor={account.id}
                   >
+                    <div className="flex flex-col">
+                      <span className="font-medium text-foreground" style={{ fontSize: 13 }}>
+                        {account.bank}
+                      </span>
+                      <span className="text-muted-foreground" style={{ fontSize: 11 }}>
+                        {account.type} ending in {account.ending}
+                      </span>
+                    </div>
                     <Checkbox
                       id={account.id}
                       checked={selected[account.id]}
                       onCheckedChange={() => toggleAccount(account.id)}
                     />
-                    <div className="flex flex-col">
-                      <span className="text-sm font-medium text-foreground">{account.bank}</span>
-                      <span className="text-xs text-muted-foreground">
-                        {account.type} ending in {account.ending}
-                      </span>
-                    </div>
                   </label>
                 ))}
               </div>
 
-              <Button className="mt-5 w-full" size="lg" onClick={handleConsent}>
+              {/* CTA */}
+              <Button className="w-full" size="lg" onClick={handleConsent} style={{ marginTop: 16 }}>
                 Give Consent &amp; Connect
               </Button>
+
+              {/* Trust badge */}
+              <p
+                className="text-center text-muted-foreground"
+                style={{ fontSize: 11, marginTop: 12 }}
+              >
+                🔒 Powered by RBI Account Aggregator framework
+              </p>
             </motion.div>
           </>
         )}
