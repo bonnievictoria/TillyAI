@@ -55,24 +55,25 @@ const OTP = () => {
 
       {/* Account Aggregator Modal */}
       <AnimatePresence>
-        {showPopup && (
+      {showPopup && (
           <>
             <motion.div
-              className="fixed inset-0 z-50"
+              className="fixed inset-0 z-50 flex items-center justify-center"
               style={{ backgroundColor: "rgba(0,0,0,0.45)" }}
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               onClick={() => setShowPopup(false)}
-            />
+            >
             <motion.div
-              className="fixed left-1/2 top-1/2 z-50 -translate-x-1/2 -translate-y-1/2 bg-card shadow-xl"
+              className="relative bg-card shadow-xl"
               style={{
                 width: "88%",
                 maxWidth: 340,
                 borderRadius: 16,
                 padding: 24,
               }}
+              onClick={(e) => e.stopPropagation()}
               initial={{ opacity: 0, scale: 0.92, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 10 }}
@@ -132,6 +133,7 @@ const OTP = () => {
               >
                 🔒 Powered by RBI Account Aggregator framework
               </p>
+            </motion.div>
             </motion.div>
           </>
         )}
