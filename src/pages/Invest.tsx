@@ -342,14 +342,10 @@ const Invest = () => {
                     max={50}
                     value={pct}
                     onChange={(e) => updateAllocation(i, Number(e.target.value))}
-                    className="absolute inset-x-0 h-6 w-full appearance-none bg-transparent cursor-pointer z-20
+                    className="alloc-slider absolute inset-x-0 h-6 w-full appearance-none bg-transparent cursor-pointer z-20
                       [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:h-5 [&::-webkit-slider-thumb]:w-5 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:border-2 [&::-webkit-slider-thumb]:bg-card [&::-webkit-slider-thumb]:shadow-sm
                       [&::-moz-range-thumb]:h-5 [&::-moz-range-thumb]:w-5 [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:border-2 [&::-moz-range-thumb]:bg-card"
-                    style={{
-                      // thumb border color
-                      // @ts-ignore
-                      "--tw-slider-thumb-border": fillColor,
-                    }}
+                    style={{ "--slider-fill": fillColor } as React.CSSProperties}
                   />
                 </div>
               </div>
