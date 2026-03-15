@@ -134,6 +134,7 @@ const OTP = () => {
                 🔒 Powered by RBI Account Aggregator framework
               </p>
             </motion.div>
+            </motion.div>
           </>
         )}
       </AnimatePresence>
