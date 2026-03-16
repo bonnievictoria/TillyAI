@@ -21,6 +21,7 @@ import Invest from "./pages/Invest";
 import Discovery from "./pages/Discovery";
 import OTP from "./pages/OTP";
 import LinkAccounts from "./pages/LinkAccounts";
+import AboutYou from "./pages/AboutYou";
 
 const queryClient = new QueryClient();
 
@@ -34,6 +35,7 @@ const App = () => (
           <Route path="/" element={<Index />} />
           <Route path="/otp" element={<OTP />} />
           <Route path="/link-accounts" element={<LinkAccounts />} />
+          <Route path="/about-you" element={<AboutYou />} />
           <Route path="/profile" element={<Profile />} />
           <Route path="/chat" element={<Chat />} />
           <Route path="/notifications" element={<Notifications />} />
