@@ -258,42 +258,6 @@ const NewOnboardingFlow = ({ onComplete }: NewOnboardingFlowProps) => {
   const estSavingsHigh = Math.max(0, incomeRange[1] - expenseRange[0]);
   const expensePct = avgIncome > 0 ? Math.round((avgExpense / avgIncome) * 100) : 0;
 
-  /* ─── SCREEN 0: Welcome ─── */
-  if (step === -1) {
-    return (
-      <WelcomeScreen onNext={() => setStep(0)} />
-    );
-  }
-
-  /* ─── SCREEN 3: All set ─── */
-  if (step === 2) {
-    return (
-      <div className="mobile-container flex flex-col items-center justify-center bg-background px-8">
-        <motion.div
-          initial={{ scale: 0.5, opacity: 0 }}
-          animate={{ scale: 1, opacity: 1 }}
-          transition={{ type: "spring", stiffness: 200, damping: 20 }}
-          className="flex flex-col items-center gap-5 w-full"
-        >
-          <div className="flex h-20 w-20 items-center justify-center rounded-full bg-wealth-green">
-            <Check className="h-10 w-10 text-primary-foreground" />
-          </div>
-          <h2 className="font-display text-3xl text-foreground">
-            You're all set, Bonnie!
-          </h2>
-          <p className="text-sm text-muted-foreground text-center max-w-[280px]">
-            We're personalising your dashboard based on your profile.
-          </p>
-          <div className="w-full max-w-[240px] mt-2">
-            <Progress value={confirmProgress} className="h-2" />
-          </div>
-          <p className="text-xs text-muted-foreground">
-            Setting things up…
-          </p>
-        </motion.div>
-      </div>
-    );
-  }
 
   /* ─── Progress bar (shared between step 0 and 1) ─── */
   const renderProgress = () => (
