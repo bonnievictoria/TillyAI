@@ -4,7 +4,7 @@ import { motion } from "framer-motion";
 
 const tabs = [
   { icon: MessageSquare, label: "Chat", path: "/chat" },
-  { icon: Home, label: "Portfolio", path: "/landing" },
+  { icon: Home, label: "Portfolio", path: "/" },
   { icon: TrendingUp, label: "Invest", path: "/invest" },
   { icon: Target, label: "Goals", path: "/goal-planner" },
   { icon: Bell, label: "Alerts", path: "/notifications", badge: 2 },

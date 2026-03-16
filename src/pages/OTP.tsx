@@ -35,7 +35,7 @@ const OTP = () => {
 
   const handleConsent = () => {
     setShowPopup(false);
-    navigate("/landing");
+    navigate("/");
   };
 
   return (
