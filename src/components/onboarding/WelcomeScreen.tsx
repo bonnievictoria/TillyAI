@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
 import { ArrowRight, Shield, TrendingUp, Sparkles, ChevronDown } from "lucide-react";
+import AccountDiscoveryModal from "./AccountDiscoveryModal";
 
 interface WelcomeScreenProps {
   onNext: () => void;
