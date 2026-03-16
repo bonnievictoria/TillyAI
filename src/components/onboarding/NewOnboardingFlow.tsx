@@ -546,7 +546,7 @@ const NewOnboardingFlow = ({ onComplete }: NewOnboardingFlowProps) => {
             <div className="fixed bottom-0 left-0 right-0 p-6 bg-gradient-to-t from-background via-background to-transparent">
               <div className="max-w-md mx-auto">
                 <button
-                  onClick={() => setStep(1)}
+                  onClick={handleContinueToLinkAccounts}
                   className="flex w-full items-center justify-center gap-2 rounded-xl wealth-gradient py-3.5 text-[15px] font-semibold text-primary-foreground tracking-wide transition-all active:scale-[0.98]"
                 >
                   Continue
