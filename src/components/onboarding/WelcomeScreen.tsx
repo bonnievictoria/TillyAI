@@ -140,6 +140,7 @@ const WelcomeScreen = ({ onNext }: WelcomeScreenProps) => {
         Get Started
         <ArrowRight className="h-4 w-4" />
       </motion.button>
+      <AccountDiscoveryModal open={showModal} onClose={() => setShowModal(false)} />
     </div>
   );
 };
