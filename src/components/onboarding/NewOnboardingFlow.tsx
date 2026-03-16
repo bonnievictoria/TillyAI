@@ -216,7 +216,8 @@ const HORIZON_OPTIONS = [
 
 /* ─── Main component ─── */
 const NewOnboardingFlow = ({ onComplete }: NewOnboardingFlowProps) => {
-  // -1 = welcome, 0 = about you, 1 = link accounts, 2 = all set
+  const navigate = useNavigate();
+  // -1 = welcome, 0 = about you
   const [step, setStep] = useState(-1);
 
   // Section 1 state
@@ -230,17 +231,6 @@ const NewOnboardingFlow = ({ onComplete }: NewOnboardingFlowProps) => {
   const [horizon, setHorizon] = useState("");
   const [incomeRange, setIncomeRange] = useState<[number, number]>([30000000, 70000000]);
   const [expenseRange, setExpenseRange] = useState<[number, number]>([20000000, 50000000]);
-
-  // Section 2 state
-  const [accounts, setAccounts] = useState<Record<string, AccountEntry[]>>({
-    mf: [], stock: [], bank: [], other: [],
-  });
-  const [providerModal, setProviderModal] = useState<string | null>(null);
-  const [otherAssets, setOtherAssets] = useState<OtherAsset[]>([]);
-  const [othersExpanded, setOthersExpanded] = useState(false);
-
-  // Confirmation
-  const [confirmProgress, setConfirmProgress] = useState(0);
 
   const toggleGoal = (g: string) =>
     setSelectedGoals((prev) =>
@@ -256,35 +246,9 @@ const NewOnboardingFlow = ({ onComplete }: NewOnboardingFlowProps) => {
     }
   };
 
-  const handleProviderSelect = (type: string, providers: string[]) => {
-    const entries: AccountEntry[] = providers.map((name) => ({ name }));
-    setAccounts((prev) => ({
-      ...prev,
-      [type]: [...prev[type], ...entries],
-    }));
-  };
-
-  const removeAccountEntry = (type: string, idx: number) => {
-    setAccounts((prev) => ({
-      ...prev,
-      [type]: prev[type].filter((_, i) => i !== idx),
-    }));
-  };
-
-  const handleFinish = () => {
+  const handleContinueToLinkAccounts = () => {
     sessionStorage.setItem("completedTellUs", "true");
-    sessionStorage.setItem("completedLinkAccounts", "true");
-    sessionStorage.setItem("onboardingComplete", "true");
-    setStep(2);
-    let p = 0;
-    const interval = setInterval(() => {
-      p += 2;
-      setConfirmProgress(p);
-      if (p >= 100) {
-        clearInterval(interval);
-        setTimeout(() => onComplete(), 800);
-      }
-    }, 30);
+    navigate("/link-accounts");
   };
 
   // Compute subtexts
@@ -293,8 +257,6 @@ const NewOnboardingFlow = ({ onComplete }: NewOnboardingFlowProps) => {
   const estSavingsLow = Math.max(0, incomeRange[0] - expenseRange[1]);
   const estSavingsHigh = Math.max(0, incomeRange[1] - expenseRange[0]);
   const expensePct = avgIncome > 0 ? Math.round((avgExpense / avgIncome) * 100) : 0;
-
-  const totalLinked = Object.values(accounts).reduce((s, a) => s + a.length, 0);
 
   /* ─── SCREEN 0: Welcome ─── */
   if (step === -1) {
