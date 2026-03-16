@@ -2,6 +2,8 @@ import { useState } from "react";
 import { motion } from "framer-motion";
 import { ArrowRight, Shield, TrendingUp, Sparkles, ChevronDown } from "lucide-react";
 import AccountDiscoveryModal from "./AccountDiscoveryModal";
+import { signup, login } from "@/lib/api";
+import { useAuth } from "@/context/AuthContext";
 
 interface WelcomeScreenProps {
   onNext: () => void;
@@ -16,16 +18,43 @@ const countryCodes = [
   { code: "+65", label: "SG", flag: "🇸🇬" },
 ];
 
+const DEFAULT_PASSWORD = "asktilly2026";
+
 const WelcomeScreen = ({ onNext }: WelcomeScreenProps) => {
+  const { refresh } = useAuth();
   const [phone, setPhone] = useState("");
   const [countryCode, setCountryCode] = useState(countryCodes[2]);
   const [showCodes, setShowCodes] = useState(false);
   const [showModal, setShowModal] = useState(false);
+  const [loading, setLoading] = useState(false);
 
   const isValid = phone.replace(/\s/g, "").length >= 7;
 
-  const handleSubmit = () => {
-    if (isValid) setShowModal(true);
+  const handleSubmit = async () => {
+    if (!isValid || loading) return;
+    setLoading(true);
+    const digits = phone.replace(/\s/g, "");
+    try {
+      await signup({
+        country_code: countryCode.code,
+        mobile: digits,
+        password: DEFAULT_PASSWORD,
+        first_name: "User",
+      });
+    } catch {
+      try {
+        await login({
+          country_code: countryCode.code,
+          mobile: digits,
+          password: DEFAULT_PASSWORD,
+        });
+      } catch {
+        // allow flow to continue even if backend is down
+      }
+    }
+    await refresh();
+    setLoading(false);
+    setShowModal(true);
   };
 
   return (
@@ -134,7 +163,7 @@ const WelcomeScreen = ({ onNext }: WelcomeScreenProps) => {
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.9, duration: 0.5 }}
         onClick={handleSubmit}
-        disabled={!isValid}
+        disabled={!isValid || loading}
         className="flex w-full items-center justify-center gap-2 rounded-xl wealth-gradient py-3.5 text-[15px] font-semibold text-primary-foreground tracking-wide transition-all active:scale-[0.98] disabled:opacity-40 disabled:pointer-events-none"
       >
         Get Started
