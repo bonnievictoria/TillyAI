@@ -164,7 +164,7 @@ const LinkAccounts = () => {
         className="w-full max-w-[340px] flex items-center justify-between"
       >
         <button
-          onClick={() => navigate(-1)}
+          onClick={() => navigate("/otp")}
           className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors"
         >
           <ArrowLeft className="h-3.5 w-3.5" />
@@ -173,6 +173,7 @@ const LinkAccounts = () => {
         <button
           onClick={() => {
             sessionStorage.setItem("completedLinkAccounts", "true");
+            sessionStorage.setItem("onboardingComplete", "true");
             navigate("/");
           }}
           className="flex items-center gap-1.5 rounded-xl px-5 py-2.5 text-sm font-semibold text-primary-foreground"

@@ -1,22 +1,15 @@
 import { useState, useRef, useEffect, useCallback } from "react";
+import { useNavigate } from "react-router-dom";
 import WelcomeScreen from "./WelcomeScreen";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   ArrowRight,
   Check,
-  ChevronDown,
-  ChevronRight,
   Plus,
   X,
-  Landmark,
-  TrendingUp,
-  Building2,
-  Sparkles,
-  BarChart3,
   Calendar,
   Target,
   Wallet,
-  Search,
 } from "lucide-react";
 import {
   Accordion,
@@ -24,19 +17,6 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
-import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-} from "@/components/ui/sheet";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import { Progress } from "@/components/ui/progress";
 
 interface NewOnboardingFlowProps {
   onComplete: () => void;
@@ -231,170 +211,12 @@ const HORIZON_OPTIONS = [
   { label: "Long term", sub: "5+ years" },
 ];
 
-const ACCOUNT_TYPES = [
-  { id: "mf", label: "Mutual funds", icon: BarChart3, desc: "CAMS, Karvy & all AMCs" },
-  { id: "stock", label: "Stocks", icon: TrendingUp, desc: "NSE, BSE via CDSL / NSDL" },
-  { id: "bank", label: "Bank account", icon: Building2, desc: "All banks via account aggregator" },
-  { id: "other", label: "Others", icon: Sparkles, desc: "NPS, PPF, Gold, Real estate…" },
-];
 
-/* ─── Indian Provider Lists ─── */
-const INDIAN_PROVIDERS: Record<string, { name: string; subtitle?: string }[]> = {
-  mf: [
-    { name: "Groww", subtitle: "Mutual Fund Platform" },
-    { name: "Zerodha Coin", subtitle: "Direct MF Investing" },
-    { name: "Kuvera", subtitle: "Free Direct Plans" },
-    { name: "Paytm Money", subtitle: "MF & SIP Platform" },
-    { name: "MF Central", subtitle: "Unified MF Portal" },
-    { name: "CAMS", subtitle: "Registrar & Transfer Agent" },
-    { name: "KFintech", subtitle: "Registrar & Transfer Agent" },
-  ],
-  stock: [
-    { name: "Zerodha", subtitle: "Discount Broker" },
-    { name: "Upstox", subtitle: "Online Trading" },
-    { name: "Angel One", subtitle: "Full Service Broker" },
-    { name: "ICICI Direct", subtitle: "Banking + Demat" },
-    { name: "HDFC Securities", subtitle: "Banking + Demat" },
-    { name: "Groww", subtitle: "Stocks & MF" },
-  ],
-  bank: [
-    { name: "SBI", subtitle: "State Bank of India" },
-    { name: "HDFC Bank", subtitle: "Private Sector Bank" },
-    { name: "ICICI Bank", subtitle: "Private Sector Bank" },
-    { name: "Axis Bank", subtitle: "Private Sector Bank" },
-    { name: "Kotak Mahindra", subtitle: "Private Sector Bank" },
-    { name: "Yes Bank", subtitle: "Private Sector Bank" },
-    { name: "IDFC First", subtitle: "Private Sector Bank" },
-  ],
-  other: [
-    { name: "NPS", subtitle: "National Pension System" },
-    { name: "PPF", subtitle: "Public Provident Fund" },
-    { name: "EPF", subtitle: "Employee Provident Fund" },
-    { name: "Gold", subtitle: "Physical / Digital Gold" },
-    { name: "Real Estate", subtitle: "Property Investments" },
-  ],
-};
-
-interface AccountEntry {
-  name: string;
-  accountNumber?: string;
-  amount?: string;
-}
-
-interface OtherAsset {
-  name: string;
-  amount: string;
-}
-
-/* ─── Provider Selection Modal ─── */
-const ProviderSelectionModal = ({
-  open,
-  onClose,
-  accountType,
-  onSelect,
-}: {
-  open: boolean;
-  onClose: () => void;
-  accountType: string;
-  onSelect: (providers: string[]) => void;
-}) => {
-  const [search, setSearch] = useState("");
-  const [selected, setSelected] = useState<Set<string>>(new Set());
-  const providers = INDIAN_PROVIDERS[accountType] || [];
-  const accLabel = ACCOUNT_TYPES.find((a) => a.id === accountType)?.label || "";
-
-  const filtered = providers.filter((p) =>
-    p.name.toLowerCase().includes(search.toLowerCase())
-  );
-
-  const toggleProvider = (name: string) => {
-    setSelected((prev) => {
-      const next = new Set(prev);
-      if (next.has(name)) next.delete(name);
-      else next.add(name);
-      return next;
-    });
-  };
-
-  const handleConfirm = () => {
-    onSelect(Array.from(selected));
-    setSelected(new Set());
-    setSearch("");
-    onClose();
-  };
-
-  return (
-    <Dialog open={open} onOpenChange={(v) => { if (!v) onClose(); }}>
-      <DialogContent className="max-w-[340px] rounded-2xl p-0 gap-0">
-        <DialogHeader className="px-4 pt-4 pb-2">
-          <DialogTitle className="text-sm font-semibold">Link {accLabel}</DialogTitle>
-        </DialogHeader>
-
-        {/* Search */}
-        <div className="px-4 pb-2">
-          <div className="flex items-center gap-2 rounded-xl border border-border bg-secondary/30 px-3 py-2">
-            <Search className="h-3.5 w-3.5 text-muted-foreground" />
-            <input
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search providers…"
-              className="flex-1 bg-transparent text-xs text-foreground placeholder:text-muted-foreground/50 outline-none"
-            />
-          </div>
-        </div>
-
-        {/* Provider list */}
-        <div className="px-2 pb-2 max-h-[50vh] overflow-y-auto">
-          {filtered.map((p) => {
-            const isSelected = selected.has(p.name);
-            return (
-              <button
-                key={p.name}
-                onClick={() => toggleProvider(p.name)}
-                className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all text-left ${
-                  isSelected ? "bg-primary/10" : "hover:bg-muted/40"
-                }`}
-              >
-                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-secondary text-muted-foreground">
-                  <Landmark className="h-3.5 w-3.5" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-foreground">{p.name}</p>
-                  {p.subtitle && (
-                    <p className="text-[10px] text-muted-foreground">{p.subtitle}</p>
-                  )}
-                </div>
-                {isSelected && (
-                  <div className="flex h-5 w-5 items-center justify-center rounded-full bg-primary">
-                    <Check className="h-3 w-3 text-primary-foreground" />
-                  </div>
-                )}
-              </button>
-            );
-          })}
-          {filtered.length === 0 && (
-            <p className="text-xs text-muted-foreground text-center py-6">No providers found</p>
-          )}
-        </div>
-
-        {/* Confirm */}
-        <div className="px-4 pb-4 pt-2 border-t border-border/40">
-          <button
-            onClick={handleConfirm}
-            disabled={selected.size === 0}
-            className="w-full flex items-center justify-center gap-2 rounded-xl bg-primary text-primary-foreground py-2.5 text-sm font-semibold transition-all active:scale-[0.98] disabled:opacity-40"
-          >
-            Link {selected.size > 0 ? `${selected.size} account${selected.size > 1 ? "s" : ""}` : "selected"}
-          </button>
-        </div>
-      </DialogContent>
-    </Dialog>
-  );
-};
 
 /* ─── Main component ─── */
 const NewOnboardingFlow = ({ onComplete }: NewOnboardingFlowProps) => {
-  // -1 = welcome, 0 = about you, 1 = link accounts, 2 = all set
+  const navigate = useNavigate();
+  // -1 = welcome, 0 = about you
   const [step, setStep] = useState(-1);
 
   // Section 1 state
@@ -408,17 +230,6 @@ const NewOnboardingFlow = ({ onComplete }: NewOnboardingFlowProps) => {
   const [horizon, setHorizon] = useState("");
   const [incomeRange, setIncomeRange] = useState<[number, number]>([30000000, 70000000]);
   const [expenseRange, setExpenseRange] = useState<[number, number]>([20000000, 50000000]);
-
-  // Section 2 state
-  const [accounts, setAccounts] = useState<Record<string, AccountEntry[]>>({
-    mf: [], stock: [], bank: [], other: [],
-  });
-  const [providerModal, setProviderModal] = useState<string | null>(null);
-  const [otherAssets, setOtherAssets] = useState<OtherAsset[]>([]);
-  const [othersExpanded, setOthersExpanded] = useState(false);
-
-  // Confirmation
-  const [confirmProgress, setConfirmProgress] = useState(0);
 
   const toggleGoal = (g: string) =>
     setSelectedGoals((prev) =>
@@ -434,35 +245,9 @@ const NewOnboardingFlow = ({ onComplete }: NewOnboardingFlowProps) => {
     }
   };
 
-  const handleProviderSelect = (type: string, providers: string[]) => {
-    const entries: AccountEntry[] = providers.map((name) => ({ name }));
-    setAccounts((prev) => ({
-      ...prev,
-      [type]: [...prev[type], ...entries],
-    }));
-  };
-
-  const removeAccountEntry = (type: string, idx: number) => {
-    setAccounts((prev) => ({
-      ...prev,
-      [type]: prev[type].filter((_, i) => i !== idx),
-    }));
-  };
-
-  const handleFinish = () => {
+  const handleContinueToLinkAccounts = () => {
     sessionStorage.setItem("completedTellUs", "true");
-    sessionStorage.setItem("completedLinkAccounts", "true");
-    sessionStorage.setItem("onboardingComplete", "true");
-    setStep(2);
-    let p = 0;
-    const interval = setInterval(() => {
-      p += 2;
-      setConfirmProgress(p);
-      if (p >= 100) {
-        clearInterval(interval);
-        setTimeout(() => onComplete(), 800);
-      }
-    }, 30);
+    navigate("/link-accounts");
   };
 
   // Compute subtexts
@@ -472,8 +257,6 @@ const NewOnboardingFlow = ({ onComplete }: NewOnboardingFlowProps) => {
   const estSavingsHigh = Math.max(0, incomeRange[1] - expenseRange[0]);
   const expensePct = avgIncome > 0 ? Math.round((avgExpense / avgIncome) * 100) : 0;
 
-  const totalLinked = Object.values(accounts).reduce((s, a) => s + a.length, 0);
-
   /* ─── SCREEN 0: Welcome ─── */
   if (step === -1) {
     return (
@@ -481,37 +264,7 @@ const NewOnboardingFlow = ({ onComplete }: NewOnboardingFlowProps) => {
     );
   }
 
-  /* ─── SCREEN 3: All set ─── */
-  if (step === 2) {
-    return (
-      <div className="mobile-container flex flex-col items-center justify-center bg-background px-8">
-        <motion.div
-          initial={{ scale: 0.5, opacity: 0 }}
-          animate={{ scale: 1, opacity: 1 }}
-          transition={{ type: "spring", stiffness: 200, damping: 20 }}
-          className="flex flex-col items-center gap-5 w-full"
-        >
-          <div className="flex h-20 w-20 items-center justify-center rounded-full bg-wealth-green">
-            <Check className="h-10 w-10 text-primary-foreground" />
-          </div>
-          <h2 className="font-display text-3xl text-foreground">
-            You're all set, Bonnie!
-          </h2>
-          <p className="text-sm text-muted-foreground text-center max-w-[280px]">
-            We're personalising your dashboard based on your profile.
-          </p>
-          <div className="w-full max-w-[240px] mt-2">
-            <Progress value={confirmProgress} className="h-2" />
-          </div>
-          <p className="text-xs text-muted-foreground">
-            Setting things up…
-          </p>
-        </motion.div>
-      </div>
-    );
-  }
-
-  /* ─── Progress bar (shared between step 0 and 1) ─── */
+  /* ─── Progress bar ─── */
   const renderProgress = () => (
     <div className="px-4 pt-12 pb-1">
       <div className="flex items-center gap-1">
@@ -762,7 +515,7 @@ const NewOnboardingFlow = ({ onComplete }: NewOnboardingFlowProps) => {
             <div className="fixed bottom-0 left-0 right-0 p-6 bg-gradient-to-t from-background via-background to-transparent">
               <div className="max-w-md mx-auto">
                 <button
-                  onClick={() => setStep(1)}
+                  onClick={handleContinueToLinkAccounts}
                   className="flex w-full items-center justify-center gap-2 rounded-xl wealth-gradient py-3.5 text-[15px] font-semibold text-primary-foreground tracking-wide transition-all active:scale-[0.98]"
                 >
                   Continue
@@ -773,180 +526,7 @@ const NewOnboardingFlow = ({ onComplete }: NewOnboardingFlowProps) => {
           </motion.div>
         )}
 
-        {/* ─── SCREEN 2: Link your accounts ─── */}
-        {step === 1 && (
-          <motion.div
-            key="step2"
-            initial={{ opacity: 0, x: 40 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: -40 }}
-            transition={{ duration: 0.3 }}
-            className="flex-1 flex flex-col px-6 pb-36 overflow-y-auto"
-          >
-            <div className="mt-4 mb-5">
-              <h2 className="text-xl font-semibold text-foreground">Link your accounts</h2>
-              <p className="text-xs text-muted-foreground mt-1">
-                Select accounts to get a complete picture
-              </p>
-            </div>
-
-            <div className="space-y-3">
-              {ACCOUNT_TYPES.map((acc) => {
-                const count = accounts[acc.id]?.length || 0;
-                const isOther = acc.id === "other";
-                const hasContent = isOther ? othersExpanded : count > 0;
-
-                return (
-                  <div
-                    key={acc.id}
-                    className="rounded-xl border border-border/60 bg-card overflow-hidden"
-                  >
-                    {/* Card header row */}
-                    <button
-                      onClick={() => {
-                        if (isOther) {
-                          setOthersExpanded((prev) => !prev);
-                          if (!othersExpanded && otherAssets.length === 0) {
-                            setOtherAssets([{ name: "", amount: "" }]);
-                          }
-                        } else {
-                          setProviderModal(acc.id);
-                        }
-                      }}
-                      className="w-full flex items-center gap-3 px-4 py-3.5 hover:bg-muted/30 transition-all text-left"
-                    >
-                      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-secondary">
-                        <acc.icon className="h-[20px] w-[20px] text-muted-foreground" />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-semibold text-foreground">{acc.label}</p>
-                        <p className="text-xs text-muted-foreground truncate">{acc.desc}</p>
-                      </div>
-                      <div className="flex items-center gap-1.5">
-                        {count > 0 && !isOther && (
-                          <span className="px-2 py-0.5 rounded-full bg-wealth-green/10 text-wealth-green text-[11px] font-semibold">
-                            {count} linked
-                          </span>
-                        )}
-                        {isOther ? (
-                          <ChevronDown className={`h-4 w-4 text-muted-foreground/50 transition-transform ${othersExpanded ? "rotate-180" : ""}`} />
-                        ) : (
-                          <ChevronRight className="h-4 w-4 text-muted-foreground/50" />
-                        )}
-                      </div>
-                    </button>
-
-                    {/* Linked entries inside card (non-other) */}
-                    {!isOther && count > 0 && (
-                      <div className="border-t border-border/40 px-4 py-2 space-y-1.5">
-                        {accounts[acc.id].map((entry, i) => (
-                          <div key={i} className="flex items-center justify-between py-1.5">
-                            <span className="text-xs text-foreground">{entry.name}</span>
-                            <button
-                              onClick={() => removeAccountEntry(acc.id, i)}
-                              className="p-1 rounded-full hover:bg-secondary text-muted-foreground"
-                            >
-                              <X className="h-3 w-3" />
-                            </button>
-                          </div>
-                        ))}
-                        <button
-                          onClick={() => setProviderModal(acc.id)}
-                          className="flex items-center gap-1 text-[11px] font-medium text-primary hover:underline pt-0.5"
-                        >
-                          <Plus className="h-3 w-3" /> Add another
-                        </button>
-                      </div>
-                    )}
-
-                    {/* Others — inline expand inside card */}
-                    {isOther && othersExpanded && (
-                      <motion.div
-                        initial={{ height: 0, opacity: 0 }}
-                        animate={{ height: "auto", opacity: 1 }}
-                        exit={{ height: 0, opacity: 0 }}
-                        className="overflow-hidden border-t border-border/40 px-4 py-3 space-y-2"
-                      >
-                        {otherAssets.map((asset, i) => (
-                          <div key={i} className="flex items-center gap-2">
-                            <input
-                              placeholder="e.g. NPS"
-                              value={asset.name}
-                              onChange={(e) => {
-                                const next = [...otherAssets];
-                                next[i] = { ...next[i], name: e.target.value };
-                                setOtherAssets(next);
-                              }}
-                              className="flex-1 rounded-lg border border-border bg-background px-3 py-2 text-xs text-foreground outline-none placeholder:text-muted-foreground/50"
-                            />
-                            <div className="flex items-center rounded-lg border border-border bg-background px-2 py-2 w-28">
-                              <span className="text-xs text-muted-foreground mr-1">₹</span>
-                              <input
-                                type="number"
-                                placeholder="Amount"
-                                value={asset.amount}
-                                onChange={(e) => {
-                                  const next = [...otherAssets];
-                                  next[i] = { ...next[i], amount: e.target.value };
-                                  setOtherAssets(next);
-                                }}
-                                className="flex-1 bg-transparent text-xs text-foreground outline-none placeholder:text-muted-foreground/50 w-full [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
-                              />
-                            </div>
-                            {otherAssets.length > 1 && (
-                              <button
-                                onClick={() => setOtherAssets((prev) => prev.filter((_, j) => j !== i))}
-                                className="p-1 rounded-full hover:bg-secondary text-muted-foreground"
-                              >
-                                <X className="h-3.5 w-3.5" />
-                              </button>
-                            )}
-                          </div>
-                        ))}
-                        <button
-                          onClick={() => setOtherAssets((prev) => [...prev, { name: "", amount: "" }])}
-                          className="flex items-center gap-1 text-xs font-medium text-primary hover:underline"
-                        >
-                          <Plus className="h-3 w-3" /> Add another asset
-                        </button>
-                      </motion.div>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-
-            {/* Fixed bottom — Back above CTA */}
-            <div className="fixed bottom-0 left-0 right-0 p-6 pb-8 bg-gradient-to-t from-background via-background to-transparent">
-              <div className="max-w-md mx-auto space-y-2">
-                <button
-                  onClick={() => setStep(0)}
-                  className="w-full text-center text-xs text-muted-foreground py-1.5 hover:text-foreground transition-colors"
-                >
-                  ← Back
-                </button>
-                <button
-                  onClick={handleFinish}
-                  className="flex w-full items-center justify-center gap-2 rounded-xl wealth-gradient py-3.5 text-[15px] font-semibold text-primary-foreground tracking-wide transition-all active:scale-[0.98]"
-                >
-                  Generate my portfolio
-                  <Sparkles className="h-4 w-4" />
-                </button>
-              </div>
-            </div>
-          </motion.div>
-        )}
       </AnimatePresence>
-
-      {/* Provider selection modal */}
-      {providerModal && (
-        <ProviderSelectionModal
-          open={!!providerModal}
-          onClose={() => setProviderModal(null)}
-          accountType={providerModal}
-          onSelect={(providers) => handleProviderSelect(providerModal, providers)}
-        />
-      )}
     </div>
   );
 };
