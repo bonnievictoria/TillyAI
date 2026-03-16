@@ -1,22 +1,15 @@
 import { useState, useRef, useEffect, useCallback } from "react";
+import { useNavigate } from "react-router-dom";
 import WelcomeScreen from "./WelcomeScreen";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   ArrowRight,
   Check,
-  ChevronDown,
-  ChevronRight,
   Plus,
   X,
-  Landmark,
-  TrendingUp,
-  Building2,
-  Sparkles,
-  BarChart3,
   Calendar,
   Target,
   Wallet,
-  Search,
 } from "lucide-react";
 import {
   Accordion,
