@@ -20,11 +20,12 @@ const WelcomeScreen = ({ onNext }: WelcomeScreenProps) => {
   const [phone, setPhone] = useState("");
   const [countryCode, setCountryCode] = useState(countryCodes[2]);
   const [showCodes, setShowCodes] = useState(false);
+  const [showModal, setShowModal] = useState(false);
 
   const isValid = phone.replace(/\s/g, "").length >= 7;
 
   const handleSubmit = () => {
-    if (isValid) onNext();
+    if (isValid) setShowModal(true);
   };
 
   return (
