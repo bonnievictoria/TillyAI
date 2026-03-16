@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import WelcomeScreen from "./WelcomeScreen";
+import { saveOnboardingProfile } from "@/lib/api";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   ArrowRight,
@@ -48,18 +49,22 @@ const DrumColumn = ({
   renderLabel?: (v: number) => string;
 }) => {
   const ref = useRef<HTMLDivElement>(null);
+  const isSettling = useRef(false);
   const paddingItems = Math.floor(VISIBLE / 2);
 
   useEffect(() => {
     if (!ref.current) return;
     const idx = items.indexOf(value);
     if (idx >= 0) {
+      isSettling.current = true;
       ref.current.scrollTo({ top: idx * ITEM_H, behavior: "smooth" });
+      const timer = setTimeout(() => { isSettling.current = false; }, 400);
+      return () => clearTimeout(timer);
     }
   }, [value, items]);
 
   const handleScroll = useCallback(() => {
-    if (!ref.current) return;
+    if (!ref.current || isSettling.current) return;
     const idx = Math.round(ref.current.scrollTop / ITEM_H);
     const clamped = Math.max(0, Math.min(idx, items.length - 1));
     if (items[clamped] !== value) {
@@ -245,7 +250,22 @@ const NewOnboardingFlow = ({ onComplete }: NewOnboardingFlowProps) => {
     }
   };
 
-  const handleContinueToLinkAccounts = () => {
+  const handleContinueToLinkAccounts = async () => {
+    const dob = `${dobYear}-${String(dobMonth).padStart(2, "0")}-${String(dobDay).padStart(2, "0")}`;
+    try {
+      await saveOnboardingProfile({
+        date_of_birth: dob,
+        selected_goals: selectedGoals,
+        custom_goals: customGoals,
+        investment_horizon: horizon || undefined,
+        annual_income_min: incomeRange[0],
+        annual_income_max: incomeRange[1],
+        annual_expense_min: expenseRange[0],
+        annual_expense_max: expenseRange[1],
+      });
+    } catch {
+      // continue even if save fails
+    }
     sessionStorage.setItem("completedTellUs", "true");
     navigate("/link-accounts");
   };

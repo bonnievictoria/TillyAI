@@ -102,6 +102,32 @@ export async function updateMe(p: UserUpdatePayload): Promise<UserInfo> {
   });
 }
 
+// ── Onboarding API ──────────────────────────────────────
+export interface OnboardingProfilePayload {
+  date_of_birth?: string;
+  selected_goals?: string[];
+  custom_goals?: string[];
+  investment_horizon?: string;
+  annual_income_min?: number;
+  annual_income_max?: number;
+  annual_expense_min?: number;
+  annual_expense_max?: number;
+}
+
+export async function saveOnboardingProfile(p: OnboardingProfilePayload) {
+  return request("/onboarding/profile", {
+    method: "POST",
+    body: JSON.stringify(p),
+  });
+}
+
+export async function completeOnboarding() {
+  return request("/onboarding/complete", {
+    method: "POST",
+    body: JSON.stringify({ is_complete: true }),
+  });
+}
+
 export function logout() {
   clearToken();
 }

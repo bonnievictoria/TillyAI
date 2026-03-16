@@ -1,9 +1,15 @@
 import { useState } from "react";
-import { motion } from "framer-motion";
-import { ArrowRight, Shield, TrendingUp, Sparkles, ChevronDown } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import { ArrowRight, Shield, TrendingUp, Sparkles, ChevronDown, ArrowLeft, Loader2 } from "lucide-react";
 import AccountDiscoveryModal from "./AccountDiscoveryModal";
 import { signup, login } from "@/lib/api";
 import { useAuth } from "@/context/AuthContext";
+import {
+  InputOTP,
+  InputOTPGroup,
+  InputOTPSlot,
+  InputOTPSeparator,
+} from "@/components/ui/input-otp";
 
 interface WelcomeScreenProps {
   onNext: () => void;
@@ -20,18 +26,33 @@ const countryCodes = [
 
 const DEFAULT_PASSWORD = "asktilly2026";
 
+type Step = "phone" | "otp";
+
 const WelcomeScreen = ({ onNext }: WelcomeScreenProps) => {
   const { refresh } = useAuth();
+  const [step, setStep] = useState<Step>("phone");
   const [phone, setPhone] = useState("");
   const [countryCode, setCountryCode] = useState(countryCodes[2]);
   const [showCodes, setShowCodes] = useState(false);
   const [showModal, setShowModal] = useState(false);
   const [loading, setLoading] = useState(false);
 
+  const [otp, setOtp] = useState("");
+  const [otpError, setOtpError] = useState("");
+
   const isValid = phone.replace(/\s/g, "").length >= 7;
 
-  const handleSubmit = async () => {
+  const handlePhoneSubmit = () => {
     if (!isValid || loading) return;
+    setStep("otp");
+  };
+
+  const handleVerifyOtp = async () => {
+    if (otp.length < 6) {
+      setOtpError("Enter the full 6-digit code");
+      return;
+    }
+    setOtpError("");
     setLoading(true);
     const digits = phone.replace(/\s/g, "");
     try {
@@ -49,7 +70,7 @@ const WelcomeScreen = ({ onNext }: WelcomeScreenProps) => {
           password: DEFAULT_PASSWORD,
         });
       } catch {
-        // allow flow to continue even if backend is down
+        // continue even if backend is down
       }
     }
     await refresh();
@@ -57,6 +78,89 @@ const WelcomeScreen = ({ onNext }: WelcomeScreenProps) => {
     setShowModal(true);
   };
 
+  const handleResend = () => {
+    setOtp("");
+    setOtpError("");
+  };
+
+  /* ─── OTP Screen ─── */
+  if (step === "otp") {
+    return (
+      <div className="mobile-container flex flex-col bg-background px-6 pb-6 pt-12">
+        <motion.div
+          initial={{ opacity: 0, x: 40 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ duration: 0.35 }}
+          className="flex-1 flex flex-col"
+        >
+          <button
+            onClick={() => { setStep("phone"); setOtp(""); setOtpError(""); }}
+            className="flex items-center gap-1 text-sm text-muted-foreground mb-6 hover:text-foreground transition-colors"
+          >
+            <ArrowLeft className="h-4 w-4" /> Back
+          </button>
+
+          <h1 className="font-display text-2xl font-semibold tracking-tight text-foreground mb-2">
+            Verify your number
+          </h1>
+          <p className="text-sm text-muted-foreground mb-1">
+            We sent a 6-digit code to
+          </p>
+          <p className="text-sm font-semibold text-foreground mb-8">
+            {countryCode.code} {phone}
+          </p>
+
+          <div className="flex justify-center mb-6">
+            <InputOTP maxLength={6} value={otp} onChange={setOtp}>
+              <InputOTPGroup>
+                <InputOTPSlot index={0} />
+                <InputOTPSlot index={1} />
+                <InputOTPSlot index={2} />
+              </InputOTPGroup>
+              <InputOTPSeparator />
+              <InputOTPGroup>
+                <InputOTPSlot index={3} />
+                <InputOTPSlot index={4} />
+                <InputOTPSlot index={5} />
+              </InputOTPGroup>
+            </InputOTP>
+          </div>
+
+          {otpError && (
+            <p className="text-xs text-destructive text-center mb-4">{otpError}</p>
+          )}
+
+          <button
+            onClick={handleResend}
+            className="text-xs text-muted-foreground hover:text-foreground transition-colors text-center mb-auto"
+          >
+            Didn't receive it? <span className="font-semibold underline">Resend code</span>
+          </button>
+        </motion.div>
+
+        <motion.button
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.2, duration: 0.4 }}
+          onClick={handleVerifyOtp}
+          disabled={otp.length < 6 || loading}
+          className="flex w-full items-center justify-center gap-2 rounded-xl wealth-gradient py-3.5 text-[15px] font-semibold text-primary-foreground tracking-wide transition-all active:scale-[0.98] disabled:opacity-40 disabled:pointer-events-none"
+        >
+          {loading ? (
+            <Loader2 className="h-4 w-4 animate-spin" />
+          ) : (
+            <>
+              Verify & Continue
+              <ArrowRight className="h-4 w-4" />
+            </>
+          )}
+        </motion.button>
+        <AccountDiscoveryModal open={showModal} onClose={() => setShowModal(false)} />
+      </div>
+    );
+  }
+
+  /* ─── Phone Screen (original design) ─── */
   return (
     <div className="mobile-container flex flex-col bg-background px-6 pb-6 pt-12">
       <motion.div
@@ -162,14 +266,13 @@ const WelcomeScreen = ({ onNext }: WelcomeScreenProps) => {
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.9, duration: 0.5 }}
-        onClick={handleSubmit}
+        onClick={handlePhoneSubmit}
         disabled={!isValid || loading}
         className="flex w-full items-center justify-center gap-2 rounded-xl wealth-gradient py-3.5 text-[15px] font-semibold text-primary-foreground tracking-wide transition-all active:scale-[0.98] disabled:opacity-40 disabled:pointer-events-none"
       >
         Get Started
         <ArrowRight className="h-4 w-4" />
       </motion.button>
-      <AccountDiscoveryModal open={showModal} onClose={() => setShowModal(false)} />
     </div>
   );
 };
