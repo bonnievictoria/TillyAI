@@ -1,325 +1,478 @@
-import { useState, useRef, useCallback, useEffect } from "react";
+import type React from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import { motion, AnimatePresence } from "framer-motion";
-import { ArrowLeft, ArrowRight, Check, Sparkles } from "lucide-react";
+import { motion } from "framer-motion";
+import { ArrowRight, Calendar, Check, Plus, Target, Wallet, X } from "lucide-react";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
 
-/* ─── Age Picker ─── */
-const AgePicker = ({ value, onChange }: { value: number; onChange: (v: number) => void }) => {
-  const containerRef = useRef<HTMLDivElement>(null);
-  const ITEM_H = 24;
-  const ages = Array.from({ length: 83 }, (_, i) => 18 + i);
+interface Props {
+  onComplete: () => void;
+  onBack: () => void;
+}
+
+/* ─── Drum-roll date picker ─── */
+const DAYS = Array.from({ length: 31 }, (_, i) => i + 1);
+const MONTHS = Array.from({ length: 12 }, (_, i) => i + 1);
+const currentYear = new Date().getFullYear();
+const YEARS = Array.from({ length: 80 }, (_, i) => currentYear - 18 - i);
+
+const MONTH_LABELS: Record<number, string> = {
+  1: "Jan",
+  2: "Feb",
+  3: "Mar",
+  4: "Apr",
+  5: "May",
+  6: "Jun",
+  7: "Jul",
+  8: "Aug",
+  9: "Sep",
+  10: "Oct",
+  11: "Nov",
+  12: "Dec",
+};
+
+const ITEM_H = 28;
+const VISIBLE = 3;
+
+const DrumColumn = ({
+  items,
+  value,
+  onChange,
+  renderLabel,
+}: {
+  items: number[];
+  value: number;
+  onChange: (v: number) => void;
+  renderLabel?: (v: number) => string;
+}) => {
+  const ref = useRef<HTMLDivElement>(null);
+  const paddingItems = Math.floor(VISIBLE / 2);
 
   useEffect(() => {
-    if (containerRef.current) {
-      containerRef.current.scrollTop = (value - 18) * ITEM_H;
+    if (!ref.current) return;
+    const idx = items.indexOf(value);
+    if (idx >= 0) {
+      ref.current.scrollTo({ top: idx * ITEM_H, behavior: "smooth" });
     }
-  }, []);
+  }, [value, items]);
 
   const handleScroll = useCallback(() => {
-    if (!containerRef.current) return;
-    const idx = Math.round(containerRef.current.scrollTop / ITEM_H);
-    onChange(ages[Math.max(0, Math.min(idx, ages.length - 1))]);
-  }, [onChange, ages]);
+    if (!ref.current) return;
+    const idx = Math.round(ref.current.scrollTop / ITEM_H);
+    const clamped = Math.max(0, Math.min(idx, items.length - 1));
+    if (items[clamped] !== value) {
+      onChange(items[clamped]);
+    }
+  }, [items, value, onChange]);
 
   return (
-    <div
-      className="relative overflow-hidden"
-      style={{
-        height: 72,
-        maskImage: "linear-gradient(to bottom, transparent 0%, black 20%, black 80%, transparent 100%)",
-        WebkitMaskImage: "linear-gradient(to bottom, transparent 0%, black 20%, black 80%, transparent 100%)",
-      }}
-    >
+    <div className="relative flex-1" style={{ height: ITEM_H * VISIBLE }}>
       <div
-        ref={containerRef}
+        className="absolute inset-x-1 pointer-events-none z-10 rounded-md bg-primary/6"
+        style={{ top: Math.floor(VISIBLE / 2) * ITEM_H, height: ITEM_H }}
+      />
+      <div
+        ref={ref}
         onScroll={handleScroll}
-        className="h-full overflow-y-scroll snap-y snap-mandatory [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]"
-        style={{ paddingTop: 24, paddingBottom: 24 }}
+        className="h-full overflow-y-auto snap-y snap-mandatory scrollbar-hide"
+        style={{ scrollSnapType: "y mandatory" }}
       >
-        {ages.map((age) => {
-          const distance = Math.abs(age - value);
+        {Array.from({ length: paddingItems }).map((_, i) => (
+          <div key={`pad-top-${i}`} style={{ height: ITEM_H }} />
+        ))}
+        {items.map((item) => {
+          const idx = items.indexOf(item);
+          const selectedIdx = items.indexOf(value);
+          const distance = Math.abs(idx - selectedIdx);
+          const opacity = distance === 0 ? 1 : 0.15;
+          const fontSize = distance === 0 ? "13px" : "11px";
           return (
-            <div key={age} className="h-[24px] flex items-center justify-center snap-center">
-              {distance === 0 ? (
-                <span className="text-base font-semibold text-foreground">{age}</span>
-              ) : distance <= 1 ? (
-                <span className="text-sm text-muted-foreground/50">{age}</span>
-              ) : (
-                <span className="text-sm text-muted-foreground/30">{age}</span>
-              )}
+            <div
+              key={item}
+              className="flex items-center justify-center snap-center transition-all"
+              style={{ height: ITEM_H, opacity, fontWeight: distance === 0 ? 600 : 400, fontSize }}
+              onClick={() => onChange(item)}
+            >
+              {renderLabel ? renderLabel(item) : String(item).padStart(2, "0")}
             </div>
           );
         })}
+        {Array.from({ length: paddingItems }).map((_, i) => (
+          <div key={`pad-bot-${i}`} style={{ height: ITEM_H }} />
+        ))}
       </div>
     </div>
   );
 };
 
-/* ─── Goal Options ─── */
-const goalOptions = [
-  { label: "Buying a home", icon: "🏠" },
-  { label: "Retiring", icon: "📈" },
-  { label: "Building generational wealth", icon: "🌱" },
-  { label: "Funding education", icon: "🎓" },
-  { label: "Not yet sure", icon: "✨" },
-];
-
-const netWorthBrackets = ["Under £50K", "£50K – £250K", "£250K – £1M", "£1M – £5M", "£5M+"];
+/* ─── Format INR ─── */
+const formatINR = (v: number) => {
+  if (v >= 100000000) return "₹10 Cr+";
+  if (v >= 10000000) return `₹${(v / 10000000).toFixed(1)} Cr`;
+  if (v >= 100000) return `₹${(v / 100000).toFixed(1)}L`;
+  if (v >= 1000) return `₹${(v / 1000).toFixed(0)}K`;
+  return `₹${v}`;
+};
 
 /* ─── Dual Range Slider ─── */
-const DualRangeSlider = ({ min, max, value, onChange }: { min: number; max: number; value: [number, number]; onChange: (v: [number, number]) => void }) => {
-  const trackRef = useRef<HTMLDivElement>(null);
-  const getPercent = (v: number) => ((v - min) / (max - min)) * 100;
+const SLIDER_TICKS = [
+  { value: 0, label: "₹0" },
+  { value: 2500000, label: "₹25L" },
+  { value: 5000000, label: "₹50L" },
+  { value: 10000000, label: "₹1Cr" },
+  { value: 50000000, label: "₹5Cr" },
+  { value: 100000000, label: "₹10Cr+" },
+];
 
-  const handlePointer = (idx: 0 | 1) => (e: React.PointerEvent) => {
-    e.preventDefault();
-    const track = trackRef.current;
-    if (!track) return;
-    const move = (ev: PointerEvent) => {
-      const rect = track.getBoundingClientRect();
-      const pct = Math.max(0, Math.min(1, (ev.clientX - rect.left) / rect.width));
-      const raw = Math.round(min + pct * (max - min));
-      const next: [number, number] = [...value];
-      next[idx] = raw;
-      if (next[0] > next[1]) { if (idx === 0) next[0] = next[1]; else next[1] = next[0]; }
-      onChange(next);
-    };
-    const up = () => { window.removeEventListener("pointermove", move); window.removeEventListener("pointerup", up); };
-    window.addEventListener("pointermove", move);
-    window.addEventListener("pointerup", up);
-  };
+const DualRangeSlider = ({
+  label,
+  range,
+  onChange,
+  subtext,
+}: {
+  label: string;
+  range: [number, number];
+  onChange: (r: [number, number]) => void;
+  subtext?: string;
+}) => {
+  const max = 100000000;
+  const minPct = (range[0] / max) * 100;
+  const maxPct = (range[1] / max) * 100;
+  const isSingleValue = range[0] === range[1];
 
   return (
-    <div ref={trackRef} className="relative h-10 flex items-center touch-none">
-      <div className="absolute inset-x-0 h-1 rounded-full bg-muted" />
-      <div className="absolute h-1 rounded-full bg-accent" style={{ left: `${getPercent(value[0])}%`, width: `${getPercent(value[1]) - getPercent(value[0])}%` }} />
-      {[0, 1].map((idx) => (
-        <div key={idx} onPointerDown={handlePointer(idx as 0 | 1)} className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 h-6 w-6 rounded-full bg-primary border-2 border-primary-foreground cursor-grab active:cursor-grabbing shadow-wealth" style={{ left: `${getPercent(value[idx as 0 | 1])}%` }} />
-      ))}
+    <div className="space-y-2">
+      <div className="flex items-center justify-between">
+        <span className="text-xs font-medium text-muted-foreground">{label}</span>
+        <span className="text-xs font-semibold text-foreground">
+          {isSingleValue ? formatINR(range[0]) : `${formatINR(range[0])} – ${formatINR(range[1])}`}
+        </span>
+      </div>
+      <div className="relative h-2 rounded-full bg-secondary">
+        <div
+          className="absolute h-full rounded-full bg-primary"
+          style={{ left: `${minPct}%`, width: `${Math.max(0, maxPct - minPct)}%` }}
+        />
+        <input
+          type="range"
+          min={0}
+          max={max}
+          step={100000}
+          value={range[0]}
+          onChange={(e) => {
+            const v = Math.max(0, Math.min(Number(e.target.value), range[1]));
+            onChange([v, range[1]]);
+          }}
+          className="absolute inset-0 w-full h-full appearance-none bg-transparent cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:h-5 [&::-webkit-slider-thumb]:w-5 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-primary [&::-webkit-slider-thumb]:border-2 [&::-webkit-slider-thumb]:border-card [&::-webkit-slider-thumb]:shadow-md pointer-events-none [&::-webkit-slider-thumb]:pointer-events-auto"
+        />
+        <input
+          type="range"
+          min={0}
+          max={max}
+          step={100000}
+          value={range[1]}
+          onChange={(e) => {
+            const v = Math.max(Number(e.target.value), range[0]);
+            onChange([range[0], v]);
+          }}
+          className="absolute inset-0 w-full h-full appearance-none bg-transparent cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:h-5 [&::-webkit-slider-thumb]:w-5 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-primary [&::-webkit-slider-thumb]:border-2 [&::-webkit-slider-thumb]:border-card [&::-webkit-slider-thumb]:shadow-md pointer-events-none [&::-webkit-slider-thumb]:pointer-events-auto"
+        />
+      </div>
+      <div className="flex justify-between">
+        {SLIDER_TICKS.map((t) => (
+          <span key={t.value} className="text-[9px] text-muted-foreground/50">
+            {t.label}
+          </span>
+        ))}
+      </div>
+      {subtext && <p className="text-[11px] text-muted-foreground italic">{subtext}</p>}
     </div>
   );
 };
 
-/* ─── Main Page ─── */
-const AboutYou = () => {
-  const navigate = useNavigate();
-  const [age, setAge] = useState(30);
-  const [goals, setGoals] = useState<Set<string>>(new Set());
-  const [goalDetails, setGoalDetails] = useState<Record<string, { amount: string; date: string }>>({});
-  const [netWorth, setNetWorth] = useState<string | null>(null);
-  const [horizonRange, setHorizonRange] = useState<[number, number]>([5, 15]);
+/* ─── Constants ─── */
+const DEFAULT_GOALS = [
+  { label: "Buying a home", icon: "🏡" },
+  { label: "Retiring", icon: "🌴" },
+  { label: "Education", icon: "🎓" },
+  { label: "Marriage", icon: "💍" },
+];
 
-  const toggleGoal = (g: string) => {
-    setGoals((prev) => {
-      const next = new Set(prev);
-      if (next.has(g)) {
-        next.delete(g);
-        setGoalDetails((d) => { const n = { ...d }; delete n[g]; return n; });
-      } else {
-        next.add(g);
-        if (g !== "Not yet sure") {
-          setGoalDetails((d) => ({ ...d, [g]: { amount: "", date: "" } }));
-        }
-      }
-      return next;
-    });
+const HORIZON_OPTIONS = [
+  { label: "Short term", sub: "< 2 years" },
+  { label: "Medium term", sub: "2–5 years" },
+  { label: "Long term", sub: "5+ years" },
+];
+
+const TellUsAboutYou = ({ onComplete }: Props) => {
+  const [dobDay, setDobDay] = useState(15);
+  const [dobMonth, setDobMonth] = useState(6);
+  const [dobYear, setDobYear] = useState(1990);
+  const [selectedGoals, setSelectedGoals] = useState<string[]>([]);
+  const [customGoals, setCustomGoals] = useState<string[]>([]);
+  const [addingGoal, setAddingGoal] = useState(false);
+  const [newGoalText, setNewGoalText] = useState("");
+  const [horizon, setHorizon] = useState("");
+  const [incomeRange, setIncomeRange] = useState<[number, number]>([30000000, 70000000]);
+  const [expenseRange, setExpenseRange] = useState<[number, number]>([20000000, 50000000]);
+
+  const toggleGoal = (g: string) =>
+    setSelectedGoals((prev) => (prev.includes(g) ? prev.filter((x) => x !== g) : [...prev, g]));
+
+  const addCustomGoal = () => {
+    if (newGoalText.trim()) {
+      setCustomGoals((prev) => [...prev, newGoalText.trim()]);
+      setSelectedGoals((prev) => [...prev, newGoalText.trim()]);
+      setNewGoalText("");
+      setAddingGoal(false);
+    }
   };
 
-  const updateGoalDetail = (goal: string, field: "amount" | "date", value: string) => {
-    setGoalDetails((prev) => ({
-      ...prev,
-      [goal]: { ...prev[goal], [field]: value },
-    }));
-  };
+  const avgIncome = (incomeRange[0] + incomeRange[1]) / 2;
+  const avgExpense = (expenseRange[0] + expenseRange[1]) / 2;
+  const estSavingsLow = Math.max(0, incomeRange[0] - expenseRange[1]);
+  const estSavingsHigh = Math.max(0, incomeRange[1] - expenseRange[0]);
+  const expensePct = avgIncome > 0 ? Math.round((avgExpense / avgIncome) * 100) : 0;
 
-  const hasValidGoal = Array.from(goals).some((g) => {
-    const d = goalDetails[g];
-    return d && d.amount.trim() !== "" && d.date.trim() !== "";
-  });
-
-  const canComplete = age > 0 && hasValidGoal;
-
-  const handleGenerate = () => {
-    sessionStorage.setItem("completedTellUs", "true");
-    sessionStorage.setItem("onboardingComplete", "true");
-    navigate("/");
-  };
+  const canContinue =
+    !!dobDay && !!dobMonth && !!dobYear && selectedGoals.length > 0 && !!horizon;
 
   return (
-    <div className="min-h-screen bg-background flex flex-col items-center px-4 pt-8 pb-6">
-      {/* Stepper — Step 1 completed, Step 2 active */}
-      <motion.div
-        initial={{ opacity: 0, y: -10 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="flex items-center gap-0 mb-6 w-full max-w-[340px]"
-      >
-        {/* Step 1 — completed */}
-        <div className="flex flex-col items-center">
-          <div className="flex h-7 w-7 items-center justify-center rounded-full bg-[hsl(160_50%_38%)]">
-            <Check className="h-3.5 w-3.5 text-white" />
-          </div>
-          <span className="text-[10px] text-muted-foreground mt-1.5">Link accounts</span>
-          <span className="text-[10px] text-muted-foreground">~90 secs</span>
-        </div>
-
-        {/* Divider */}
-        <div className="flex-1 h-[1.5px] bg-border mx-2 mt-[-22px]" />
-
-        {/* Step 2 — active */}
-        <div className="flex flex-col items-center">
-          <div className="flex h-7 w-7 items-center justify-center rounded-full bg-foreground">
-            <span className="text-xs font-semibold text-primary-foreground">2</span>
-          </div>
-          <span className="text-[10px] text-foreground font-medium mt-1.5">About you</span>
-          <span className="text-[10px] text-muted-foreground">~30 secs</span>
-        </div>
-      </motion.div>
-
-      {/* Content */}
-      <div className="w-full max-w-[340px] flex-1 overflow-y-auto pb-32">
-        <h2 className="text-xl font-semibold text-foreground">Tell us about you</h2>
-        <p className="text-xs text-muted-foreground mt-1 mb-5">Takes about 30 seconds. You can update this anytime.</p>
-
-        {/* 1. Age */}
-        <section>
-          <p className="text-sm font-medium tracking-tight text-foreground mb-2">How old are you?</p>
-          <AgePicker value={age} onChange={setAge} />
-        </section>
-
-        <div className="h-px bg-border my-6" />
-
-        {/* 2. Goals */}
-        <section>
-          <p className="text-sm font-medium tracking-tight text-foreground mb-2">What are your main goals?</p>
-          <div className="flex flex-wrap gap-2">
-            {goalOptions.map((opt) => {
-              const isActive = goals.has(opt.label);
-              return (
-                <button
-                  key={opt.label}
-                  onClick={() => toggleGoal(opt.label)}
-                  className={`rounded-xl px-3 py-2 text-xs font-medium tracking-tight border transition-all flex items-center gap-1.5 ${
-                    isActive ? "wealth-gradient text-primary-foreground border-transparent" : "bg-card text-foreground border-border/60 hover:border-foreground/20"
-                  }`}
-                >
-                  <span>{opt.icon}</span>
-                  {opt.label}
-                </button>
-              );
-            })}
-          </div>
-
-          {/* Goal sub-fields */}
-          <AnimatePresence>
-            {goalOptions.filter((o) => goals.has(o.label) && o.label !== "Not yet sure").map((opt) => (
-              <motion.div
-                key={opt.label}
-                initial={{ height: 0, opacity: 0 }}
-                animate={{ height: "auto", opacity: 1 }}
-                exit={{ height: 0, opacity: 0 }}
-                transition={{ duration: 0.3, ease: "easeOut" }}
-                className="overflow-hidden"
-              >
-                <div className="mt-2 ml-1 p-2.5 rounded-xl bg-card border border-border/60">
-                  <p className="text-[11px] font-semibold text-muted-foreground mb-1.5">{opt.icon} {opt.label}</p>
-                  <div className="flex gap-2">
-                    <div className="flex-1">
-                      <label className="text-[11px] uppercase tracking-wide text-muted-foreground/60 mb-0.5 block">Target amount</label>
-                      <div className="flex items-center rounded-lg border border-border bg-background px-2 h-7">
-                        <span className="text-xs text-muted-foreground mr-1">₹</span>
-                        <input
-                          type="number"
-                          placeholder="e.g. 50,00,000"
-                          value={goalDetails[opt.label]?.amount || ""}
-                          onChange={(e) => updateGoalDetail(opt.label, "amount", e.target.value)}
-                          className="flex-1 bg-transparent text-xs text-foreground outline-none placeholder:text-muted-foreground/50 [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
-                        />
-                      </div>
-                    </div>
-                    <div className="w-24">
-                      <label className="text-[11px] uppercase tracking-wide text-muted-foreground/60 mb-0.5 block">Target year</label>
-                      <input
-                        type="text"
-                        placeholder="e.g. 2035"
-                        maxLength={4}
-                        value={goalDetails[opt.label]?.date || ""}
-                        onChange={(e) => updateGoalDetail(opt.label, "date", e.target.value.replace(/\D/g, ""))}
-                        className="w-full rounded-lg border border-border bg-background px-2 h-7 text-xs text-foreground outline-none placeholder:text-muted-foreground/50"
-                      />
-                    </div>
-                  </div>
-                </div>
-              </motion.div>
-            ))}
-          </AnimatePresence>
-        </section>
-
-        <div className="h-px bg-border my-6" />
-
-        {/* 3. Net worth */}
-        <section>
-          <p className="text-sm font-medium tracking-tight text-foreground mb-2">What is your total net worth?</p>
-          <div className="space-y-2">
-            {netWorthBrackets.map((b) => (
-              <button
-                key={b}
-                onClick={() => setNetWorth(b)}
-                className={`w-full rounded-xl px-3 py-2.5 text-xs font-medium tracking-tight border text-left transition-all ${
-                  netWorth === b ? "wealth-gradient text-primary-foreground border-transparent" : "bg-card text-foreground border-border/60 hover:border-foreground/20"
-                }`}
-              >
-                {b}
-              </button>
-            ))}
-          </div>
-        </section>
-
-        <div className="h-px bg-border my-6" />
-
-        {/* 4. Investment horizon */}
-        <section>
-          <p className="text-sm font-medium tracking-tight text-foreground mb-1">Investment horizon?</p>
-          <p className="text-sm font-semibold text-foreground mb-3">
-            {horizonRange[0]} – {horizonRange[1] >= 30 ? "30+" : horizonRange[1]} years
-          </p>
-          <div className="px-1">
-            <DualRangeSlider min={1} max={30} value={horizonRange} onChange={setHorizonRange} />
-            <div className="flex justify-between mt-1">
-              <div className="text-left leading-tight">
-                <span className="text-[10px] text-muted-foreground uppercase tracking-wider block">1 yr</span>
-                <span className="text-[9px] text-muted-foreground/70 italic mt-0.5 block">Short term</span>
-              </div>
-              <div className="text-center leading-tight">
-                <span className="text-[10px] text-muted-foreground uppercase tracking-wider block">10 yrs</span>
-                <span className="text-[9px] text-muted-foreground/70 italic mt-0.5 block">Medium</span>
-              </div>
-              <div className="text-right leading-tight">
-                <span className="text-[10px] text-muted-foreground uppercase tracking-wider block">20+ yrs</span>
-                <span className="text-[9px] text-muted-foreground/70 italic mt-0.5 block">Long haul</span>
-              </div>
+    <div className="mobile-container flex flex-col bg-background min-h-screen">
+      {/* Progress header */}
+      <div className="px-4 pt-12 pb-1">
+        <div className="flex items-center gap-1">
+          <div className="flex items-center gap-1.5 shrink-0">
+            <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full wealth-gradient text-[10px] font-semibold text-primary-foreground">
+              1
+            </div>
+            <div className="flex flex-col">
+              <span className="text-[10px] font-medium leading-tight text-foreground">About you</span>
+              <span className="text-[8px] text-muted-foreground/50 leading-tight">~30 secs</span>
             </div>
           </div>
-        </section>
+          <div className="flex-1 h-0.5 rounded-full bg-secondary overflow-hidden mx-1" />
+          <div className="flex items-center gap-1.5 shrink-0">
+            <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-secondary text-[10px] font-semibold text-muted-foreground">
+              2
+            </div>
+            <div className="flex flex-col">
+              <span className="text-[10px] font-medium leading-tight text-muted-foreground">
+                Link accounts
+              </span>
+              <span className="text-[8px] text-muted-foreground/50 leading-tight">~90 secs</span>
+            </div>
+          </div>
+        </div>
       </div>
 
-      {/* Bottom actions — pinned */}
-      <div className="fixed bottom-0 left-0 right-0 bg-background/95 backdrop-blur-sm border-t border-border/50 px-6 py-4">
-        <div className="max-w-[340px] mx-auto flex flex-col items-center gap-3">
-          <button
-            onClick={() => navigate("/link-accounts")}
-            className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors"
+      {/* Content */}
+      <div className="flex-1 flex flex-col px-6 pb-24 overflow-y-auto">
+        <div className="mt-4 mb-1">
+          <h2 className="text-xl font-semibold text-foreground">Tell us about you</h2>
+          <p className="text-xs text-muted-foreground mt-1">
+            Personalise your financial journey
+          </p>
+        </div>
+
+        <Accordion type="single" collapsible className="space-y-3">
+          {/* Age / DOB */}
+          <AccordionItem
+            value="age"
+            className="border rounded-xl bg-card overflow-hidden border-border/60"
           >
-            <ArrowLeft className="h-3.5 w-3.5" />
-            Back
-          </button>
-          <button
-            onClick={handleGenerate}
-            disabled={!canComplete}
-            className="flex w-full items-center justify-center gap-1.5 rounded-xl py-3.5 text-[15px] font-semibold text-primary-foreground tracking-wide transition-all active:scale-[0.98] disabled:opacity-40 disabled:pointer-events-none"
-            style={{ backgroundColor: "hsl(222 47% 14%)" }}
+            <AccordionTrigger className="px-4 py-3 hover:no-underline">
+              <div className="flex items-center gap-3">
+                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-secondary">
+                  <Calendar className="h-[20px] w-[20px] text-muted-foreground" />
+                </div>
+                <div className="text-left">
+                  <p className="text-sm font-semibold text-foreground">Age</p>
+                </div>
+              </div>
+            </AccordionTrigger>
+            <AccordionContent className="px-4 pb-4">
+              <div className="flex gap-1 rounded-xl overflow-hidden bg-secondary/20 p-2 max-w-[260px] mx-auto">
+                <DrumColumn items={DAYS} value={dobDay} onChange={setDobDay} />
+                <DrumColumn
+                  items={MONTHS}
+                  value={dobMonth}
+                  onChange={setDobMonth}
+                  renderLabel={(v) => MONTH_LABELS[v]}
+                />
+                <DrumColumn
+                  items={YEARS}
+                  value={dobYear}
+                  onChange={setDobYear}
+                  renderLabel={(v) => String(v)}
+                />
+              </div>
+            </AccordionContent>
+          </AccordionItem>
+
+          {/* Financial Goals */}
+          <AccordionItem
+            value="goals"
+            className="border rounded-xl bg-card overflow-hidden border-border/60"
           >
-            Generate my portfolio
-            <Sparkles className="h-3.5 w-3.5" />
+            <AccordionTrigger className="px-4 py-3 hover:no-underline">
+              <div className="flex items-center gap-3">
+                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-secondary">
+                  <Target className="h-[20px] w-[20px] text-muted-foreground" />
+                </div>
+                <div className="text-left">
+                  <p className="text-sm font-semibold text-foreground">Financial Goals</p>
+                </div>
+              </div>
+            </AccordionTrigger>
+            <AccordionContent className="px-4 pb-4 space-y-5">
+              <div>
+                <p className="text-xs font-medium text-muted-foreground mb-2.5">
+                  What are your key financial goals?
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  {[...DEFAULT_GOALS, ...customGoals.map((g) => ({ label: g, icon: "✦" }))].map(
+                    (g) => {
+                      const isSelected = selectedGoals.includes(g.label);
+                      return (
+                        <button
+                          key={g.label}
+                          onClick={() => toggleGoal(g.label)}
+                          className={`flex items-center gap-1.5 px-3 py-2 rounded-full text-xs font-medium transition-all ${
+                            isSelected
+                              ? "bg-primary text-primary-foreground"
+                              : "bg-secondary text-secondary-foreground hover:bg-muted"
+                          }`}
+                        >
+                          {isSelected && <Check className="h-3 w-3" />}
+                          <span>{g.icon}</span>
+                          {g.label}
+                        </button>
+                      );
+                    }
+                  )}
+                  {addingGoal ? (
+                    <div className="flex items-center gap-1">
+                      <input
+                        autoFocus
+                        value={newGoalText}
+                        onChange={(e) => setNewGoalText(e.target.value)}
+                        onKeyDown={(e) => e.key === "Enter" && addCustomGoal()}
+                        placeholder="Type goal"
+                        className="px-3 py-2 rounded-full text-xs bg-secondary text-foreground outline-none w-28 border border-border"
+                      />
+                      <button
+                        onClick={addCustomGoal}
+                        className="p-1.5 rounded-full bg-primary text-primary-foreground"
+                      >
+                        <Check className="h-3 w-3" />
+                      </button>
+                      <button
+                        onClick={() => {
+                          setAddingGoal(false);
+                          setNewGoalText("");
+                        }}
+                        className="p-1.5 rounded-full bg-secondary text-muted-foreground"
+                      >
+                        <X className="h-3 w-3" />
+                      </button>
+                    </div>
+                  ) : (
+                    <button
+                      onClick={() => setAddingGoal(true)}
+                      className="flex items-center gap-1 px-3 py-2 rounded-full text-xs font-medium bg-secondary text-muted-foreground hover:bg-muted border border-dashed border-border"
+                    >
+                      <Plus className="h-3 w-3" /> Add your own
+                    </button>
+                  )}
+                </div>
+              </div>
+
+              <div>
+                <p className="text-xs font-medium text-muted-foreground mb-2.5">
+                  Investment Horizon
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  {HORIZON_OPTIONS.map((h) => {
+                    const isSelected = horizon === h.label;
+                    return (
+                      <button
+                        key={h.label}
+                        onClick={() => setHorizon(h.label)}
+                        className={`px-4 py-2.5 rounded-xl text-xs font-medium text-center transition-all ${
+                          isSelected
+                            ? "bg-primary text-primary-foreground"
+                            : "bg-secondary text-secondary-foreground hover:bg-muted"
+                        }`}
+                      >
+                        {h.label}
+                      </button>
+                    );
+                  })}
+                </div>
+                {horizon && (
+                  <p className="text-[11px] text-muted-foreground mt-2 text-center w-full">
+                    {HORIZON_OPTIONS.find((h) => h.label === horizon)?.sub}
+                  </p>
+                )}
+              </div>
+            </AccordionContent>
+          </AccordionItem>
+
+          {/* Income & Expenses */}
+          <AccordionItem
+            value="income"
+            className="border rounded-xl bg-card overflow-hidden border-border/60"
+          >
+            <AccordionTrigger className="px-4 py-3 hover:no-underline">
+              <div className="flex items-center gap-3">
+                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-secondary">
+                  <Wallet className="h-[20px] w-[20px] text-muted-foreground" />
+                </div>
+                <div className="text-left">
+                  <p className="text-sm font-semibold text-foreground">Income & Expenses</p>
+                </div>
+              </div>
+            </AccordionTrigger>
+            <AccordionContent className="px-4 pb-4 space-y-5">
+              <DualRangeSlider
+                label="Annual Income Range (₹)"
+                range={incomeRange}
+                onChange={setIncomeRange}
+                subtext={`Estimated savings: ${formatINR(estSavingsLow)} – ${formatINR(
+                  estSavingsHigh
+                )} / year`}
+              />
+              <DualRangeSlider
+                label="Annual Expenses Range (₹)"
+                range={expenseRange}
+                onChange={setExpenseRange}
+                subtext={`That's roughly ${expensePct}% of your income range`}
+              />
+            </AccordionContent>
+          </AccordionItem>
+        </Accordion>
+      </div>
+
+      {/* Fixed CTA */}
+      <div className="fixed bottom-0 left-0 right-0 p-6 bg-gradient-to-t from-background via-background to-transparent">
+        <div className="max-w-md mx-auto">
+          <button
+            onClick={onComplete}
+            disabled={!canContinue}
+            className={`flex w-full items-center justify-center gap-2 rounded-xl py-3.5 text-[15px] font-semibold tracking-wide transition-all active:scale-[0.98] disabled:pointer-events-none ${
+              canContinue
+                ? "wealth-gradient text-primary-foreground"
+                : "bg-secondary text-muted-foreground"
+            }`}
+          >
+            Continue
+            <ArrowRight className="h-4 w-4" />
           </button>
         </div>
       </div>
@@ -327,4 +480,17 @@ const AboutYou = () => {
   );
 };
 
-export default AboutYou;
+const AboutYouPage = () => {
+  const navigate = useNavigate();
+  return (
+    <TellUsAboutYou
+      onComplete={() => {
+        sessionStorage.setItem("onboardingComplete", "true");
+        navigate("/");
+      }}
+      onBack={() => navigate("/link-accounts")}
+    />
+  );
+};
+
+export default AboutYouPage;
