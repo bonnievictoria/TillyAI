@@ -21,6 +21,7 @@ import Invest from "./pages/Invest";
 import Discovery from "./pages/Discovery";
 import OTP from "./pages/OTP";
 import LinkAccounts from "./pages/LinkAccounts";
+import AboutYou from "./pages/AboutYou";
 
 const queryClient = new QueryClient();
 
