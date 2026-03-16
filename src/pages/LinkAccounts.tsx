@@ -173,7 +173,7 @@ const LinkAccounts = () => {
         <button
           onClick={() => {
             sessionStorage.setItem("completedLinkAccounts", "true");
-            navigate("/");
+            navigate("/landing");
           }}
           className="flex items-center gap-1.5 rounded-xl px-5 py-2.5 text-sm font-semibold text-primary-foreground"
           style={{ backgroundColor: "hsl(222 47% 14%)" }}
