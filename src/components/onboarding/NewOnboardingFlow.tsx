@@ -212,60 +212,6 @@ const HORIZON_OPTIONS = [
   { label: "Long term", sub: "5+ years" },
 ];
 
-const ACCOUNT_TYPES = [
-  { id: "mf", label: "Mutual funds", icon: BarChart3, desc: "CAMS, Karvy & all AMCs" },
-  { id: "stock", label: "Stocks", icon: TrendingUp, desc: "NSE, BSE via CDSL / NSDL" },
-  { id: "bank", label: "Bank account", icon: Building2, desc: "All banks via account aggregator" },
-  { id: "other", label: "Others", icon: Sparkles, desc: "NPS, PPF, Gold, Real estate…" },
-];
-
-/* ─── Indian Provider Lists ─── */
-const INDIAN_PROVIDERS: Record<string, { name: string; subtitle?: string }[]> = {
-  mf: [
-    { name: "Groww", subtitle: "Mutual Fund Platform" },
-    { name: "Zerodha Coin", subtitle: "Direct MF Investing" },
-    { name: "Kuvera", subtitle: "Free Direct Plans" },
-    { name: "Paytm Money", subtitle: "MF & SIP Platform" },
-    { name: "MF Central", subtitle: "Unified MF Portal" },
-    { name: "CAMS", subtitle: "Registrar & Transfer Agent" },
-    { name: "KFintech", subtitle: "Registrar & Transfer Agent" },
-  ],
-  stock: [
-    { name: "Zerodha", subtitle: "Discount Broker" },
-    { name: "Upstox", subtitle: "Online Trading" },
-    { name: "Angel One", subtitle: "Full Service Broker" },
-    { name: "ICICI Direct", subtitle: "Banking + Demat" },
-    { name: "HDFC Securities", subtitle: "Banking + Demat" },
-    { name: "Groww", subtitle: "Stocks & MF" },
-  ],
-  bank: [
-    { name: "SBI", subtitle: "State Bank of India" },
-    { name: "HDFC Bank", subtitle: "Private Sector Bank" },
-    { name: "ICICI Bank", subtitle: "Private Sector Bank" },
-    { name: "Axis Bank", subtitle: "Private Sector Bank" },
-    { name: "Kotak Mahindra", subtitle: "Private Sector Bank" },
-    { name: "Yes Bank", subtitle: "Private Sector Bank" },
-    { name: "IDFC First", subtitle: "Private Sector Bank" },
-  ],
-  other: [
-    { name: "NPS", subtitle: "National Pension System" },
-    { name: "PPF", subtitle: "Public Provident Fund" },
-    { name: "EPF", subtitle: "Employee Provident Fund" },
-    { name: "Gold", subtitle: "Physical / Digital Gold" },
-    { name: "Real Estate", subtitle: "Property Investments" },
-  ],
-};
-
-interface AccountEntry {
-  name: string;
-  accountNumber?: string;
-  amount?: string;
-}
-
-interface OtherAsset {
-  name: string;
-  amount: string;
-}
 
 /* ─── Provider Selection Modal ─── */
 const ProviderSelectionModal = ({
