@@ -258,8 +258,14 @@ const NewOnboardingFlow = ({ onComplete }: NewOnboardingFlowProps) => {
   const estSavingsHigh = Math.max(0, incomeRange[1] - expenseRange[0]);
   const expensePct = avgIncome > 0 ? Math.round((avgExpense / avgIncome) * 100) : 0;
 
+  /* ─── SCREEN 0: Welcome ─── */
+  if (step === -1) {
+    return (
+      <WelcomeScreen onNext={() => setStep(0)} />
+    );
+  }
 
-  /* ─── Progress bar (shared between step 0 and 1) ─── */
+  /* ─── Progress bar ─── */
   const renderProgress = () => (
     <div className="px-4 pt-12 pb-1">
       <div className="flex items-center gap-1">
