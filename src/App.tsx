@@ -20,6 +20,7 @@ import GoalPlanner from "./pages/GoalPlanner";
 import Invest from "./pages/Invest";
 import Discovery from "./pages/Discovery";
 import OTP from "./pages/OTP";
+import LinkAccounts from "./pages/LinkAccounts";
 
 const queryClient = new QueryClient();
 
