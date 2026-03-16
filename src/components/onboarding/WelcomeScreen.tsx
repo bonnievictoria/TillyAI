@@ -113,6 +113,20 @@ const WelcomeScreen = ({ onNext }: WelcomeScreenProps) => {
         </div>
       </motion.div>
 
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ delay: 0.85, duration: 0.5 }}
+        className="text-center mb-3"
+      >
+        <p className="text-xs text-muted-foreground leading-relaxed">
+          We'll find accounts linked to this number
+        </p>
+        <p className="text-xs text-muted-foreground leading-relaxed">
+          🔒 Each account requires your authorization to connect
+        </p>
+      </motion.div>
+
       <motion.button
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
