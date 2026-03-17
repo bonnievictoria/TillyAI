@@ -11,14 +11,15 @@ const CONNECTED_ACCOUNTS = [
   { icon: Landmark, title: "Bank account", subtitle: "All banks via account aggregator" },
 ];
 
-const BANKS = [
-  { name: "SBI", full: "State Bank of India", type: "Public Sector Bank" },
-  { name: "HDFC Bank", full: "HDFC Bank", type: "Private Sector Bank" },
-  { name: "ICICI Bank", full: "ICICI Bank", type: "Private Sector Bank" },
-  { name: "Axis Bank", full: "Axis Bank", type: "Private Sector Bank" },
-  { name: "Kotak Mahindra", full: "Kotak Mahindra Bank", type: "Private Sector Bank" },
-  { name: "Yes Bank", full: "Yes Bank", type: "Private Sector Bank" },
-  { name: "IDFC First", full: "IDFC First Bank", type: "Private Sector Bank" },
+const BROKERS = [
+  { name: "Zerodha" },
+  { name: "Groww" },
+  { name: "Upstox" },
+  { name: "Angel One" },
+  { name: "ICICI Direct" },
+  { name: "HDFC Securities" },
+  { name: "Motilal Oswal" },
+  { name: "5Paisa" },
 ];
 
 const LinkAccounts = () => {
