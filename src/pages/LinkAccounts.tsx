@@ -26,14 +26,12 @@ const LinkAccounts = () => {
   const navigate = useNavigate();
   const [showStocksModal, setShowStocksModal] = useState(false);
   const [stockSearch, setStockSearch] = useState("");
-  const [selectedBanks, setSelectedBanks] = useState<Set<string>>(new Set());
+  const [selectedBrokers, setSelectedBrokers] = useState<Set<string>>(new Set());
   const [othersExpanded, setOthersExpanded] = useState(false);
   const [otherAssets, setOtherAssets] = useState([{ name: "", amount: "" }]);
 
-  const filteredBanks = BANKS.filter(
-    (b) =>
-      b.name.toLowerCase().includes(stockSearch.toLowerCase()) ||
-      b.full.toLowerCase().includes(stockSearch.toLowerCase())
+  const filteredBrokers = BROKERS.filter(
+    (b) => b.name.toLowerCase().includes(stockSearch.toLowerCase())
   );
 
   const toggleBank = (name: string) => {
