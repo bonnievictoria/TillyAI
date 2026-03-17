@@ -34,8 +34,8 @@ const LinkAccounts = () => {
     (b) => b.name.toLowerCase().includes(stockSearch.toLowerCase())
   );
 
-  const toggleBank = (name: string) => {
-    setSelectedBanks((prev) => {
+  const toggleBroker = (name: string) => {
+    setSelectedBrokers((prev) => {
       const next = new Set(prev);
       if (next.has(name)) next.delete(name);
       else next.add(name);
