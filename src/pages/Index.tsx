@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { Loader2 } from "lucide-react";
 import NewOnboardingFlow from "@/components/onboarding/NewOnboardingFlow";
@@ -9,10 +9,15 @@ type Screen = "onboarding" | "dashboard";
 
 const Index = () => {
   const { authenticated, loading } = useAuth();
-  const hasCompletedOnboarding = sessionStorage.getItem("onboardingComplete") === "true";
+  const [screen, setScreen] = useState<Screen>("onboarding");
 
-  const initial: Screen = authenticated && hasCompletedOnboarding ? "dashboard" : "onboarding";
-  const [screen, setScreen] = useState<Screen>(initial);
+  useEffect(() => {
+    if (loading) return;
+    const hasCompletedOnboarding = sessionStorage.getItem("onboardingComplete") === "true";
+    if (authenticated && hasCompletedOnboarding) {
+      setScreen("dashboard");
+    }
+  }, [authenticated, loading]);
 
   const handleOnboardingComplete = () => {
     sessionStorage.setItem("onboardingComplete", "true");

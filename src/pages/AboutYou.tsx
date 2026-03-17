@@ -214,7 +214,7 @@ const HORIZON_OPTIONS = [
   { label: "Long term", sub: "5+ years" },
 ];
 
-const TellUsAboutYou = ({ onComplete }: Props) => {
+const TellUsAboutYou = ({ onComplete, onBack }: Props) => {
   const [dobDay, setDobDay] = useState(15);
   const [dobMonth, setDobMonth] = useState(6);
   const [dobYear, setDobYear] = useState(1990);
@@ -265,32 +265,33 @@ const TellUsAboutYou = ({ onComplete }: Props) => {
 
   return (
     <div className="mobile-container flex flex-col bg-background min-h-screen">
-      {/* Progress header */}
-      <div className="px-4 pt-12 pb-1">
-        <div className="flex items-center gap-1">
-          <div className="flex items-center gap-1.5 shrink-0">
-            <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full wealth-gradient text-[10px] font-semibold text-primary-foreground">
-              1
-            </div>
-            <div className="flex flex-col">
-              <span className="text-[10px] font-medium leading-tight text-foreground">About you</span>
-              <span className="text-[8px] text-muted-foreground/50 leading-tight">~30 secs</span>
-            </div>
+      {/* Stepper — Step 1 completed, Step 2 active */}
+      <motion.div
+        initial={{ opacity: 0, y: -10 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="flex items-center gap-0 px-4 pt-8 pb-6 w-full max-w-[340px] mx-auto"
+      >
+        {/* Step 1 — completed */}
+        <div className="flex flex-col items-center">
+          <div className="flex h-7 w-7 items-center justify-center rounded-full bg-secondary">
+            <Check className="h-3.5 w-3.5 text-muted-foreground" />
           </div>
-          <div className="flex-1 h-0.5 rounded-full bg-secondary overflow-hidden mx-1" />
-          <div className="flex items-center gap-1.5 shrink-0">
-            <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-secondary text-[10px] font-semibold text-muted-foreground">
-              2
-            </div>
-            <div className="flex flex-col">
-              <span className="text-[10px] font-medium leading-tight text-muted-foreground">
-                Link accounts
-              </span>
-              <span className="text-[8px] text-muted-foreground/50 leading-tight">~90 secs</span>
-            </div>
-          </div>
+          <span className="text-[10px] text-muted-foreground mt-1.5">Link accounts</span>
+          <span className="text-[10px] text-muted-foreground">~90 secs</span>
         </div>
-      </div>
+
+        {/* Divider */}
+        <div className="flex-1 h-[1.5px] bg-border mx-2 mt-[-22px]" />
+
+        {/* Step 2 — active */}
+        <div className="flex flex-col items-center">
+          <div className="flex h-7 w-7 items-center justify-center rounded-full bg-foreground">
+            <span className="text-xs font-semibold text-primary-foreground">2</span>
+          </div>
+          <span className="text-[10px] text-foreground font-medium mt-1.5">About you</span>
+          <span className="text-[10px] text-muted-foreground">~30 secs</span>
+        </div>
+      </motion.div>
 
       {/* Content */}
       <div className="flex-1 flex flex-col px-6 pb-24 overflow-y-auto">
@@ -480,15 +481,25 @@ const TellUsAboutYou = ({ onComplete }: Props) => {
         </Accordion>
       </div>
 
-      {/* Fixed CTA */}
+      {/* Fixed bottom actions */}
       <div className="fixed bottom-0 left-0 right-0 p-6 bg-gradient-to-t from-background via-background to-transparent">
-        <div className="max-w-md mx-auto">
+        <div className="max-w-md mx-auto flex flex-col items-center gap-3">
           <button
-            onClick={handleSaveAndContinue}
-            className="flex w-full items-center justify-center gap-2 rounded-xl wealth-gradient py-3.5 text-[15px] font-semibold text-primary-foreground tracking-wide transition-all active:scale-[0.98]"
+            onClick={onBack}
+            className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
           >
-            Continue
-            <ArrowRight className="h-4 w-4" />
+            ← Back
+          </button>
+          <button
+            onClick={onComplete}
+            disabled={!canContinue}
+            className={`flex w-full items-center justify-center gap-2 rounded-xl py-3.5 text-[15px] font-semibold tracking-wide transition-all active:scale-[0.98] disabled:pointer-events-none ${
+              canContinue
+                ? "bg-foreground text-background"
+                : "bg-secondary text-muted-foreground"
+            }`}
+          >
+            Generate my portfolio ✦
           </button>
         </div>
       </div>
