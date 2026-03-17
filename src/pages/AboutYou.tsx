@@ -209,7 +209,7 @@ const HORIZON_OPTIONS = [
   { label: "Long term", sub: "5+ years" },
 ];
 
-const TellUsAboutYou = ({ onComplete }: Props) => {
+const TellUsAboutYou = ({ onComplete, onBack }: Props) => {
   const [dobDay, setDobDay] = useState(15);
   const [dobMonth, setDobMonth] = useState(6);
   const [dobYear, setDobYear] = useState(1990);
