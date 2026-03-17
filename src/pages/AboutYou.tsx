@@ -460,20 +460,25 @@ const TellUsAboutYou = ({ onComplete }: Props) => {
         </Accordion>
       </div>
 
-      {/* Fixed CTA */}
+      {/* Fixed bottom actions */}
       <div className="fixed bottom-0 left-0 right-0 p-6 bg-gradient-to-t from-background via-background to-transparent">
-        <div className="max-w-md mx-auto">
+        <div className="max-w-md mx-auto flex flex-col items-center gap-3">
+          <button
+            onClick={onBack}
+            className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
+          >
+            ← Back
+          </button>
           <button
             onClick={onComplete}
             disabled={!canContinue}
             className={`flex w-full items-center justify-center gap-2 rounded-xl py-3.5 text-[15px] font-semibold tracking-wide transition-all active:scale-[0.98] disabled:pointer-events-none ${
               canContinue
-                ? "wealth-gradient text-primary-foreground"
+                ? "bg-foreground text-background"
                 : "bg-secondary text-muted-foreground"
             }`}
           >
-            Continue
-            <ArrowRight className="h-4 w-4" />
+            Generate my portfolio ✦
           </button>
         </div>
       </div>
