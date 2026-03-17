@@ -272,7 +272,7 @@ const LinkAccounts = () => {
               </button>
 
               <h2 className="font-medium text-foreground" style={{ fontSize: 17 }}>
-                Link Bank account
+                Link Stock Account
               </h2>
 
               <div className="relative mt-3">
@@ -287,12 +287,12 @@ const LinkAccounts = () => {
               </div>
 
               <div className="flex-1 overflow-y-auto mt-3 -mx-1 px-1 space-y-1.5" style={{ maxHeight: 280 }}>
-                {filteredBanks.map((bank) => {
-                  const isSelected = selectedBanks.has(bank.name);
+                {filteredBrokers.map((broker) => {
+                  const isSelected = selectedBrokers.has(broker.name);
                   return (
                     <button
-                      key={bank.name}
-                      onClick={() => toggleBank(bank.name)}
+                      key={broker.name}
+                      onClick={() => toggleBroker(broker.name)}
                       className={`w-full flex items-center gap-3 rounded-lg border px-3 py-2.5 text-left transition-colors ${
                         isSelected
                           ? "border-primary/40 bg-primary/5"
@@ -300,11 +300,10 @@ const LinkAccounts = () => {
                       }`}
                     >
                       <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-secondary">
-                        <Landmark className="h-4 w-4 text-muted-foreground" />
+                        <TrendingUp className="h-4 w-4 text-muted-foreground" />
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="text-[13px] font-medium text-foreground">{bank.name}</p>
-                        <p className="text-[11px] text-muted-foreground">{bank.type}</p>
+                        <p className="text-[13px] font-medium text-foreground">{broker.name}</p>
                       </div>
                       {isSelected && (
                         <div className="flex h-5 w-5 items-center justify-center rounded-full bg-primary">
@@ -316,10 +315,14 @@ const LinkAccounts = () => {
                 })}
               </div>
 
+              <p className="text-[10px] text-muted-foreground text-center mt-3">
+                🔒 Secured by SEBI-regulated account aggregator
+              </p>
+
               <button
                 onClick={() => setShowStocksModal(false)}
-                disabled={selectedBanks.size === 0}
-                className="w-full mt-4 rounded-xl py-3 text-sm font-semibold text-primary-foreground transition-all disabled:opacity-40 disabled:pointer-events-none"
+                disabled={selectedBrokers.size === 0}
+                className="w-full mt-3 rounded-xl py-3 text-sm font-semibold text-primary-foreground transition-all disabled:opacity-40 disabled:pointer-events-none"
                 style={{ backgroundColor: "hsl(222 47% 14%)" }}
               >
                 Link selected
