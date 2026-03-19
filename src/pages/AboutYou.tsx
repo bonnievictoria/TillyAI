@@ -257,6 +257,8 @@ const TellUsAboutYou = ({ onComplete, onBack }: Props) => {
     onComplete();
   };
 
+  const canContinue = selectedGoals.length > 0;
+
   const avgIncome = (incomeRange[0] + incomeRange[1]) / 2;
   const avgExpense = (expenseRange[0] + expenseRange[1]) / 2;
   const estSavingsLow = Math.max(0, incomeRange[0] - expenseRange[1]);
@@ -491,7 +493,7 @@ const TellUsAboutYou = ({ onComplete, onBack }: Props) => {
             ← Back
           </button>
           <button
-            onClick={onComplete}
+            onClick={handleSaveAndContinue}
             disabled={!canContinue}
             className={`flex w-full items-center justify-center gap-2 rounded-xl py-3.5 text-[15px] font-semibold tracking-wide transition-all active:scale-[0.98] disabled:pointer-events-none ${
               canContinue

@@ -131,3 +131,44 @@ export async function completeOnboarding() {
 export function logout() {
   clearToken();
 }
+
+// ── Chat API ────────────────────────────────────────────
+export interface ChatSessionInfo {
+  id: string;
+  title: string | null;
+  status: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface ChatMessageInfo {
+  id: string;
+  role: string;
+  content: string;
+  intent: string | null;
+  intent_confidence: number | null;
+  intent_reasoning: string | null;
+  created_at: string;
+}
+
+export interface ChatSendResponse {
+  user_message: ChatMessageInfo;
+  assistant_message: ChatMessageInfo;
+}
+
+export async function createChatSession(title?: string): Promise<ChatSessionInfo> {
+  return request<ChatSessionInfo>("/chat/sessions", {
+    method: "POST",
+    body: JSON.stringify({ title: title ?? null }),
+  });
+}
+
+export async function sendChatMessage(
+  sessionId: string,
+  content: string
+): Promise<ChatSendResponse> {
+  return request<ChatSendResponse>(`/chat/sessions/${sessionId}/messages`, {
+    method: "POST",
+    body: JSON.stringify({ content }),
+  });
+}
