@@ -22,6 +22,9 @@ import Discovery from "./pages/Discovery";
 import OTP from "./pages/OTP";
 import LinkAccounts from "./pages/LinkAccounts";
 import AboutYou from "./pages/AboutYou";
+import Portfolio from "./pages/Portfolio";
+import PortfolioPopup from "./pages/PortfolioPopup";
+import VoiceOnboarding from "./pages/VoiceOnboarding";
 
 const queryClient = new QueryClient();
 
