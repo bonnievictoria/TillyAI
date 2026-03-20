@@ -457,7 +457,7 @@ const CompleteProfile = () => {
   };
 
   const handleTillyMode = () => {
-    navigate("/chat");
+    navigate("/voice-onboarding");
   };
 
   const renderSection = (idx: number) => {
