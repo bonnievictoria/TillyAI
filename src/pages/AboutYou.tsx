@@ -3,6 +3,7 @@ import { useState, useRef, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { ArrowRight, Calendar, Check, Plus, Target, Wallet, X } from "lucide-react";
+import { saveOnboardingProfile } from "@/lib/api";
 import {
   Accordion,
   AccordionContent,
@@ -51,18 +52,22 @@ const DrumColumn = ({
   renderLabel?: (v: number) => string;
 }) => {
   const ref = useRef<HTMLDivElement>(null);
+  const isSettling = useRef(false);
   const paddingItems = Math.floor(VISIBLE / 2);
 
   useEffect(() => {
     if (!ref.current) return;
     const idx = items.indexOf(value);
     if (idx >= 0) {
+      isSettling.current = true;
       ref.current.scrollTo({ top: idx * ITEM_H, behavior: "smooth" });
+      const timer = setTimeout(() => { isSettling.current = false; }, 400);
+      return () => clearTimeout(timer);
     }
   }, [value, items]);
 
   const handleScroll = useCallback(() => {
-    if (!ref.current) return;
+    if (!ref.current || isSettling.current) return;
     const idx = Math.round(ref.current.scrollTop / ITEM_H);
     const clamped = Math.max(0, Math.min(idx, items.length - 1));
     if (items[clamped] !== value) {
@@ -233,14 +238,32 @@ const TellUsAboutYou = ({ onComplete, onBack }: Props) => {
     }
   };
 
+  const handleSaveAndContinue = async () => {
+    const dob = `${dobYear}-${String(dobMonth).padStart(2, "0")}-${String(dobDay).padStart(2, "0")}`;
+    try {
+      await saveOnboardingProfile({
+        date_of_birth: dob,
+        selected_goals: selectedGoals,
+        custom_goals: customGoals,
+        investment_horizon: horizon || undefined,
+        annual_income_min: incomeRange[0],
+        annual_income_max: incomeRange[1],
+        annual_expense_min: expenseRange[0],
+        annual_expense_max: expenseRange[1],
+      });
+    } catch {
+      // continue even if save fails
+    }
+    onComplete();
+  };
+
+  const canContinue = selectedGoals.length > 0;
+
   const avgIncome = (incomeRange[0] + incomeRange[1]) / 2;
   const avgExpense = (expenseRange[0] + expenseRange[1]) / 2;
   const estSavingsLow = Math.max(0, incomeRange[0] - expenseRange[1]);
   const estSavingsHigh = Math.max(0, incomeRange[1] - expenseRange[0]);
   const expensePct = avgIncome > 0 ? Math.round((avgExpense / avgIncome) * 100) : 0;
-
-  const canContinue =
-    !!dobDay && !!dobMonth && !!dobYear && selectedGoals.length > 0 && !!horizon;
 
   return (
     <div className="mobile-container flex flex-col bg-background min-h-screen">
@@ -470,7 +493,7 @@ const TellUsAboutYou = ({ onComplete, onBack }: Props) => {
             ← Back
           </button>
           <button
-            onClick={onComplete}
+            onClick={handleSaveAndContinue}
             disabled={!canContinue}
             className={`flex w-full items-center justify-center gap-2 rounded-xl py-3.5 text-[15px] font-semibold tracking-wide transition-all active:scale-[0.98] disabled:pointer-events-none ${
               canContinue

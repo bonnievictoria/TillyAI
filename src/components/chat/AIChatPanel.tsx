@@ -4,6 +4,8 @@ import { motion, AnimatePresence } from "framer-motion";
 import { X, Send, Mic, MicOff, AlertCircle, Loader2, Sparkles } from "lucide-react";
 import { useState, useRef, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
+import { createChatSession, sendChatMessage } from "@/lib/api";
+import ReactMarkdown from "react-markdown";
 
 interface AIChatPanelProps {
   isOpen: boolean;
@@ -24,23 +26,6 @@ const suggestedQuestions = [
   "How should I rebalance?",
 ];
 
-const aiResponses: Record<string, string> = {
-  "Best performing asset?":
-    "Equity mutual funds led this month — your top fund gained 4.2% in 30 days, driven by strong large-cap returns.",
-  "How should I rebalance?":
-    "Your equity is at 62%, above the 55% target. Consider moving ₹3.5L into debt instruments for better stability.",
-  "What's my risk exposure?":
-    "Moderate-high. 62% equities with 38% in mid/small-cap. Adding 5-8% gold could improve risk-adjusted returns.",
-};
-
-const getAIResponse = (msg: string): string => {
-  const lower = msg.toLowerCase();
-  if (lower.includes("best") || lower.includes("performing")) return aiResponses["Best performing asset?"];
-  if (lower.includes("rebalance") || lower.includes("allocat")) return aiResponses["How should I rebalance?"];
-  if (lower.includes("risk")) return aiResponses["What's my risk exposure?"];
-  return "Your portfolio looks healthy overall. I'd recommend a quarterly review of your allocation. Want me to dive deeper into any specific area?";
-};
-
 const formatTimestamp = () => {
   const now = new Date();
   const hours = now.getHours();
@@ -48,6 +33,36 @@ const formatTimestamp = () => {
   const ampm = hours >= 12 ? "PM" : "AM";
   const h = hours % 12 || 12;
   return `Today, ${h}:${mins} ${ampm}`;
+};
+
+const MarkdownMessage = ({ text }: { text: string }) => {
+  const isLong = text.length > 600;
+
+  return (
+    <div className={isLong ? "prose-doc" : "prose-chat"}>
+      <ReactMarkdown
+        components={{
+          h1: ({ children }) => <h1 className="text-[15px] font-bold text-foreground mt-3 mb-1.5">{children}</h1>,
+          h2: ({ children }) => <h2 className="text-[14px] font-bold text-foreground mt-3 mb-1">{children}</h2>,
+          h3: ({ children }) => <h3 className="text-[13px] font-semibold text-foreground mt-2.5 mb-1">{children}</h3>,
+          p: ({ children }) => <p className="text-[12px] leading-relaxed mb-2">{children}</p>,
+          strong: ({ children }) => <strong className="font-semibold text-foreground">{children}</strong>,
+          em: ({ children }) => <em className="text-muted-foreground">{children}</em>,
+          ul: ({ children }) => <ul className="list-disc list-outside pl-4 mb-2 space-y-0.5">{children}</ul>,
+          ol: ({ children }) => <ol className="list-decimal list-outside pl-4 mb-2 space-y-0.5">{children}</ol>,
+          li: ({ children }) => <li className="text-[12px] leading-relaxed">{children}</li>,
+          blockquote: ({ children }) => (
+            <blockquote className="border-l-2 border-primary/40 pl-3 my-2 text-[12px] text-foreground/80 italic">
+              {children}
+            </blockquote>
+          ),
+          hr: () => <hr className="my-3 border-border/60" />,
+        }}
+      >
+        {text}
+      </ReactMarkdown>
+    </div>
+  );
 };
 
 const TillyAvatar = () => (
@@ -68,6 +83,7 @@ const AIChatPanel = ({ isOpen, onClose, embedded = false, chatFirst = false }: A
   const [chatStartTime] = useState(formatTimestamp);
   const scrollRef = useRef<HTMLDivElement>(null);
   const recognitionRef = useRef<any>(null);
+  const sessionIdRef = useRef<string | null>(null);
 
   useEffect(() => {
     if (scrollRef.current) {
@@ -75,19 +91,35 @@ const AIChatPanel = ({ isOpen, onClose, embedded = false, chatFirst = false }: A
     }
   }, [messages, isTyping, interimTranscript]);
 
-  const sendMessage = useCallback((text: string) => {
+  const ensureSession = useCallback(async (): Promise<string> => {
+    if (sessionIdRef.current) return sessionIdRef.current;
+    const session = await createChatSession("Tilly Chat");
+    sessionIdRef.current = session.id;
+    return session.id;
+  }, []);
+
+  const sendMessage = useCallback(async (text: string) => {
     if (!text.trim()) return;
-    setMessages((prev) => [...prev, { role: "user", content: text.trim() }]);
+    const trimmed = text.trim();
+    setMessages((prev) => [...prev, { role: "user", content: trimmed }]);
     setInput("");
     setInterimTranscript("");
     setIsTyping(true);
     setShowFirstUseHint(false);
 
-    setTimeout(() => {
+    try {
+      const sid = await ensureSession();
+      const resp = await sendChatMessage(sid, trimmed);
       setIsTyping(false);
-      setMessages((prev) => [...prev, { role: "ai", content: getAIResponse(text) }]);
-    }, 1200);
-  }, []);
+      setMessages((prev) => [...prev, { role: "ai", content: resp.assistant_message.content }]);
+    } catch (err: any) {
+      setIsTyping(false);
+      const fallback = err?.message?.includes("401") || err?.message?.includes("Not authenticated")
+        ? "Please log in to use the chat."
+        : "Sorry, something went wrong. Please try again.";
+      setMessages((prev) => [...prev, { role: "ai", content: fallback }]);
+    }
+  }, [ensureSession]);
 
   const toggleListening = useCallback(() => {
     setMicError(false);
@@ -179,16 +211,20 @@ const AIChatPanel = ({ isOpen, onClose, embedded = false, chatFirst = false }: A
               </div>
             </div>
           ) : (
-            <div className="flex gap-2 items-start max-w-[88%]">
+            <div className={`flex gap-2 items-start ${msg.content.length > 600 ? "max-w-[95%]" : "max-w-[88%]"}`}>
               <TillyAvatar />
               <div
-                className="rounded-2xl rounded-tl-sm px-3 py-2 text-[12px] leading-relaxed text-foreground/90"
+                className={`rounded-2xl rounded-tl-sm px-3 py-2 text-[12px] leading-relaxed text-foreground/90 ${
+                  msg.content.length > 600
+                    ? "max-h-[60vh] overflow-y-auto border border-border/40 shadow-sm"
+                    : ""
+                }`}
                 style={{
                   backgroundColor: "hsl(var(--tilly-bubble))",
                   borderLeft: "2px solid hsla(38, 45%, 54%, 0.3)",
                 }}
               >
-                {msg.content}
+                <MarkdownMessage text={msg.content} />
               </div>
             </div>
           )}

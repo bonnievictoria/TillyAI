@@ -1,18 +1,47 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { User, Pencil, Check, FileText, ChevronRight, MessageSquareText, Calculator, BarChart3, Users } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import BottomNav from "@/components/BottomNav";
 import { Badge } from "@/components/ui/badge";
+import { useAuth } from "@/context/AuthContext";
+import { updateMe } from "@/lib/api";
 
 const Profile = () => {
   const navigate = useNavigate();
+  const { user, refresh } = useAuth();
   const [editing, setEditing] = useState(false);
   const [contact, setContact] = useState({
     phone: "+44 7700 900123",
     email: "bonnievictoria@gmail.com",
     address: "12 Kensington Palace Gardens, London W8",
   });
+
+  useEffect(() => {
+    if (user) {
+      setContact((prev) => ({
+        phone: `${user.country_code} ${user.mobile}`,
+        email: user.email ?? prev.email,
+        address: prev.address,
+      }));
+    }
+  }, [user]);
+
+  const displayName =
+    [user?.first_name, user?.last_name].filter(Boolean).join(" ") || "Bonnie Victoria";
+  const displayEmail = user?.email ?? contact.email;
+
+  const handleToggleEdit = async () => {
+    if (editing) {
+      try {
+        await updateMe({ email: contact.email || undefined });
+        await refresh();
+      } catch {
+        // silent
+      }
+    }
+    setEditing(!editing);
+  };
 
   return (
     <div className="mobile-container bg-background pb-16 min-h-screen">
@@ -29,8 +58,8 @@ const Profile = () => {
         >
           <User className="h-5 w-5 text-muted-foreground" />
         </motion.div>
-        <p className="text-sm font-semibold text-foreground">Bonnie Victoria</p>
-        <p className="text-[11px] text-muted-foreground">bonnievictoria@gmail.com</p>
+        <p className="text-sm font-semibold text-foreground">{displayName}</p>
+        <p className="text-[11px] text-muted-foreground">{displayEmail}</p>
       </div>
 
       {/* Contact Information */}
@@ -39,7 +68,7 @@ const Profile = () => {
           <div className="flex items-center justify-between mb-2">
             <h3 className="text-[11px] font-semibold text-foreground">Contact Information</h3>
             <button
-              onClick={() => setEditing(!editing)}
+              onClick={handleToggleEdit}
               className="flex items-center gap-1 text-[10px] font-medium text-muted-foreground hover:text-foreground transition-colors"
             >
               {editing ? <Check className="h-3 w-3" /> : <Pencil className="h-3 w-3" />}
