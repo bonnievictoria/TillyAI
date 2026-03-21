@@ -699,7 +699,7 @@ const CompleteProfile = () => {
   };
 
   const handleTillyMode = () => {
-    navigate("/chat");
+    navigate("/voice-onboarding");
   };
 
   const renderSection = (idx: number) => {
@@ -949,12 +949,13 @@ const CompleteProfile = () => {
       <div className="px-5 pb-4 flex gap-2">
         <button
           onClick={handleTillyMode}
-          className="flex-1 inline-flex items-center justify-center gap-1.5 rounded-xl border border-border bg-card text-muted-foreground py-2.5 text-xs font-medium transition-all hover:border-accent/40"
+          className="relative flex-[3] inline-flex flex-col items-center justify-center gap-1 rounded-xl bg-accent text-accent-foreground py-2.5 text-xs font-medium transition-all hover:opacity-90 active:scale-[0.97]"
         >
-          <MessageCircle className="h-3.5 w-3.5 shrink-0" /><span>Guide me (Chat with Tilly)</span>
+          <span className="absolute -top-2.5 left-1/2 -translate-x-1/2 rounded-full bg-accent text-accent-foreground px-2 py-0.5 text-[9px] font-semibold leading-none whitespace-nowrap shadow-sm">Recommended</span>
+          <span className="flex items-center gap-1.5"><MessageCircle className="h-3.5 w-3.5 shrink-0" />Guide me (Chat with Tilly)</span>
         </button>
         <button
-          className="flex-1 flex items-center justify-center gap-2 rounded-xl border border-accent bg-accent/10 text-accent py-2.5 text-xs font-medium"
+          className="flex-[2] flex items-center justify-center gap-2 rounded-xl border border-border bg-card text-muted-foreground py-2.5 text-xs font-medium hover:border-accent/40 transition-all active:scale-[0.97]"
         >
           <PenLine className="h-3.5 w-3.5" /> I'll fill it in myself
         </button>
