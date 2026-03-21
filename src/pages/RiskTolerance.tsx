@@ -1,10 +1,11 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ArrowLeft, Check } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { Slider } from "@/components/ui/slider";
 import confetti from "canvas-confetti";
 import { toast } from "sonner";
+import { getRiskProfile, updateRiskProfile } from "@/lib/api";
 
 const riskOptions = [
   { label: "Conservative", emoji: "🛡️" },
@@ -38,13 +39,43 @@ const RiskTolerance = () => {
   const [riskLevel, setRiskLevel] = useState(savedRiskLevel !== null ? Number(savedRiskLevel) : 1);
   const [sliderTouched, setSliderTouched] = useState(isEditing && savedRiskLevel !== null);
   const [dipReaction, setDipReaction] = useState<string | null>(isEditing && savedDipReaction ? savedDipReaction : null);
+  const [saving, setSaving] = useState(false);
 
   const originalRisk = savedRiskLevel !== null ? Number(savedRiskLevel) : null;
   const originalDip = savedDipReaction || null;
 
-  const handleSave = () => {
-    sessionStorage.setItem("riskLevel", String(riskLevel));
-    sessionStorage.setItem("dipReaction", dipReaction || "");
+  useEffect(() => {
+    (async () => {
+      try {
+        const rp = await getRiskProfile();
+        if (rp.risk_level != null) {
+          setRiskLevel(rp.risk_level);
+          setSliderTouched(true);
+        }
+        if (rp.drop_reaction) setDipReaction(rp.drop_reaction);
+      } catch {
+        // no existing profile — use defaults
+      }
+    })();
+  }, []);
+
+  const handleSave = async () => {
+    setSaving(true);
+    try {
+      const dipLabel = dipReaction ?? undefined;
+      await updateRiskProfile({
+        risk_level: riskLevel,
+        drop_reaction: dipLabel || null,
+      });
+      sessionStorage.setItem("riskLevel", String(riskLevel));
+      sessionStorage.setItem("dipReaction", dipReaction || "");
+    } catch (err) {
+      toast.error(`Failed to save risk profile: ${err instanceof Error ? err.message : "unknown error"}`);
+      setSaving(false);
+      return;
+    }
+    setSaving(false);
+
     if (isEditing) {
       const changed = riskLevel !== originalRisk || dipReaction !== originalDip;
       navigate(`/profile/complete?${changed ? "updated=risk" : ""}`, { replace: true });

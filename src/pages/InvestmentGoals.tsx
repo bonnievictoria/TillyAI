@@ -1,9 +1,11 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ArrowLeft, Check } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { Slider } from "@/components/ui/slider";
 import confetti from "canvas-confetti";
+import { toast } from "sonner";
+import { getInvestmentProfile, updateInvestmentProfile } from "@/lib/api";
 
 const goalOptions = [
   { label: "Financial Freedom", desc: "Build lasting independence and flexibility." },
