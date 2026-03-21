@@ -172,3 +172,162 @@ export async function sendChatMessage(
     body: JSON.stringify({ content }),
   });
 }
+
+// ── Profile types ───────────────────────────────────────
+
+export interface PersonalInfoPayload {
+  occupation?: string | null;
+  family_status?: string | null;
+  wealth_sources?: string[] | null;
+  personal_values?: string[] | null;
+  address?: string | null;
+}
+
+export interface PersonalInfoResponse extends PersonalInfoPayload {}
+
+export interface InvestmentProfilePayload {
+  objectives?: string[] | null;
+  detailed_goals?: Record<string, unknown>[] | null;
+  portfolio_value?: number | null;
+  monthly_savings?: number | null;
+  target_corpus?: number | null;
+  target_timeline?: string | null;
+  annual_income?: number | null;
+  retirement_age?: number | null;
+  investable_assets?: number | null;
+  total_liabilities?: number | null;
+  property_value?: number | null;
+  mortgage_amount?: number | null;
+  expected_inflows?: number | null;
+  regular_outgoings?: number | null;
+  planned_major_expenses?: number | null;
+  emergency_fund?: number | null;
+  emergency_fund_months?: string | null;
+  is_multi_phase_horizon?: boolean | null;
+  phase_description?: string | null;
+  total_horizon?: string | null;
+}
+
+export interface InvestmentProfileResponse extends InvestmentProfilePayload {
+  id: string;
+}
+
+export interface RiskProfilePayload {
+  risk_level?: number | null;
+  investment_horizon?: string | null;
+  drop_reaction?: string | null;
+  max_drawdown?: number | null;
+  comfort_assets?: string[] | null;
+}
+
+export interface RiskProfileResponse extends RiskProfilePayload {
+  id: string;
+}
+
+export interface AllocationConstraintItem {
+  asset_class: string;
+  min_allocation?: number | null;
+  max_allocation?: number | null;
+}
+
+export interface InvestmentConstraintPayload {
+  permitted_assets?: string[] | null;
+  prohibited_instruments?: string[] | null;
+  is_leverage_allowed?: boolean | null;
+  is_derivatives_allowed?: boolean | null;
+  diversification_notes?: string | null;
+  allocation_constraints?: AllocationConstraintItem[] | null;
+}
+
+export interface InvestmentConstraintResponse extends InvestmentConstraintPayload {
+  id: string;
+}
+
+export interface TaxProfilePayload {
+  income_tax_rate?: number | null;
+  capital_gains_tax_rate?: number | null;
+  notes?: string | null;
+}
+
+export interface TaxProfileResponse extends TaxProfilePayload {
+  id: string;
+}
+
+export interface ReviewPreferencePayload {
+  frequency?: string | null;
+  triggers?: string[] | null;
+  update_process?: string | null;
+}
+
+export interface ReviewPreferenceResponse extends ReviewPreferencePayload {
+  id: string;
+}
+
+export interface FullProfileResponse {
+  personal_info: PersonalInfoResponse | null;
+  investment_profile: InvestmentProfileResponse | null;
+  risk_profile: RiskProfileResponse | null;
+  investment_constraint: InvestmentConstraintResponse | null;
+  tax_profile: TaxProfileResponse | null;
+  review_preference: ReviewPreferenceResponse | null;
+}
+
+// ── Profile API ─────────────────────────────────────────
+
+export async function getFullProfile(): Promise<FullProfileResponse> {
+  return request<FullProfileResponse>("/profile/");
+}
+
+export async function updatePersonalInfo(p: PersonalInfoPayload): Promise<PersonalInfoResponse> {
+  return request<PersonalInfoResponse>("/profile/personal-info", {
+    method: "PUT",
+    body: JSON.stringify(p),
+  });
+}
+
+export async function getInvestmentProfile(): Promise<InvestmentProfileResponse> {
+  return request<InvestmentProfileResponse>("/profile/investment");
+}
+
+export async function updateInvestmentProfile(p: InvestmentProfilePayload): Promise<InvestmentProfileResponse> {
+  return request<InvestmentProfileResponse>("/profile/investment", {
+    method: "PUT",
+    body: JSON.stringify(p),
+  });
+}
+
+export async function getRiskProfile(): Promise<RiskProfileResponse> {
+  return request<RiskProfileResponse>("/profile/risk");
+}
+
+export async function updateRiskProfile(p: RiskProfilePayload): Promise<RiskProfileResponse> {
+  return request<RiskProfileResponse>("/profile/risk", {
+    method: "PUT",
+    body: JSON.stringify(p),
+  });
+}
+
+export async function getConstraints(): Promise<InvestmentConstraintResponse> {
+  return request<InvestmentConstraintResponse>("/profile/constraints");
+}
+
+export async function updateConstraints(p: InvestmentConstraintPayload): Promise<InvestmentConstraintResponse> {
+  return request<InvestmentConstraintResponse>("/profile/constraints", {
+    method: "PUT",
+    body: JSON.stringify(p),
+  });
+}
+
+export async function updateTaxProfile(p: TaxProfilePayload): Promise<TaxProfileResponse> {
+  return request<TaxProfileResponse>("/profile/tax", {
+    method: "PUT",
+    body: JSON.stringify(p),
+  });
+}
+
+export async function updateReviewPreference(p: ReviewPreferencePayload): Promise<ReviewPreferenceResponse> {
+  return request<ReviewPreferenceResponse>("/profile/review", {
+    method: "PUT",
+    body: JSON.stringify(p),
+  });
+}
