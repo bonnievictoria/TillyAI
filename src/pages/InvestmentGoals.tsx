@@ -28,6 +28,18 @@ const fireConfetti = () => {
   setTimeout(() => { confetti({ particleCount: 50, spread: 90, origin: { y: 0.85, x: 0.4 }, colors }); }, 200);
 };
 
+const HORIZON_TO_TIMELINE: Record<number, string> = {
+  0: "0-3 years",
+  1: "3-10 years",
+  2: "10+ years",
+};
+
+const TIMELINE_TO_HORIZON: Record<string, number> = {
+  "0-3 years": 0,
+  "3-10 years": 1,
+  "10+ years": 2,
+};
+
 const InvestmentGoals = () => {
   const navigate = useNavigate();
   const location = useLocation();
@@ -43,16 +55,51 @@ const InvestmentGoals = () => {
   });
   const [horizon, setHorizon] = useState(savedHorizon !== null ? Number(savedHorizon) : 1);
   const [horizonTouched, setHorizonTouched] = useState(isEditing && savedHorizon !== null);
+  const [saving, setSaving] = useState(false);
 
   const originalGoals = savedGoals ? JSON.parse(savedGoals) : [];
   const originalHorizon = savedHorizon !== null ? Number(savedHorizon) : null;
 
+  useEffect(() => {
+    (async () => {
+      try {
+        const ip = await getInvestmentProfile();
+        if (ip.objectives?.length) {
+          setSelectedGoals(ip.objectives);
+          sessionStorage.setItem("selectedGoals", JSON.stringify(ip.objectives));
+        }
+        if (ip.target_timeline) {
+          const idx = TIMELINE_TO_HORIZON[ip.target_timeline];
+          if (idx != null) {
+            setHorizon(idx);
+            setHorizonTouched(true);
+            sessionStorage.setItem("timeHorizon", String(idx));
+          }
+        }
+      } catch {
+        // no profile yet
+      }
+    })();
+  }, []);
+
   const handleHorizonChange = (v: number[]) => { setHorizon(v[0]); if (!horizonTouched) setHorizonTouched(true); };
 
-  const handleSave = () => {
-    sessionStorage.setItem("selectedGoals", JSON.stringify(selectedGoals));
-    sessionStorage.setItem("timeHorizon", String(horizon));
-    if (selectedGoals.length > 0) sessionStorage.setItem("investmentGoal", selectedGoals[0]);
+  const handleSave = async () => {
+    setSaving(true);
+    try {
+      await updateInvestmentProfile({
+        objectives: selectedGoals.length ? selectedGoals : null,
+        target_timeline: HORIZON_TO_TIMELINE[horizon] ?? null,
+      });
+      sessionStorage.setItem("selectedGoals", JSON.stringify(selectedGoals));
+      sessionStorage.setItem("timeHorizon", String(horizon));
+      if (selectedGoals.length > 0) sessionStorage.setItem("investmentGoal", selectedGoals[0]);
+    } catch (err) {
+      toast.error(`Failed to save: ${err instanceof Error ? err.message : "unknown error"}`);
+      setSaving(false);
+      return;
+    }
+    setSaving(false);
 
     if (isEditing) {
       const changed = JSON.stringify(selectedGoals.sort()) !== JSON.stringify(originalGoals.sort()) || horizon !== originalHorizon;
