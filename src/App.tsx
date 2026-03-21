@@ -8,14 +8,11 @@ import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 import Notifications from "./pages/Notifications";
 import CompleteProfile from "./pages/CompleteProfile";
-import RiskTolerance from "./pages/RiskTolerance";
-import InvestmentGoals from "./pages/InvestmentGoals";
 import Profile from "./pages/Profile";
 import Chat from "./pages/Chat";
 import InvestmentPolicyStatement from "./pages/InvestmentPolicyStatement";
 import MeetingNotes from "./pages/MeetingNotes";
 import MeetingNotesIndex from "./pages/MeetingNotesIndex";
-import GoalTracker from "./pages/GoalTracker";
 import Rebalancing from "./pages/Rebalancing";
 import GoalPlanner from "./pages/GoalPlanner";
 import Invest from "./pages/Invest";
@@ -50,12 +47,9 @@ const App = () => (
             <Route path="/invest" element={<Invest />} />
             <Route path="/discovery" element={<Discovery />} />
             <Route path="/profile/complete" element={<CompleteProfile />} />
-            <Route path="/profile/risk-tolerance" element={<RiskTolerance />} />
-            <Route path="/profile/investment-goals" element={<InvestmentGoals />} />
             <Route path="/profile/ips" element={<InvestmentPolicyStatement />} />
             <Route path="/meeting-notes" element={<MeetingNotesIndex />} />
             <Route path="/meeting-notes/detail" element={<MeetingNotes />} />
-            <Route path="/profile/goal-tracker" element={<GoalTracker />} />
             <Route path="/rebalancing" element={<Rebalancing />} />
             <Route path="/goal-planner" element={<GoalPlanner />} />
             <Route path="*" element={<NotFound />} />
