@@ -515,7 +515,7 @@ const AboutYouPage = () => {
     <TellUsAboutYou
       onComplete={() => {
         sessionStorage.setItem("onboardingComplete", "true");
-        navigate("/");
+        navigate("/chat");
       }}
       onBack={() => navigate("/link-accounts")}
     />
