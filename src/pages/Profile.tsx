@@ -100,9 +100,9 @@ const Profile = () => {
 
       {/* Option rows */}
       {([
-        { icon: FileText, title: "Investment Policy Statement", sub: "Investment guidelines", route: "/profile/ips", reward: false },
-        { icon: User, title: "Tell Us More About You", sub: "Goals, risk tolerance & mandate", route: "/profile/complete", reward: true },
-        { icon: MessageSquareText, title: "Meeting Notes", sub: "Review past meeting transcripts", route: "/meeting-notes", reward: false },
+        { icon: FileText, title: "Investment Policy Statement", sub: "Investment guidelines", route: "/profile/ips", showDot: false },
+        { icon: User, title: "Tell Us More About You", sub: "Goals, risk tolerance & mandates", route: "/profile/complete", showDot: true },
+        { icon: MessageSquareText, title: "Meeting Notes", sub: "Review past meeting transcripts", route: "/meeting-notes", showDot: false },
       ] as const).map((item) => (
         <div key={item.title} className="px-5 mb-1.5">
           <button
@@ -115,43 +115,31 @@ const Profile = () => {
             <div className="flex-1 min-w-0">
               <h3 className="text-xs font-semibold text-foreground">{item.title}</h3>
               <p className="text-[10px] text-muted-foreground">{item.sub}</p>
-              {item.reward && (
-                <p className="text-[9px] font-medium mt-0.5" style={{ color: "hsl(38, 80%, 48%)" }}>
-                  🎁 Complete to unlock your full insights
-                </p>
-              )}
             </div>
-            <ChevronRight className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+            <div className="flex items-center gap-1.5 shrink-0">
+              {item.showDot && (
+                <span className="h-2 w-2 rounded-full" style={{ backgroundColor: "hsl(38, 80%, 48%)" }} />
+              )}
+              <ChevronRight className="h-3.5 w-3.5 text-muted-foreground" />
+            </div>
           </button>
         </div>
       ))}
 
-      {/* Family Members — Coming Soon (non-tappable) */}
-      <div className="px-5 mb-1.5">
-        <div className="wealth-card !p-2.5 w-full flex items-center gap-2.5 opacity-70 cursor-default">
-          <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-secondary">
-            <Users className="h-3 w-3 text-muted-foreground" />
-          </div>
-          <div className="flex-1 min-w-0">
-            <h3 className="text-xs font-semibold text-foreground">Family Members</h3>
-          </div>
-          <Badge variant="secondary" className="text-[9px] font-medium shrink-0">Coming Soon</Badge>
-        </div>
-      </div>
-
       {/* Coming Soon items */}
       {([
-        { icon: BarChart3, title: "Reports", sub: "Portfolio performance & analytics" },
+        { icon: Users, title: "Family Members", sub: undefined },
+        { icon: BarChart3, title: "Reports", sub: "Track performance & analytics" },
         { icon: Calculator, title: "Tax Optimisation", sub: "Smart tax-efficient strategies" },
       ]).map((item) => (
         <div key={item.title} className="px-5 mb-1.5">
-          <div className="wealth-card !p-2.5 w-full flex items-center gap-2.5 opacity-50 cursor-default">
+          <div className="wealth-card !p-2.5 w-full flex items-center gap-2.5 opacity-60 cursor-default">
             <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-secondary">
               <item.icon className="h-3 w-3 text-muted-foreground" />
             </div>
             <div className="flex-1 min-w-0">
               <h3 className="text-xs font-semibold text-foreground">{item.title}</h3>
-              <p className="text-[10px] text-muted-foreground">{item.sub}</p>
+              {item.sub && <p className="text-[10px] text-muted-foreground">{item.sub}</p>}
             </div>
             <Badge variant="secondary" className="text-[9px] font-medium shrink-0">Coming Soon</Badge>
           </div>
