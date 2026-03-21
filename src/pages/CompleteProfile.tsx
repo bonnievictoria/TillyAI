@@ -1,9 +1,19 @@
-import { useState, useCallback, useMemo } from "react";
+import { useState, useCallback, useMemo, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ArrowLeft, MessageCircle, PenLine, ChevronDown, Plus, X, Info, AlertTriangle } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { Slider } from "@/components/ui/slider";
+import {
+  getFullProfile,
+  updatePersonalInfo,
+  updateInvestmentProfile,
+  updateRiskProfile,
+  updateConstraints,
+  updateTaxProfile,
+  updateReviewPreference,
+  type FullProfileResponse,
+} from "@/lib/api";
 
 type SectionStatus = "not_started" | "in_progress" | "confirmed";
 
