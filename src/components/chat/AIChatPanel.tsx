@@ -5,6 +5,7 @@ import { X, Send, Mic, MicOff, AlertCircle, Loader2, Sparkles } from "lucide-rea
 import { useState, useRef, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { createChatSession, sendChatMessage } from "@/lib/api";
+import ReactMarkdown from "react-markdown";
 
 interface AIChatPanelProps {
   isOpen: boolean;
@@ -34,23 +35,33 @@ const formatTimestamp = () => {
   return `Today, ${h}:${mins} ${ampm}`;
 };
 
-const FormattedText = ({ text }: { text: string }) => {
-  const lines = text.split("\n");
+const MarkdownMessage = ({ text }: { text: string }) => {
+  const isLong = text.length > 600;
+
   return (
-    <>
-      {lines.map((line, li) => (
-        <span key={li}>
-          {li > 0 && <br />}
-          {line.split(/(\*\*.*?\*\*)/).map((seg, si) =>
-            seg.startsWith("**") && seg.endsWith("**") ? (
-              <strong key={si} className="font-semibold">{seg.slice(2, -2)}</strong>
-            ) : (
-              <span key={si}>{seg}</span>
-            )
-          )}
-        </span>
-      ))}
-    </>
+    <div className={isLong ? "prose-doc" : "prose-chat"}>
+      <ReactMarkdown
+        components={{
+          h1: ({ children }) => <h1 className="text-[15px] font-bold text-foreground mt-3 mb-1.5">{children}</h1>,
+          h2: ({ children }) => <h2 className="text-[14px] font-bold text-foreground mt-3 mb-1">{children}</h2>,
+          h3: ({ children }) => <h3 className="text-[13px] font-semibold text-foreground mt-2.5 mb-1">{children}</h3>,
+          p: ({ children }) => <p className="text-[12px] leading-relaxed mb-2">{children}</p>,
+          strong: ({ children }) => <strong className="font-semibold text-foreground">{children}</strong>,
+          em: ({ children }) => <em className="text-muted-foreground">{children}</em>,
+          ul: ({ children }) => <ul className="list-disc list-outside pl-4 mb-2 space-y-0.5">{children}</ul>,
+          ol: ({ children }) => <ol className="list-decimal list-outside pl-4 mb-2 space-y-0.5">{children}</ol>,
+          li: ({ children }) => <li className="text-[12px] leading-relaxed">{children}</li>,
+          blockquote: ({ children }) => (
+            <blockquote className="border-l-2 border-primary/40 pl-3 my-2 text-[12px] text-foreground/80 italic">
+              {children}
+            </blockquote>
+          ),
+          hr: () => <hr className="my-3 border-border/60" />,
+        }}
+      >
+        {text}
+      </ReactMarkdown>
+    </div>
   );
 };
 
@@ -200,16 +211,20 @@ const AIChatPanel = ({ isOpen, onClose, embedded = false, chatFirst = false }: A
               </div>
             </div>
           ) : (
-            <div className="flex gap-2 items-start max-w-[88%]">
+            <div className={`flex gap-2 items-start ${msg.content.length > 600 ? "max-w-[95%]" : "max-w-[88%]"}`}>
               <TillyAvatar />
               <div
-                className="rounded-2xl rounded-tl-sm px-3 py-2 text-[12px] leading-relaxed text-foreground/90"
+                className={`rounded-2xl rounded-tl-sm px-3 py-2 text-[12px] leading-relaxed text-foreground/90 ${
+                  msg.content.length > 600
+                    ? "max-h-[60vh] overflow-y-auto border border-border/40 shadow-sm"
+                    : ""
+                }`}
                 style={{
                   backgroundColor: "hsl(var(--tilly-bubble))",
                   borderLeft: "2px solid hsla(38, 45%, 54%, 0.3)",
                 }}
               >
-                <FormattedText text={msg.content} />
+                <MarkdownMessage text={msg.content} />
               </div>
             </div>
           )}
