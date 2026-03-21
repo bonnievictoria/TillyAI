@@ -332,11 +332,31 @@ const RiskDial = ({ level, onChangeLevel }: { level: number; onChangeLevel: (l: 
   );
 };
 
+/* ── Helpers ── */
+const parseNum = (s: string | undefined | null): string => {
+  if (s == null) return "";
+  const n = Number(s);
+  if (Number.isNaN(n) || n === 0) return "";
+  return n.toLocaleString("en-IN");
+};
+
+const toNum = (s: string): number | null => {
+  const cleaned = s.replace(/[₹,\s]/g, "");
+  if (!cleaned) return null;
+  const crMatch = cleaned.match(/^([\d.]+)\s*[Cc]r$/);
+  if (crMatch) return parseFloat(crMatch[1]) * 10_000_000;
+  const lMatch = cleaned.match(/^([\d.]+)\s*[Ll]$/);
+  if (lMatch) return parseFloat(lMatch[1]) * 100_000;
+  const n = Number(cleaned);
+  return Number.isNaN(n) ? null : n;
+};
+
 /* ── Main Component ── */
 const CompleteProfile = () => {
   const navigate = useNavigate();
   const [openSection, setOpenSection] = useState(0);
   const [statuses, setStatuses] = useState<SectionStatus[]>(Array(8).fill("not_started"));
+  const [profileLoaded, setProfileLoaded] = useState(false);
 
   // Section 1
   const [occupation, setOccupation] = useState("");
@@ -345,21 +365,21 @@ const CompleteProfile = () => {
   const [values, setValues] = useState("");
 
   // Section 2 — multi-select objectives
-  const [selectedObjectives, setSelectedObjectives] = useState<string[]>(["Wealth Growth", "Retirement Planning"]);
+  const [selectedObjectives, setSelectedObjectives] = useState<string[]>([]);
   const [goals, setGoals] = useState<FinancialGoal[]>([{ description: "", year: "" }]);
-  const [portfolioValue, setPortfolioValue] = useState("42,00,000");
-  const [monthlySavings, setMonthlySavings] = useState("75,000");
-  const [targetCorpus, setTargetCorpus] = useState("5.00 Cr");
-  const [targetTimeline, setTargetTimeline] = useState("20");
-  const [annualIncome, setAnnualIncome] = useState("36,00,000");
-  const [retirementAge, setRetirementAge] = useState("60");
+  const [portfolioValue, setPortfolioValue] = useState("");
+  const [monthlySavings, setMonthlySavings] = useState("");
+  const [targetCorpus, setTargetCorpus] = useState("");
+  const [targetTimeline, setTargetTimeline] = useState("");
+  const [annualIncome, setAnnualIncome] = useState("");
+  const [retirementAge, setRetirementAge] = useState("");
 
   // Section 3 — risk
-  const [riskLevelIdx, setRiskLevelIdx] = useState(3); // Moderate-Aggressive
-  const [investmentHorizon, setInvestmentHorizon] = useState("15–20 years");
-  const [dropReaction, setDropReaction] = useState("Stay invested and buy more");
-  const [maxDrawdown, setMaxDrawdown] = useState("25");
-  const [comfortAssets, setComfortAssets] = useState<string[]>(["Equities", "Gold", "International Markets"]);
+  const [riskLevelIdx, setRiskLevelIdx] = useState(2);
+  const [investmentHorizon, setInvestmentHorizon] = useState("");
+  const [dropReaction, setDropReaction] = useState("");
+  const [maxDrawdown, setMaxDrawdown] = useState("");
+  const [comfortAssets, setComfortAssets] = useState<string[]>([]);
 
   // Section 4
   const [investableAssets, setInvestableAssets] = useState("");
@@ -403,6 +423,124 @@ const CompleteProfile = () => {
   const [reviewTriggers, setReviewTriggers] = useState<string[]>([]);
   const [updateProcess, setUpdateProcess] = useState("");
 
+  // ── Load existing profile from backend ──
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const p = await getFullProfile();
+        if (cancelled) return;
+        const newStatuses: SectionStatus[] = Array(8).fill("not_started");
+
+        // Section 1 — personal info
+        if (p.personal_info) {
+          const pi = p.personal_info;
+          if (pi.occupation) setOccupation(pi.occupation);
+          if (pi.family_status) setFamily(pi.family_status);
+          if (pi.wealth_sources) setWealthSources(pi.wealth_sources);
+          if (pi.personal_values) setValues(pi.personal_values.join(", "));
+          if (pi.occupation || pi.family_status) newStatuses[0] = "confirmed";
+        }
+
+        // Section 2 + 4 — investment profile
+        if (p.investment_profile) {
+          const ip = p.investment_profile;
+          if (ip.objectives?.length) setSelectedObjectives(ip.objectives);
+          if (ip.detailed_goals?.length) {
+            setGoals(ip.detailed_goals.map((g) => ({
+              description: (g.description as string) ?? "",
+              year: (g.year as string) ?? "",
+            })));
+          }
+          setPortfolioValue(parseNum(ip.portfolio_value?.toString()));
+          setMonthlySavings(parseNum(ip.monthly_savings?.toString()));
+          setTargetCorpus(parseNum(ip.target_corpus?.toString()));
+          if (ip.target_timeline) setTargetTimeline(ip.target_timeline);
+          setAnnualIncome(parseNum(ip.annual_income?.toString()));
+          if (ip.retirement_age) setRetirementAge(String(ip.retirement_age));
+          if (ip.objectives?.length) newStatuses[1] = "confirmed";
+
+          // Section 4 — financial situation
+          setInvestableAssets(parseNum(ip.investable_assets?.toString()));
+          setLiabilities(parseNum(ip.total_liabilities?.toString()));
+          setPropertyValue(parseNum(ip.property_value?.toString()));
+          setMortgage(parseNum(ip.mortgage_amount?.toString()));
+          setExpectedInflows(parseNum(ip.expected_inflows?.toString()));
+          setOutgoings(parseNum(ip.regular_outgoings?.toString()));
+          setPlannedExpenses(parseNum(ip.planned_major_expenses?.toString()));
+          setEmergencyFund(parseNum(ip.emergency_fund?.toString()));
+          if (ip.emergency_fund_months) setEmergencyTimeframe(ip.emergency_fund_months);
+          if (ip.investable_assets != null) newStatuses[3] = "confirmed";
+
+          // Section 6 — time horizon
+          if (ip.is_multi_phase_horizon != null) setMultiPhase(ip.is_multi_phase_horizon);
+          if (ip.phase_description) setPhaseDescription(ip.phase_description);
+          if (ip.total_horizon) setTotalHorizon(ip.total_horizon);
+          if (ip.total_horizon) newStatuses[5] = "confirmed";
+        }
+
+        // Section 3 — risk
+        if (p.risk_profile) {
+          const rp = p.risk_profile;
+          if (rp.risk_level != null) setRiskLevelIdx(rp.risk_level);
+          if (rp.investment_horizon) setInvestmentHorizon(rp.investment_horizon);
+          if (rp.drop_reaction) setDropReaction(rp.drop_reaction);
+          if (rp.max_drawdown != null) setMaxDrawdown(String(rp.max_drawdown));
+          if (rp.comfort_assets) setComfortAssets(rp.comfort_assets);
+          if (rp.risk_level != null) newStatuses[2] = "confirmed";
+        }
+
+        // Section 5 — constraints
+        if (p.investment_constraint) {
+          const ic = p.investment_constraint;
+          if (ic.permitted_assets?.length) setPermittedAssets(ic.permitted_assets);
+          if (ic.prohibited_instruments?.length) setProhibited(ic.prohibited_instruments.join(", "));
+          if (ic.is_leverage_allowed != null) setLeverage(ic.is_leverage_allowed);
+          if (ic.is_derivatives_allowed != null) setDerivatives(ic.is_derivatives_allowed);
+          if (ic.diversification_notes) setDiversificationNotes(ic.diversification_notes);
+          if (ic.allocation_constraints?.length) {
+            const loaded: Record<string, AllocationRange> = {};
+            ic.allocation_constraints.forEach((ac) => {
+              loaded[ac.asset_class] = {
+                min: ac.min_allocation ?? 0,
+                max: ac.max_allocation ?? 100,
+              };
+            });
+            setAllocations((prev) => ({ ...prev, ...loaded }));
+          }
+          if (ic.permitted_assets?.length) newStatuses[4] = "confirmed";
+        }
+
+        // Section 7 — tax
+        if (p.tax_profile) {
+          const tp = p.tax_profile;
+          if (tp.income_tax_rate != null) setIncomeTaxRate(String(tp.income_tax_rate));
+          if (tp.capital_gains_tax_rate != null) setCgtRate(String(tp.capital_gains_tax_rate));
+          if (tp.notes) setTaxNotes(tp.notes);
+          if (tp.income_tax_rate != null) newStatuses[6] = "confirmed";
+        }
+
+        // Section 8 — review
+        if (p.review_preference) {
+          const rp = p.review_preference;
+          if (rp.frequency) setReviewFreq(rp.frequency);
+          if (rp.triggers) setReviewTriggers(rp.triggers);
+          if (rp.update_process) setUpdateProcess(rp.update_process);
+          if (rp.frequency) newStatuses[7] = "confirmed";
+        }
+
+        setStatuses(newStatuses);
+        const firstIncomplete = newStatuses.findIndex((s) => s !== "confirmed");
+        if (firstIncomplete >= 0) setOpenSection(firstIncomplete);
+      } catch {
+        // first-time user — no profile yet, use defaults
+      } finally {
+        if (!cancelled) setProfileLoaded(true);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, []);
+
   const confirmedCount = statuses.filter((s) => s === "confirmed").length;
   const progressPercent = Math.round((confirmedCount / 8) * 100);
   const allConfirmed = confirmedCount === 8;
@@ -411,7 +549,92 @@ const CompleteProfile = () => {
     return permittedAssets.reduce((sum, a) => sum + (allocations[a]?.max || 0), 0);
   }, [permittedAssets, allocations]);
 
-  const confirmSection = useCallback((idx: number) => {
+  const confirmSection = useCallback(async (idx: number) => {
+    try {
+      switch (idx) {
+        case 0:
+          await updatePersonalInfo({
+            occupation: occupation || null,
+            family_status: family || null,
+            wealth_sources: wealthSources.length ? wealthSources : null,
+            personal_values: values ? values.split(",").map((v) => v.trim()).filter(Boolean) : null,
+          });
+          break;
+        case 1:
+          await updateInvestmentProfile({
+            objectives: selectedObjectives.length ? selectedObjectives : null,
+            detailed_goals: goals.filter((g) => g.description).map((g) => ({ description: g.description, year: g.year })),
+            portfolio_value: toNum(portfolioValue),
+            monthly_savings: toNum(monthlySavings),
+            target_corpus: toNum(targetCorpus),
+            target_timeline: targetTimeline || null,
+            annual_income: toNum(annualIncome),
+            retirement_age: retirementAge ? Number(retirementAge) : null,
+          });
+          break;
+        case 2:
+          await updateRiskProfile({
+            risk_level: riskLevelIdx,
+            investment_horizon: investmentHorizon || null,
+            drop_reaction: dropReaction || null,
+            max_drawdown: maxDrawdown ? Number(maxDrawdown) : null,
+            comfort_assets: comfortAssets.length ? comfortAssets : null,
+          });
+          break;
+        case 3:
+          await updateInvestmentProfile({
+            investable_assets: toNum(investableAssets),
+            total_liabilities: toNum(liabilities),
+            property_value: toNum(propertyValue),
+            mortgage_amount: toNum(mortgage),
+            expected_inflows: toNum(expectedInflows),
+            regular_outgoings: toNum(outgoings),
+            planned_major_expenses: toNum(plannedExpenses),
+            emergency_fund: toNum(emergencyFund),
+            emergency_fund_months: emergencyTimeframe || null,
+          });
+          break;
+        case 4:
+          await updateConstraints({
+            permitted_assets: permittedAssets.length ? permittedAssets : null,
+            prohibited_instruments: prohibited ? prohibited.split(",").map((s) => s.trim()).filter(Boolean) : null,
+            is_leverage_allowed: leverage,
+            is_derivatives_allowed: derivatives,
+            diversification_notes: diversificationNotes || null,
+            allocation_constraints: permittedAssets.map((asset) => ({
+              asset_class: asset,
+              min_allocation: allocations[asset]?.min ?? null,
+              max_allocation: allocations[asset]?.max ?? null,
+            })),
+          });
+          break;
+        case 5:
+          await updateInvestmentProfile({
+            is_multi_phase_horizon: multiPhase,
+            phase_description: phaseDescription || null,
+            total_horizon: totalHorizon || null,
+          });
+          break;
+        case 6:
+          await updateTaxProfile({
+            income_tax_rate: incomeTaxRate ? Number(incomeTaxRate) : null,
+            capital_gains_tax_rate: cgtRate ? Number(cgtRate) : null,
+            notes: taxNotes || null,
+          });
+          break;
+        case 7:
+          await updateReviewPreference({
+            frequency: reviewFreq || null,
+            triggers: reviewTriggers.length ? reviewTriggers : null,
+            update_process: updateProcess || null,
+          });
+          break;
+      }
+    } catch (err) {
+      toast.error(`Failed to save: ${err instanceof Error ? err.message : "unknown error"}`);
+      return;
+    }
+
     setStatuses((prev) => {
       const next = [...prev];
       next[idx] = "confirmed";
@@ -419,7 +642,16 @@ const CompleteProfile = () => {
     });
     if (idx < 7) setOpenSection(idx + 1);
     toast.success(`Section ${idx + 1} confirmed ✓`);
-  }, []);
+  }, [
+    occupation, family, wealthSources, values,
+    selectedObjectives, goals, portfolioValue, monthlySavings, targetCorpus, targetTimeline, annualIncome, retirementAge,
+    riskLevelIdx, investmentHorizon, dropReaction, maxDrawdown, comfortAssets,
+    investableAssets, liabilities, propertyValue, mortgage, expectedInflows, outgoings, plannedExpenses, emergencyFund, emergencyTimeframe,
+    permittedAssets, allocations, prohibited, leverage, derivatives, diversificationNotes,
+    multiPhase, phaseDescription, totalHorizon,
+    incomeTaxRate, cgtRate, taxNotes,
+    reviewFreq, reviewTriggers, updateProcess,
+  ]);
 
   const markInProgress = useCallback((idx: number) => {
     setStatuses((prev) => {
@@ -677,6 +909,17 @@ const CompleteProfile = () => {
         return null;
     }
   };
+
+  if (!profileLoaded) {
+    return (
+      <div className="mobile-container bg-background min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="h-6 w-6 animate-spin rounded-full border-2 border-muted border-t-foreground mx-auto mb-2" />
+          <p className="text-xs text-muted-foreground">Loading your profile…</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="mobile-container bg-background min-h-screen pb-28">
