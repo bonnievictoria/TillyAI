@@ -1,5 +1,6 @@
 const API = "/api/v1";
 const TOKEN_KEY = "asktilly_token";
+const FAMILY_MEMBER_KEY = "asktilly_family_member_id";
 
 export function getToken(): string | null {
   return localStorage.getItem(TOKEN_KEY);
@@ -13,6 +14,18 @@ export function clearToken() {
   localStorage.removeItem(TOKEN_KEY);
 }
 
+export function getActiveFamilyMemberId(): string | null {
+  return localStorage.getItem(FAMILY_MEMBER_KEY);
+}
+
+export function setActiveFamilyMemberId(id: string | null) {
+  if (id) {
+    localStorage.setItem(FAMILY_MEMBER_KEY, id);
+  } else {
+    localStorage.removeItem(FAMILY_MEMBER_KEY);
+  }
+}
+
 async function request<T>(path: string, init?: RequestInit, auth = true): Promise<T> {
   const headers: Record<string, string> = {
     "Content-Type": "application/json",
@@ -21,6 +34,8 @@ async function request<T>(path: string, init?: RequestInit, auth = true): Promis
   if (auth) {
     const token = getToken();
     if (token) headers["Authorization"] = `Bearer ${token}`;
+    const familyMemberId = getActiveFamilyMemberId();
+    if (familyMemberId) headers["X-Family-Member-Id"] = familyMemberId;
   }
 
   const res = await fetch(`${API}${path}`, { ...init, headers });
@@ -370,6 +385,142 @@ export async function getReviewPreference(): Promise<ReviewPreferenceResponse> {
 export async function updateReviewPreference(p: ReviewPreferencePayload): Promise<ReviewPreferenceResponse> {
   return request<ReviewPreferenceResponse>("/profile/review", {
     method: "PUT",
+    body: JSON.stringify(p),
+  });
+}
+
+// ── Family types ────────────────────────────────────────
+
+export interface FamilyMember {
+  id: string;
+  owner_id: string;
+  member_user_id: string | null;
+  nickname: string;
+  email: string | null;
+  phone: string | null;
+  relationship_type: string;
+  status: string;
+  member_first_name: string | null;
+  member_last_name: string | null;
+  member_initials: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface FamilyMemberListResponse {
+  members: FamilyMember[];
+  count: number;
+}
+
+export interface AddFamilyMemberPayload {
+  nickname: string;
+  phone: string;
+  email?: string;
+  relationship_type?: string;
+}
+
+export interface UpdateFamilyMemberPayload {
+  nickname?: string;
+  relationship_type?: string;
+}
+
+export interface OnboardFamilyMemberPayload {
+  nickname: string;
+  phone: string;
+  country_code?: string;
+  first_name: string;
+  last_name?: string;
+  email?: string;
+  password: string;
+  relationship_type?: string;
+}
+
+export interface FamilyMemberPortfolioSummary {
+  member_id: string;
+  nickname: string;
+  relationship_type: string;
+  portfolio_value: number;
+  total_invested: number;
+  gain_percentage: number | null;
+}
+
+export interface CumulativeAllocationItem {
+  asset_class: string;
+  total_amount: number;
+  allocation_percentage: number;
+}
+
+export interface CumulativePortfolioResponse {
+  total_value: number;
+  total_invested: number;
+  total_gain_percentage: number | null;
+  member_count: number;
+  members: FamilyMemberPortfolioSummary[];
+  combined_allocations: CumulativeAllocationItem[];
+}
+
+export interface PortfolioDetail {
+  id: string;
+  name: string;
+  total_value: number;
+  total_invested: number;
+  total_gain_percentage: number | null;
+  is_primary: boolean;
+  created_at: string;
+  updated_at: string;
+  allocations: { id: string; asset_class: string; allocation_percentage: number; amount: number; performance_percentage: number | null }[];
+  holdings: { id: string; instrument_name: string; instrument_type: string; ticker_symbol: string | null; quantity: number | null; average_cost: number | null; current_price: number | null; current_value: number; allocation_percentage: number | null }[];
+}
+
+// ── Family API ──────────────────────────────────────────
+
+export async function listFamilyMembers(): Promise<FamilyMemberListResponse> {
+  return request<FamilyMemberListResponse>("/family/members");
+}
+
+export async function addFamilyMember(p: AddFamilyMemberPayload): Promise<FamilyMember> {
+  return request<FamilyMember>("/family/members", {
+    method: "POST",
+    body: JSON.stringify(p),
+  });
+}
+
+export async function updateFamilyMember(memberId: string, p: UpdateFamilyMemberPayload): Promise<FamilyMember> {
+  return request<FamilyMember>(`/family/members/${memberId}`, {
+    method: "PUT",
+    body: JSON.stringify(p),
+  });
+}
+
+export async function removeFamilyMember(memberId: string): Promise<void> {
+  await request<void>(`/family/members/${memberId}`, { method: "DELETE" });
+}
+
+export async function getFamilyMemberPortfolio(memberId: string): Promise<PortfolioDetail> {
+  return request<PortfolioDetail>(`/family/members/${memberId}/portfolio`);
+}
+
+export async function getCumulativePortfolio(): Promise<CumulativePortfolioResponse> {
+  return request<CumulativePortfolioResponse>("/family/portfolio/cumulative");
+}
+
+export async function verifyFamilyOtp(memberId: string, otp: string): Promise<FamilyMember> {
+  return request<FamilyMember>(`/family/members/${memberId}/verify-otp`, {
+    method: "POST",
+    body: JSON.stringify({ otp }),
+  });
+}
+
+export async function resendFamilyOtp(memberId: string, retryType = "text"): Promise<{ message: string }> {
+  return request<{ message: string }>(`/family/members/${memberId}/resend-otp`, {
+    method: "POST",
+    body: JSON.stringify({ retry_type: retryType }),
+  });
+}
+
+export async function onboardFamilyMember(p: OnboardFamilyMemberPayload): Promise<FamilyMember> {
+  return request<FamilyMember>("/family/members/onboard", {
+    method: "POST",
     body: JSON.stringify(p),
   });
 }

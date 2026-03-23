@@ -814,17 +814,21 @@ const Profile = () => {
         </div>
       ))}
 
-      {/* Family Members — Coming Soon */}
+      {/* Family Members */}
       <div className="px-5 mb-1.5">
-        <div className="wealth-card !p-2.5 w-full flex items-center gap-2.5 opacity-70 cursor-default">
+        <button
+          onClick={() => navigate("/family")}
+          className="wealth-card !p-2.5 w-full text-left flex items-center gap-2.5 active:scale-[0.98] transition-transform"
+        >
           <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-secondary">
             <Users className="h-3 w-3 text-muted-foreground" />
           </div>
           <div className="flex-1 min-w-0">
             <h3 className="text-xs font-semibold text-foreground">Family Members</h3>
+            <p className="text-[10px] text-muted-foreground">Manage family &amp; combined portfolios</p>
           </div>
-          <Badge variant="secondary" className="text-[9px] font-medium shrink-0">Coming Soon</Badge>
-        </div>
+          <ChevronRight className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+        </button>
       </div>
 
       {/* Coming Soon */}
