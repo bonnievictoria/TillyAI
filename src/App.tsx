@@ -4,6 +4,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/context/AuthContext";
+import { FamilyProvider } from "@/context/FamilyContext";
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 import Notifications from "./pages/Notifications";
@@ -23,12 +24,14 @@ import AboutYou from "./pages/AboutYou";
 import Portfolio from "./pages/Portfolio";
 import PortfolioPopup from "./pages/PortfolioPopup";
 import VoiceOnboarding from "./pages/VoiceOnboarding";
+import FamilyMembers from "./pages/FamilyMembers";
 
 const queryClient = new QueryClient();
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <AuthProvider>
+      <FamilyProvider>
       <TooltipProvider>
         <Toaster />
         <Sonner />
@@ -52,10 +55,12 @@ const App = () => (
             <Route path="/meeting-notes/detail" element={<MeetingNotes />} />
             <Route path="/rebalancing" element={<Rebalancing />} />
             <Route path="/goal-planner" element={<GoalPlanner />} />
+            <Route path="/family" element={<FamilyMembers />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>
       </TooltipProvider>
+      </FamilyProvider>
     </AuthProvider>
   </QueryClientProvider>
 );
