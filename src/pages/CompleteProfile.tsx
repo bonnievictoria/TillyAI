@@ -12,6 +12,7 @@ import {
   updateConstraints,
   updateTaxProfile,
   updateReviewPreference,
+  RISK_CATEGORIES,
   type FullProfileResponse,
 } from "@/lib/api";
 
@@ -61,7 +62,7 @@ const OBJECTIVES = [
   "Legacy / Estate Planning",
 ];
 
-const RISK_LEVELS = ["Conservative", "Moderate-Conservative", "Moderate", "Moderate-Aggressive", "Aggressive"];
+const RISK_LEVELS = [...RISK_CATEGORIES];
 const RISK_COLORS = [
   "hsl(var(--wealth-green))",
   "hsl(var(--wealth-green) / 0.6)",
@@ -376,6 +377,8 @@ const CompleteProfile = () => {
 
   // Section 3 — risk
   const [riskLevelIdx, setRiskLevelIdx] = useState(2);
+  const [riskCapacity, setRiskCapacity] = useState("");
+  const [investmentExperience, setInvestmentExperience] = useState("");
   const [investmentHorizon, setInvestmentHorizon] = useState("");
   const [dropReaction, setDropReaction] = useState("");
   const [maxDrawdown, setMaxDrawdown] = useState("");
@@ -391,6 +394,8 @@ const CompleteProfile = () => {
   const [plannedExpenses, setPlannedExpenses] = useState("");
   const [emergencyFund, setEmergencyFund] = useState("");
   const [emergencyTimeframe, setEmergencyTimeframe] = useState("6 months");
+  const [liquidityNeeds, setLiquidityNeeds] = useState("");
+  const [incomeNeeds, setIncomeNeeds] = useState("");
 
   // Section 5 — rules & limits with allocation bars
   const [permittedAssets, setPermittedAssets] = useState<string[]>(["Equities", "Bonds", "Gold"]);
@@ -470,6 +475,8 @@ const CompleteProfile = () => {
           setPlannedExpenses(parseNum(ip.planned_major_expenses?.toString()));
           setEmergencyFund(parseNum(ip.emergency_fund?.toString()));
           if (ip.emergency_fund_months) setEmergencyTimeframe(ip.emergency_fund_months);
+          if (ip.liquidity_needs) setLiquidityNeeds(ip.liquidity_needs);
+          setIncomeNeeds(parseNum(ip.income_needs?.toString()));
           if (ip.investable_assets != null) newStatuses[3] = "confirmed";
 
           // Section 6 — time horizon
@@ -483,6 +490,8 @@ const CompleteProfile = () => {
         if (p.risk_profile) {
           const rp = p.risk_profile;
           if (rp.risk_level != null) setRiskLevelIdx(rp.risk_level);
+          if (rp.risk_capacity) setRiskCapacity(rp.risk_capacity);
+          if (rp.investment_experience) setInvestmentExperience(rp.investment_experience);
           if (rp.investment_horizon) setInvestmentHorizon(rp.investment_horizon);
           if (rp.drop_reaction) setDropReaction(rp.drop_reaction);
           if (rp.max_drawdown != null) setMaxDrawdown(String(rp.max_drawdown));
@@ -575,6 +584,8 @@ const CompleteProfile = () => {
         case 2:
           await updateRiskProfile({
             risk_level: riskLevelIdx,
+            risk_capacity: riskCapacity || null,
+            investment_experience: investmentExperience || null,
             investment_horizon: investmentHorizon || null,
             drop_reaction: dropReaction || null,
             max_drawdown: maxDrawdown ? Number(maxDrawdown) : null,
@@ -592,6 +603,8 @@ const CompleteProfile = () => {
             planned_major_expenses: toNum(plannedExpenses),
             emergency_fund: toNum(emergencyFund),
             emergency_fund_months: emergencyTimeframe || null,
+            liquidity_needs: liquidityNeeds || null,
+            income_needs: toNum(incomeNeeds),
           });
           break;
         case 4:
@@ -645,8 +658,8 @@ const CompleteProfile = () => {
   }, [
     occupation, family, wealthSources, values,
     selectedObjectives, goals, portfolioValue, monthlySavings, targetCorpus, targetTimeline, annualIncome, retirementAge,
-    riskLevelIdx, investmentHorizon, dropReaction, maxDrawdown, comfortAssets,
-    investableAssets, liabilities, propertyValue, mortgage, expectedInflows, outgoings, plannedExpenses, emergencyFund, emergencyTimeframe,
+    riskLevelIdx, riskCapacity, investmentExperience, investmentHorizon, dropReaction, maxDrawdown, comfortAssets,
+    investableAssets, liabilities, propertyValue, mortgage, expectedInflows, outgoings, plannedExpenses, emergencyFund, emergencyTimeframe, liquidityNeeds, incomeNeeds,
     permittedAssets, allocations, prohibited, leverage, derivatives, diversificationNotes,
     multiPhase, phaseDescription, totalHorizon,
     incomeTaxRate, cgtRate, taxNotes,
@@ -773,6 +786,24 @@ const CompleteProfile = () => {
             </div>
 
             <div>
+              <FieldLabel>Risk capacity (ability to absorb losses)</FieldLabel>
+              <div className="flex flex-wrap gap-1.5">
+                {["Low", "Medium", "High"].map((c) => (
+                  <Chip key={c} label={c} active={riskCapacity === c} onClick={() => setRiskCapacity(c)} />
+                ))}
+              </div>
+            </div>
+
+            <div>
+              <FieldLabel>Investment experience</FieldLabel>
+              <div className="flex flex-wrap gap-1.5">
+                {["Beginner", "Intermediate", "Advanced", "Expert"].map((e) => (
+                  <Chip key={e} label={e} active={investmentExperience === e} onClick={() => setInvestmentExperience(e)} />
+                ))}
+              </div>
+            </div>
+
+            <div>
               <FieldLabel>Investment horizon</FieldLabel>
               <div className="flex flex-wrap gap-1.5">
                 {HORIZON_OPTIONS.map((h) => (
@@ -824,6 +855,8 @@ const CompleteProfile = () => {
               <div className="flex-1"><FieldLabel>Emergency fund target</FieldLabel><TextInput value={emergencyFund} onChange={setEmergencyFund} prefix="₹" placeholder="e.g. 3,00,000" /></div>
               <div className="w-32"><FieldLabel>Timeframe</FieldLabel><SelectInput value={emergencyTimeframe} onChange={setEmergencyTimeframe} options={EMERGENCY_TIMEFRAMES} /></div>
             </div>
+            <div><FieldLabel>Liquidity needs</FieldLabel><TextInput value={liquidityNeeds} onChange={setLiquidityNeeds} placeholder="e.g. Need 10L accessible within 30 days" /></div>
+            <div><FieldLabel>Annual income needs from portfolio</FieldLabel><TextInput value={incomeNeeds} onChange={setIncomeNeeds} prefix="₹" placeholder="e.g. 6,00,000" /></div>
           </div>
         );
       case 4:
