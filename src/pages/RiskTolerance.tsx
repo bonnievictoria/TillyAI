@@ -4,7 +4,7 @@ import { ArrowLeft, Check } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
 import confetti from "canvas-confetti";
 import { toast } from "sonner";
-import { getRiskProfile, updateRiskProfile, RISK_CATEGORIES } from "@/lib/api";
+import { getRiskProfile, updateRiskProfile, RISK_CATEGORIES, BackendOfflineError } from "@/lib/api";
 
 const riskOptions = RISK_CATEGORIES.map((label, i) => ({
   label,
@@ -66,6 +66,7 @@ const RiskTolerance = () => {
         drop_reaction: dipReaction || null,
       });
     } catch (err) {
+      if (err instanceof BackendOfflineError) return;
       toast.error(`Failed to save risk profile: ${err instanceof Error ? err.message : "unknown error"}`);
       setSaving(false);
       return;

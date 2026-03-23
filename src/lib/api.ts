@@ -26,6 +26,19 @@ export function setActiveFamilyMemberId(id: string | null) {
   }
 }
 
+//need to remove
+export class BackendOfflineError extends Error {
+  constructor(message = "Backend is not active") {
+    super(message);
+    this.name = "BackendOfflineError";
+  }
+}
+
+let backendOfflineUntil = 0;
+const OFFLINE_RETRY_MS = 15_000;
+const REQUEST_TIMEOUT_MS = 4_000;
+// till this
+
 async function request<T>(path: string, init?: RequestInit, auth = true): Promise<T> {
   const headers: Record<string, string> = {
     "Content-Type": "application/json",
@@ -38,7 +51,22 @@ async function request<T>(path: string, init?: RequestInit, auth = true): Promis
     if (familyMemberId) headers["X-Family-Member-Id"] = familyMemberId;
   }
 
-  const res = await fetch(`${API}${path}`, { ...init, headers });
+  if (Date.now() < backendOfflineUntil) {
+    throw new BackendOfflineError();
+  }
+
+  const controller = new AbortController();
+  const timeoutId = window.setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
+
+  let res: Response;
+  try {
+    res = await fetch(`${API}${path}`, { ...init, headers, signal: controller.signal });
+  } catch (err) {
+    backendOfflineUntil = Date.now() + OFFLINE_RETRY_MS;
+    throw new BackendOfflineError();
+  } finally {
+    window.clearTimeout(timeoutId);
+  }
 
   if (!res.ok) {
     let msg: string;
@@ -47,6 +75,11 @@ async function request<T>(path: string, init?: RequestInit, auth = true): Promis
       msg = body.detail ?? JSON.stringify(body);
     } catch {
       msg = await res.text();
+    }
+    // Treat common gateway/unavailable statuses as "offline" to avoid noisy errors.
+    if ([502, 503, 504].includes(res.status)) {
+      backendOfflineUntil = Date.now() + OFFLINE_RETRY_MS;
+      throw new BackendOfflineError(msg || "Backend unavailable");
     }
     throw new Error(msg || `Request failed (${res.status})`);
   }

@@ -10,6 +10,7 @@ import {
   getMe,
   getToken,
   clearToken,
+  BackendOfflineError,
   type UserInfo,
 } from "@/lib/api";
 
@@ -43,7 +44,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       const me = await getMe();
       setUser(me);
-    } catch {
+    } catch (err) {
+      // If backend is offline we don't want to destroy the user's token.
+      if (err instanceof BackendOfflineError) return;
       clearToken();
       setUser(null);
     } finally {

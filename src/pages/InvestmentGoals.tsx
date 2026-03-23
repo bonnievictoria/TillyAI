@@ -5,7 +5,7 @@ import { useNavigate, useLocation } from "react-router-dom";
 import { Slider } from "@/components/ui/slider";
 import confetti from "canvas-confetti";
 import { toast } from "sonner";
-import { getInvestmentProfile, updateInvestmentProfile } from "@/lib/api";
+import { getInvestmentProfile, updateInvestmentProfile, BackendOfflineError } from "@/lib/api";
 
 const goalOptions = [
   { label: "Financial Freedom", desc: "Build lasting independence and flexibility." },
@@ -88,6 +88,7 @@ const InvestmentGoals = () => {
         target_timeline: HORIZON_TO_TIMELINE[horizon] ?? null,
       });
     } catch (err) {
+      if (err instanceof BackendOfflineError) return;
       toast.error(`Failed to save: ${err instanceof Error ? err.message : "unknown error"}`);
       setSaving(false);
       return;

@@ -19,6 +19,7 @@ import {
   updateTaxProfile,
   updateReviewPreference,
   RISK_CATEGORIES,
+  BackendOfflineError,
   type FullProfileResponse,
   type UserUpdatePayload,
 } from "@/lib/api";
@@ -298,6 +299,7 @@ const Profile = () => {
       setEditingContact(false);
       toast.success("Contact info updated");
     } catch (err) {
+      if (err instanceof BackendOfflineError) return;
       toast.error(err instanceof Error ? err.message : "Failed to save");
     }
   }, [contactDraft, refresh]);
@@ -317,6 +319,7 @@ const Profile = () => {
       setEditingPersonal(false);
       toast.success("Personal info updated");
     } catch (err) {
+      if (err instanceof BackendOfflineError) return;
       toast.error(err instanceof Error ? err.message : "Failed to save");
     }
   }, [personalDraft]);
@@ -340,6 +343,7 @@ const Profile = () => {
       setEditingInvestment(false);
       toast.success("Investment profile updated");
     } catch (err) {
+      if (err instanceof BackendOfflineError) return;
       toast.error(err instanceof Error ? err.message : "Failed to save");
     }
   }, [investDraft]);
@@ -358,6 +362,7 @@ const Profile = () => {
       setEditingRisk(false);
       toast.success("Risk profile updated");
     } catch (err) {
+      if (err instanceof BackendOfflineError) return;
       toast.error(err instanceof Error ? err.message : "Failed to save");
     }
   }, [riskDraft]);
@@ -373,6 +378,7 @@ const Profile = () => {
       setEditingTax(false);
       toast.success("Tax profile updated");
     } catch (err) {
+      if (err instanceof BackendOfflineError) return;
       toast.error(err instanceof Error ? err.message : "Failed to save");
     }
   }, [taxDraft]);
@@ -387,6 +393,7 @@ const Profile = () => {
       setEditingReview(false);
       toast.success("Review preferences updated");
     } catch (err) {
+      if (err instanceof BackendOfflineError) return;
       toast.error(err instanceof Error ? err.message : "Failed to save");
     }
   }, [reviewDraft]);

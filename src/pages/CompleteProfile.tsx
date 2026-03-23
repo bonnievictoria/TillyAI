@@ -13,6 +13,7 @@ import {
   updateTaxProfile,
   updateReviewPreference,
   RISK_CATEGORIES,
+  BackendOfflineError,
   type FullProfileResponse,
 } from "@/lib/api";
 
@@ -644,6 +645,7 @@ const CompleteProfile = () => {
           break;
       }
     } catch (err) {
+      if (err instanceof BackendOfflineError) return;
       toast.error(`Failed to save: ${err instanceof Error ? err.message : "unknown error"}`);
       return;
     }

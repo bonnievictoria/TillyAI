@@ -27,6 +27,7 @@ import {
   removeFamilyMember,
   verifyFamilyOtp,
   resendFamilyOtp,
+  BackendOfflineError,
   type AddFamilyMemberPayload,
   type OnboardFamilyMemberPayload,
 } from "@/lib/api";
@@ -136,6 +137,7 @@ const FamilyMembers = () => {
       setSheetMode("otp");
       await refreshMembers();
     } catch (err) {
+      if (err instanceof BackendOfflineError) return;
       const msg = err instanceof Error ? err.message : "";
       // Detect the structured "member_not_found" error
       if (msg.includes("member_not_found") || msg.includes("No account found")) {
@@ -180,6 +182,7 @@ const FamilyMembers = () => {
       setSheetMode("otp");
       await refreshMembers();
     } catch (err) {
+      if (err instanceof BackendOfflineError) return;
       toast.error(err instanceof Error ? err.message : "Failed to create account");
     } finally {
       setSubmitting(false);
@@ -220,6 +223,7 @@ const FamilyMembers = () => {
       resetAll();
       await refreshMembers();
     } catch (err) {
+      if (err instanceof BackendOfflineError) return;
       toast.error(err instanceof Error ? err.message : "Invalid OTP");
       setOtpDigits(Array(OTP_LENGTH).fill(""));
       otpRefs.current[0]?.focus();
@@ -232,7 +236,10 @@ const FamilyMembers = () => {
     if (!otpMemberId) return;
     setResending(true);
     try { await resendFamilyOtp(otpMemberId); toast.success("OTP resent"); }
-    catch (err) { toast.error(err instanceof Error ? err.message : "Failed to resend"); }
+    catch (err) {
+      if (err instanceof BackendOfflineError) return;
+      toast.error(err instanceof Error ? err.message : "Failed to resend");
+    }
     finally { setResending(false); }
   }, [otpMemberId]);
 
@@ -249,7 +256,10 @@ const FamilyMembers = () => {
       toast.success("Family member removed");
       setConfirmDelete(null);
       await refreshMembers();
-    } catch (err) { toast.error(err instanceof Error ? err.message : "Failed to remove"); }
+    } catch (err) {
+      if (err instanceof BackendOfflineError) return;
+      toast.error(err instanceof Error ? err.message : "Failed to remove");
+    }
   }, [refreshMembers]);
 
   const activeCount = members.filter((m) => m.status === "active").length;
