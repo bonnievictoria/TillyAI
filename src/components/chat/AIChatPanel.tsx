@@ -359,7 +359,15 @@ const AIChatPanel = ({ isOpen, onClose, embedded = false, chatFirst = false, onV
               </div>
             </div>
           ) : (
-            <div className="flex items-center justify-center gap-2 overflow-x-auto px-4 pb-1.5">
+            <div className="flex items-center gap-2 overflow-x-auto px-4 pb-1.5">
+              {onVoiceOnboard && (
+                <button
+                  onClick={onVoiceOnboard}
+                  className="shrink-0 whitespace-nowrap rounded-full border border-primary/30 bg-primary/10 px-3 py-1.5 text-[11px] font-medium text-primary shadow-sm transition-colors hover:bg-primary/20 flex items-center gap-1.5"
+                >
+                  <Mic className="h-3 w-3" /> Voice onboarding
+                </button>
+              )}
               {embeddedSuggestions.map((q) => (
                 <button
                   key={q}
