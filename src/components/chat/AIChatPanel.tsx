@@ -12,6 +12,9 @@ interface AIChatPanelProps {
   onClose: () => void;
   embedded?: boolean;
   chatFirst?: boolean;
+  onVoiceOnboard?: () => void;
+  completionMessage?: string;
+  onCompletionShown?: () => void;
 }
 
 interface Message {
