@@ -23,6 +23,9 @@ import Discovery from "./pages/Discovery";
 import OTP from "./pages/OTP";
 import LinkAccounts from "./pages/LinkAccounts";
 import AboutYou from "./pages/AboutYou";
+import Portfolio from "./pages/Portfolio";
+import PortfolioPopup from "./pages/PortfolioPopup";
+import VoiceOnboarding from "./pages/VoiceOnboarding";
 
 const queryClient = new QueryClient();
 
@@ -35,6 +38,9 @@ const App = () => (
         <BrowserRouter>
           <Routes>
             <Route path="/" element={<Index />} />
+            <Route path="/portfolio" element={<Portfolio />} />
+            <Route path="/portfolio-popup" element={<PortfolioPopup />} />
+            <Route path="/voice-onboarding" element={<VoiceOnboarding />} />
             <Route path="/otp" element={<OTP />} />
             <Route path="/link-accounts" element={<LinkAccounts />} />
             <Route path="/about-you" element={<AboutYou />} />

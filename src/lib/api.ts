@@ -173,6 +173,18 @@ export async function sendChatMessage(
   });
 }
 
+// ── Shared constants ────────────────────────────────────
+
+export const RISK_CATEGORIES = [
+  "Conservative",
+  "Moderately Conservative",
+  "Moderate",
+  "Moderately Aggressive",
+  "Aggressive",
+] as const;
+
+export type RiskCategory = (typeof RISK_CATEGORIES)[number];
+
 // ── Profile types ───────────────────────────────────────
 
 export interface PersonalInfoPayload {
@@ -181,9 +193,17 @@ export interface PersonalInfoPayload {
   wealth_sources?: string[] | null;
   personal_values?: string[] | null;
   address?: string | null;
+  currency?: string | null;
 }
 
-export interface PersonalInfoResponse extends PersonalInfoPayload {}
+export interface PersonalInfoResponse {
+  occupation: string | null;
+  family_status: string | null;
+  wealth_sources: string[] | null;
+  personal_values: string[] | null;
+  address: string | null;
+  currency: string;
+}
 
 export interface InvestmentProfilePayload {
   objectives?: string[] | null;
@@ -203,6 +223,8 @@ export interface InvestmentProfilePayload {
   planned_major_expenses?: number | null;
   emergency_fund?: number | null;
   emergency_fund_months?: string | null;
+  liquidity_needs?: string | null;
+  income_needs?: number | null;
   is_multi_phase_horizon?: boolean | null;
   phase_description?: string | null;
   total_horizon?: string | null;
@@ -210,10 +232,13 @@ export interface InvestmentProfilePayload {
 
 export interface InvestmentProfileResponse extends InvestmentProfilePayload {
   id: string;
+  updated_at: string | null;
 }
 
 export interface RiskProfilePayload {
   risk_level?: number | null;
+  risk_capacity?: string | null;
+  investment_experience?: string | null;
   investment_horizon?: string | null;
   drop_reaction?: string | null;
   max_drawdown?: number | null;
@@ -222,6 +247,8 @@ export interface RiskProfilePayload {
 
 export interface RiskProfileResponse extends RiskProfilePayload {
   id: string;
+  risk_category: string | null;
+  updated_at: string | null;
 }
 
 export interface AllocationConstraintItem {
@@ -241,6 +268,7 @@ export interface InvestmentConstraintPayload {
 
 export interface InvestmentConstraintResponse extends InvestmentConstraintPayload {
   id: string;
+  updated_at: string | null;
 }
 
 export interface TaxProfilePayload {
@@ -251,6 +279,7 @@ export interface TaxProfilePayload {
 
 export interface TaxProfileResponse extends TaxProfilePayload {
   id: string;
+  updated_at: string | null;
 }
 
 export interface ReviewPreferencePayload {
@@ -261,6 +290,7 @@ export interface ReviewPreferencePayload {
 
 export interface ReviewPreferenceResponse extends ReviewPreferencePayload {
   id: string;
+  updated_at: string | null;
 }
 
 export interface FullProfileResponse {
@@ -276,6 +306,10 @@ export interface FullProfileResponse {
 
 export async function getFullProfile(): Promise<FullProfileResponse> {
   return request<FullProfileResponse>("/profile/");
+}
+
+export async function getPersonalInfo(): Promise<PersonalInfoResponse> {
+  return request<PersonalInfoResponse>("/profile/personal-info");
 }
 
 export async function updatePersonalInfo(p: PersonalInfoPayload): Promise<PersonalInfoResponse> {
@@ -318,11 +352,19 @@ export async function updateConstraints(p: InvestmentConstraintPayload): Promise
   });
 }
 
+export async function getTaxProfile(): Promise<TaxProfileResponse> {
+  return request<TaxProfileResponse>("/profile/tax");
+}
+
 export async function updateTaxProfile(p: TaxProfilePayload): Promise<TaxProfileResponse> {
   return request<TaxProfileResponse>("/profile/tax", {
     method: "PUT",
     body: JSON.stringify(p),
   });
+}
+
+export async function getReviewPreference(): Promise<ReviewPreferenceResponse> {
+  return request<ReviewPreferenceResponse>("/profile/review");
 }
 
 export async function updateReviewPreference(p: ReviewPreferencePayload): Promise<ReviewPreferenceResponse> {
