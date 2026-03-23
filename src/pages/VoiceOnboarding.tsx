@@ -23,7 +23,9 @@ const loadState = (): SavedState => {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (raw) return JSON.parse(raw);
-  } catch {}
+  } catch {
+    // Ignore invalid/missing stored state.
+  }
   return { currentSection: 0, completedSections: [], notes: {}, elapsed: {} };
 };
 

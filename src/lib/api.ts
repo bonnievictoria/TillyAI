@@ -71,8 +71,11 @@ async function request<T>(path: string, init?: RequestInit, auth = true): Promis
   if (!res.ok) {
     let msg: string;
     try {
-      const body = await res.json();
-      const detail = (body as any)?.detail;
+      const body = (await res.json()) as unknown;
+      let detail: unknown = undefined;
+      if (body && typeof body === "object" && "detail" in body) {
+        detail = (body as { detail?: unknown }).detail;
+      }
       if (typeof detail === "string") {
         msg = detail;
       } else if (detail != null) {

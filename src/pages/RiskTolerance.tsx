@@ -26,7 +26,8 @@ const fireConfetti = () => {
 const RiskTolerance = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const isEditing = (location.state as any)?.editing === true;
+  const state = location.state as { editing?: boolean } | null;
+  const isEditing = state?.editing === true;
 
   const [step, setStep] = useState(0);
   const [riskLevel, setRiskLevel] = useState(1);
