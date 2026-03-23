@@ -12,6 +12,9 @@ interface AIChatPanelProps {
   onClose: () => void;
   embedded?: boolean;
   chatFirst?: boolean;
+  onVoiceOnboard?: () => void;
+  completionMessage?: string;
+  onCompletionShown?: () => void;
 }
 
 interface Message {
@@ -71,7 +74,7 @@ const TillyAvatar = () => (
   </div>
 );
 
-const AIChatPanel = ({ isOpen, onClose, embedded = false, chatFirst = false }: AIChatPanelProps) => {
+const AIChatPanel = ({ isOpen, onClose, embedded = false, chatFirst = false, onVoiceOnboard, completionMessage, onCompletionShown }: AIChatPanelProps) => {
   const navigate = useNavigate();
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
@@ -90,6 +93,14 @@ const AIChatPanel = ({ isOpen, onClose, embedded = false, chatFirst = false }: A
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
     }
   }, [messages, isTyping, interimTranscript]);
+
+  // Inject completion message from voice onboarding
+  useEffect(() => {
+    if (completionMessage) {
+      setMessages((prev) => [...prev, { role: "ai", content: completionMessage }]);
+      onCompletionShown?.();
+    }
+  }, [completionMessage, onCompletionShown]);
 
   const ensureSession = useCallback(async (): Promise<string> => {
     if (sessionIdRef.current) return sessionIdRef.current;
@@ -328,6 +339,14 @@ const AIChatPanel = ({ isOpen, onClose, embedded = false, chatFirst = false }: A
                 {micState === "listening" ? <MicOff className="h-4.5 w-4.5" /> : <Mic className="h-4.5 w-4.5" />}
               </button>
               <div className="flex items-center gap-2 overflow-x-auto">
+                {onVoiceOnboard && (
+                  <button
+                    onClick={onVoiceOnboard}
+                    className="shrink-0 whitespace-nowrap rounded-full border border-primary/30 bg-primary/10 px-3 py-1.5 text-[11px] font-medium text-primary shadow-sm transition-colors hover:bg-primary/20 flex items-center gap-1.5"
+                  >
+                    <Mic className="h-3 w-3" /> Voice onboarding
+                  </button>
+                )}
                 {embeddedSuggestions.map((q) => (
                   <button
                     key={q}
@@ -340,7 +359,15 @@ const AIChatPanel = ({ isOpen, onClose, embedded = false, chatFirst = false }: A
               </div>
             </div>
           ) : (
-            <div className="flex items-center justify-center gap-2 overflow-x-auto px-4 pb-1.5">
+            <div className="flex items-center gap-2 overflow-x-auto px-4 pb-1.5">
+              {onVoiceOnboard && (
+                <button
+                  onClick={onVoiceOnboard}
+                  className="shrink-0 whitespace-nowrap rounded-full border border-primary/30 bg-primary/10 px-3 py-1.5 text-[11px] font-medium text-primary shadow-sm transition-colors hover:bg-primary/20 flex items-center gap-1.5"
+                >
+                  <Mic className="h-3 w-3" /> Voice onboarding
+                </button>
+              )}
               {embeddedSuggestions.map((q) => (
                 <button
                   key={q}
