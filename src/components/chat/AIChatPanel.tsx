@@ -94,6 +94,14 @@ const AIChatPanel = ({ isOpen, onClose, embedded = false, chatFirst = false, onV
     }
   }, [messages, isTyping, interimTranscript]);
 
+  // Inject completion message from voice onboarding
+  useEffect(() => {
+    if (completionMessage) {
+      setMessages((prev) => [...prev, { role: "ai", content: completionMessage }]);
+      onCompletionShown?.();
+    }
+  }, [completionMessage, onCompletionShown]);
+
   const ensureSession = useCallback(async (): Promise<string> => {
     if (sessionIdRef.current) return sessionIdRef.current;
     const session = await createChatSession("Tilly Chat");
