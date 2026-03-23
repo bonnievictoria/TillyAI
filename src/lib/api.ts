@@ -72,7 +72,15 @@ async function request<T>(path: string, init?: RequestInit, auth = true): Promis
     let msg: string;
     try {
       const body = await res.json();
-      msg = body.detail ?? JSON.stringify(body);
+      const detail = (body as any)?.detail;
+      if (typeof detail === "string") {
+        msg = detail;
+      } else if (detail != null) {
+        // FastAPI sometimes returns structured objects inside `detail`.
+        msg = JSON.stringify(detail);
+      } else {
+        msg = JSON.stringify(body);
+      }
     } catch {
       msg = await res.text();
     }
