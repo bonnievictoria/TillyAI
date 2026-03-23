@@ -74,7 +74,7 @@ const TillyAvatar = () => (
   </div>
 );
 
-const AIChatPanel = ({ isOpen, onClose, embedded = false, chatFirst = false }: AIChatPanelProps) => {
+const AIChatPanel = ({ isOpen, onClose, embedded = false, chatFirst = false, onVoiceOnboard, completionMessage, onCompletionShown }: AIChatPanelProps) => {
   const navigate = useNavigate();
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
