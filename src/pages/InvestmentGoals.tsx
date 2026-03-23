@@ -45,20 +45,14 @@ const InvestmentGoals = () => {
   const location = useLocation();
   const isEditing = (location.state as any)?.editing === true;
 
-  const savedGoals = sessionStorage.getItem("selectedGoals");
-  const savedHorizon = sessionStorage.getItem("timeHorizon");
-
   const [step, setStep] = useState(0);
-  const [selectedGoals, setSelectedGoals] = useState<string[]>(() => {
-    if (isEditing && savedGoals) { try { return JSON.parse(savedGoals); } catch { return []; } }
-    return [];
-  });
-  const [horizon, setHorizon] = useState(savedHorizon !== null ? Number(savedHorizon) : 1);
-  const [horizonTouched, setHorizonTouched] = useState(isEditing && savedHorizon !== null);
+  const [selectedGoals, setSelectedGoals] = useState<string[]>([]);
+  const [horizon, setHorizon] = useState(1);
+  const [horizonTouched, setHorizonTouched] = useState(false);
   const [saving, setSaving] = useState(false);
-
-  const originalGoals = savedGoals ? JSON.parse(savedGoals) : [];
-  const originalHorizon = savedHorizon !== null ? Number(savedHorizon) : null;
+  const [loaded, setLoaded] = useState(false);
+  const [originalGoals, setOriginalGoals] = useState<string[]>([]);
+  const [originalHorizon, setOriginalHorizon] = useState<number | null>(null);
 
   useEffect(() => {
     (async () => {
@@ -66,18 +60,20 @@ const InvestmentGoals = () => {
         const ip = await getInvestmentProfile();
         if (ip.objectives?.length) {
           setSelectedGoals(ip.objectives);
-          sessionStorage.setItem("selectedGoals", JSON.stringify(ip.objectives));
+          setOriginalGoals(ip.objectives);
         }
         if (ip.target_timeline) {
           const idx = TIMELINE_TO_HORIZON[ip.target_timeline];
           if (idx != null) {
             setHorizon(idx);
             setHorizonTouched(true);
-            sessionStorage.setItem("timeHorizon", String(idx));
+            setOriginalHorizon(idx);
           }
         }
       } catch {
         // no profile yet
+      } finally {
+        setLoaded(true);
       }
     })();
   }, []);
@@ -91,9 +87,6 @@ const InvestmentGoals = () => {
         objectives: selectedGoals.length ? selectedGoals : null,
         target_timeline: HORIZON_TO_TIMELINE[horizon] ?? null,
       });
-      sessionStorage.setItem("selectedGoals", JSON.stringify(selectedGoals));
-      sessionStorage.setItem("timeHorizon", String(horizon));
-      if (selectedGoals.length > 0) sessionStorage.setItem("investmentGoal", selectedGoals[0]);
     } catch (err) {
       toast.error(`Failed to save: ${err instanceof Error ? err.message : "unknown error"}`);
       setSaving(false);
@@ -102,13 +95,21 @@ const InvestmentGoals = () => {
     setSaving(false);
 
     if (isEditing) {
-      const changed = JSON.stringify(selectedGoals.sort()) !== JSON.stringify(originalGoals.sort()) || horizon !== originalHorizon;
+      const changed = JSON.stringify(selectedGoals.sort()) !== JSON.stringify([...originalGoals].sort()) || horizon !== originalHorizon;
       navigate(`/profile/complete?${changed ? "updated=goals" : ""}`, { replace: true });
     } else {
       fireConfetti();
       setTimeout(() => { navigate("/profile/complete?completed=goals", { replace: true }); }, 800);
     }
   };
+
+  if (!loaded) {
+    return (
+      <div className="mobile-container min-h-screen flex items-center justify-center bg-background">
+        <div className="h-6 w-6 animate-spin rounded-full border-2 border-muted border-t-foreground" />
+      </div>
+    );
+  }
 
   return (
     <div className="mobile-container min-h-screen flex flex-col bg-background">

@@ -2,18 +2,14 @@ import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ArrowLeft, Check } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { Slider } from "@/components/ui/slider";
 import confetti from "canvas-confetti";
 import { toast } from "sonner";
-import { getRiskProfile, updateRiskProfile } from "@/lib/api";
+import { getRiskProfile, updateRiskProfile, RISK_CATEGORIES } from "@/lib/api";
 
-const riskOptions = [
-  { label: "Conservative", emoji: "🛡️" },
-  { label: "Cautious", emoji: "🌿" },
-  { label: "Balanced", emoji: "⚖️" },
-  { label: "Growth", emoji: "🚀" },
-  { label: "Aggressive", emoji: "⚡" },
-];
+const riskOptions = RISK_CATEGORIES.map((label, i) => ({
+  label,
+  emoji: ["🛡️", "🌿", "⚖️", "🚀", "⚡"][i],
+}));
 
 const dipReactions = [
   { label: "Wait it out", emoji: "😌", desc: "I trust the long game" },
@@ -32,17 +28,14 @@ const RiskTolerance = () => {
   const location = useLocation();
   const isEditing = (location.state as any)?.editing === true;
 
-  const savedRiskLevel = sessionStorage.getItem("riskLevel");
-  const savedDipReaction = sessionStorage.getItem("dipReaction");
-
   const [step, setStep] = useState(0);
-  const [riskLevel, setRiskLevel] = useState(savedRiskLevel !== null ? Number(savedRiskLevel) : 1);
-  const [sliderTouched, setSliderTouched] = useState(isEditing && savedRiskLevel !== null);
-  const [dipReaction, setDipReaction] = useState<string | null>(isEditing && savedDipReaction ? savedDipReaction : null);
+  const [riskLevel, setRiskLevel] = useState(1);
+  const [sliderTouched, setSliderTouched] = useState(false);
+  const [dipReaction, setDipReaction] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
-
-  const originalRisk = savedRiskLevel !== null ? Number(savedRiskLevel) : null;
-  const originalDip = savedDipReaction || null;
+  const [loaded, setLoaded] = useState(false);
+  const [originalRisk, setOriginalRisk] = useState<number | null>(null);
+  const [originalDip, setOriginalDip] = useState<string | null>(null);
 
   useEffect(() => {
     (async () => {
@@ -51,10 +44,16 @@ const RiskTolerance = () => {
         if (rp.risk_level != null) {
           setRiskLevel(rp.risk_level);
           setSliderTouched(true);
+          setOriginalRisk(rp.risk_level);
         }
-        if (rp.drop_reaction) setDipReaction(rp.drop_reaction);
+        if (rp.drop_reaction) {
+          setDipReaction(rp.drop_reaction);
+          setOriginalDip(rp.drop_reaction);
+        }
       } catch {
-        // no existing profile — use defaults
+        // no existing profile
+      } finally {
+        setLoaded(true);
       }
     })();
   }, []);
@@ -62,13 +61,10 @@ const RiskTolerance = () => {
   const handleSave = async () => {
     setSaving(true);
     try {
-      const dipLabel = dipReaction ?? undefined;
       await updateRiskProfile({
         risk_level: riskLevel,
-        drop_reaction: dipLabel || null,
+        drop_reaction: dipReaction || null,
       });
-      sessionStorage.setItem("riskLevel", String(riskLevel));
-      sessionStorage.setItem("dipReaction", dipReaction || "");
     } catch (err) {
       toast.error(`Failed to save risk profile: ${err instanceof Error ? err.message : "unknown error"}`);
       setSaving(false);
@@ -84,6 +80,14 @@ const RiskTolerance = () => {
       setTimeout(() => { navigate("/profile/complete?completed=risk", { replace: true }); }, 800);
     }
   };
+
+  if (!loaded) {
+    return (
+      <div className="mobile-container min-h-screen flex items-center justify-center bg-background">
+        <div className="h-6 w-6 animate-spin rounded-full border-2 border-muted border-t-foreground" />
+      </div>
+    );
+  }
 
   return (
     <div className="mobile-container min-h-screen flex flex-col bg-background">
