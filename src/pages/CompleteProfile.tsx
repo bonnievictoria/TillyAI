@@ -1072,21 +1072,8 @@ const CompleteProfile = () => {
           </div>
         );
 
-      /* ── Section 5: Time horizon ── */
+      /* ── Section 5: Tax situation ── */
       case 5:
-        return (
-          <div className="space-y-4">
-            <div>
-              <FieldLabel>Single or multi-phase</FieldLabel>
-              <Toggle value={multiPhase} onChange={setMultiPhase} labelA="One continuous period" labelB="Multiple phases" />
-            </div>
-            {multiPhase && <div><FieldLabel>Phase description</FieldLabel><TextInput value={phaseDescription} onChange={setPhaseDescription} placeholder="Describe your investment phases" /></div>}
-            <div><FieldLabel>Total horizon (years)</FieldLabel><TextInput value={totalHorizon} onChange={setTotalHorizon} placeholder="e.g. 15" /></div>
-          </div>
-        );
-
-      /* ── Section 6: Tax situation ── */
-      case 6:
         return (
           <div className="space-y-3">
             <div><FieldLabel>Income tax rate</FieldLabel><TextInput value={incomeTaxRate} onChange={setIncomeTaxRate} placeholder="e.g. 30" /></div>
@@ -1095,8 +1082,8 @@ const CompleteProfile = () => {
           </div>
         );
 
-      /* ── Section 7: Staying involved ── */
-      case 7:
+      /* ── Section 6: Staying involved ── */
+      case 6:
         return (
           <div className="space-y-4">
             <div>
