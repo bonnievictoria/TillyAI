@@ -36,10 +36,18 @@ export class BackendOfflineError extends Error {
 
 let backendOfflineUntil = 0;
 const OFFLINE_RETRY_MS = 15_000;
-const REQUEST_TIMEOUT_MS = 4_000;
+/** Default for most API calls */
+const REQUEST_TIMEOUT_MS = 45_000;
+/** Chat can run intent classification + optional market commentary + LLM — allow longer */
+const CHAT_REQUEST_TIMEOUT_MS = 120_000;
 // till this
 
-async function request<T>(path: string, init?: RequestInit, auth = true): Promise<T> {
+async function request<T>(
+  path: string,
+  init?: RequestInit,
+  auth = true,
+  timeoutMs: number = REQUEST_TIMEOUT_MS
+): Promise<T> {
   const headers: Record<string, string> = {
     "Content-Type": "application/json",
     ...((init?.headers as Record<string, string>) ?? {}),
@@ -56,14 +64,18 @@ async function request<T>(path: string, init?: RequestInit, auth = true): Promis
   }
 
   const controller = new AbortController();
-  const timeoutId = window.setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
+  const timeoutId = window.setTimeout(() => controller.abort(), timeoutMs);
 
   let res: Response;
   try {
     res = await fetch(`${API}${path}`, { ...init, headers, signal: controller.signal });
   } catch (err) {
+    // Abort usually means request timeout for long-running AI endpoints, not true offline mode.
+    if (err instanceof DOMException && err.name === "AbortError") {
+      throw new Error("Request timed out. Please try again.");
+    }
     backendOfflineUntil = Date.now() + OFFLINE_RETRY_MS;
-    throw new BackendOfflineError();
+    throw new BackendOfflineError("Backend is unreachable");
   } finally {
     window.clearTimeout(timeoutId);
   }
@@ -101,7 +113,7 @@ async function request<T>(path: string, init?: RequestInit, auth = true): Promis
 export interface SignUpPayload {
   country_code: string;
   mobile: string;
-  password: string;
+  password?: string;
   first_name?: string;
   last_name?: string;
   email?: string;
@@ -110,7 +122,7 @@ export interface SignUpPayload {
 export interface LoginPayload {
   country_code: string;
   mobile: string;
-  password: string;
+  password?: string;
 }
 
 export interface UserInfo {
@@ -224,12 +236,18 @@ export async function createChatSession(title?: string): Promise<ChatSessionInfo
 
 export async function sendChatMessage(
   sessionId: string,
-  content: string
+  content: string,
+  clientContext?: Record<string, unknown>
 ): Promise<ChatSendResponse> {
-  return request<ChatSendResponse>(`/chat/sessions/${sessionId}/messages`, {
-    method: "POST",
-    body: JSON.stringify({ content }),
-  });
+  return request<ChatSendResponse>(
+    `/chat/sessions/${sessionId}/messages`,
+    {
+      method: "POST",
+      body: JSON.stringify({ content, client_context: clientContext ?? null }),
+    },
+    true,
+    CHAT_REQUEST_TIMEOUT_MS
+  );
 }
 
 // ── Shared constants ────────────────────────────────────
@@ -459,6 +477,8 @@ export interface FamilyMemberListResponse {
 export interface AddFamilyMemberPayload {
   nickname: string;
   phone: string;
+  /** Default +91 — must match signup format so backend can resolve User.phone */
+  country_code?: string;
   email?: string;
   relationship_type?: string;
 }
@@ -514,6 +534,106 @@ export interface PortfolioDetail {
   updated_at: string;
   allocations: { id: string; asset_class: string; allocation_percentage: number; amount: number; performance_percentage: number | null }[];
   holdings: { id: string; instrument_name: string; instrument_type: string; ticker_symbol: string | null; quantity: number | null; average_cost: number | null; current_price: number | null; current_value: number; allocation_percentage: number | null }[];
+}
+
+/** Primary portfolio for the logged-in user (from DB). */
+export async function getMyPortfolio(): Promise<PortfolioDetail> {
+  return request<PortfolioDetail>("/portfolio/");
+}
+
+export interface PortfolioHistoryPoint {
+  id: string;
+  recorded_date: string;
+  total_value: number;
+}
+
+export async function getPortfolioHistory(limit = 90): Promise<PortfolioHistoryPoint[]> {
+  return request<PortfolioHistoryPoint[]>(`/portfolio/history?limit=${limit}`);
+}
+
+// ── Goals API ───────────────────────────────────────────
+
+export interface GoalResponse {
+  id: string;
+  name: string;
+  slug: string | null;
+  icon: string | null;
+  description: string | null;
+  target_amount: number | null;
+  target_date: string | null;
+  invested_amount: number;
+  current_value: number;
+  monthly_contribution: number | null;
+  suggested_contribution: number | null;
+  priority: string;
+  status: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export async function listGoals(): Promise<GoalResponse[]> {
+  return request<GoalResponse[]>("/goals/");
+}
+
+// ── Discovery API ─────────────────────────────────────
+
+export interface DiscoveryFund {
+  id: string;
+  name: string;
+  short_name: string | null;
+  ticker_symbol: string | null;
+  category: string | null;
+  sector: string | null;
+  description: string | null;
+  exchange: string | null;
+  expense_ratio: number | null;
+  exit_load: string | null;
+  min_investment: number | null;
+  return_1y: number | null;
+  return_3y: number | null;
+  return_5y: number | null;
+  risk_level: string | null;
+  is_trending: boolean;
+  is_house_view: boolean;
+}
+
+export interface DiscoveryFundListResponse {
+  funds: DiscoveryFund[];
+  total: number;
+}
+
+export async function listDiscoveryFunds(params?: {
+  search?: string;
+  category?: string;
+  sector?: string;
+  limit?: number;
+  offset?: number;
+}): Promise<DiscoveryFundListResponse> {
+  const q = new URLSearchParams();
+  if (params?.search) q.set("search", params.search);
+  if (params?.category) q.set("category", params.category);
+  if (params?.sector) q.set("sector", params.sector);
+  if (params?.limit != null) q.set("limit", String(params.limit));
+  if (params?.offset != null) q.set("offset", String(params.offset));
+  const suffix = q.toString() ? `?${q.toString()}` : "";
+  return request<DiscoveryFundListResponse>(`/discovery/funds${suffix}`);
+}
+
+export async function listDiscoveryTrending(): Promise<DiscoveryFund[]> {
+  return request<DiscoveryFund[]>("/discovery/trending");
+}
+
+export async function listDiscoveryHouseView(): Promise<DiscoveryFund[]> {
+  return request<DiscoveryFund[]>("/discovery/house-view");
+}
+
+export interface DiscoverySector {
+  sector: string;
+  fund_count: number;
+}
+
+export async function listDiscoverySectors(): Promise<DiscoverySector[]> {
+  return request<DiscoverySector[]>("/discovery/sectors");
 }
 
 // ── Family API ──────────────────────────────────────────
