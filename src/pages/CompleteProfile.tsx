@@ -389,7 +389,7 @@ const toNum = (s: string): number | null => {
 const CompleteProfile = () => {
   const navigate = useNavigate();
   const [openSection, setOpenSection] = useState(0);
-  const [statuses, setStatuses] = useState<SectionStatus[]>(Array(8).fill("not_started"));
+  const [statuses, setStatuses] = useState<SectionStatus[]>(Array(7).fill("not_started"));
   const [profileLoaded, setProfileLoaded] = useState(false);
 
   // Section 0 — Who are you?
