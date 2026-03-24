@@ -567,8 +567,8 @@ const CompleteProfile = () => {
   }, []);
 
   const confirmedCount = statuses.filter((s) => s === "confirmed").length;
-  const progressPercent = Math.round((confirmedCount / 8) * 100);
-  const allConfirmed = confirmedCount === 8;
+  const progressPercent = Math.round((confirmedCount / 7) * 100);
+  const allConfirmed = confirmedCount === 7;
 
   const totalMaxAllocation = useMemo(() => {
     return permittedAssets.reduce((sum, a) => sum + (allocations[a]?.max || 0), 0);
