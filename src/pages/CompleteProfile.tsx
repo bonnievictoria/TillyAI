@@ -689,15 +689,14 @@ const CompleteProfile = () => {
       next[idx] = "confirmed";
       return next;
     });
-    if (idx < 7) setOpenSection(idx + 1);
+    if (idx < 6) setOpenSection(idx + 1);
     toast.success(`Section ${idx + 1} confirmed ✓`);
   }, [
     occupation, primaryResidence, earningMembers, dependents, values,
     primaryWealthSource, investableAssets, liabilities, properties, plannedExpenses, emergencyFund, emergencyTimeframe, otherAssets, ownsHome, expectingLargeIncome, largeIncomeAmount, largeIncomeCurrency, largeIncomeYear,
     selectedObjectives, goalDetails,
-    riskLevelIdx, riskCapacity, investmentExperience, investmentHorizon, riskQ1, riskQ2, riskQ3, maxDrawdown, comfortAssets,
+    riskLevelIdx, riskCapacity, investmentExperience, investmentHorizon, horizonNotes, riskQ1, riskQ2, riskQ3, maxDrawdown, comfortAssets,
     permittedAssets, allocations, prohibited, leverage, derivatives, diversificationNotes,
-    multiPhase, phaseDescription, totalHorizon,
     incomeTaxRate, cgtRate, taxNotes,
     reviewFreq, reviewTriggers, updateProcess,
   ]);
