@@ -501,11 +501,6 @@ const CompleteProfile = () => {
           if (ip.objectives?.length) setSelectedObjectives(ip.objectives);
           if (ip.objectives?.length) newStatuses[2] = "confirmed";
 
-          // Section 5 — time horizon
-          if (ip.is_multi_phase_horizon != null) setMultiPhase(ip.is_multi_phase_horizon);
-          if (ip.phase_description) setPhaseDescription(ip.phase_description);
-          if (ip.total_horizon) setTotalHorizon(ip.total_horizon);
-          if (ip.total_horizon) newStatuses[5] = "confirmed";
         }
 
         // Section 3 — risk
