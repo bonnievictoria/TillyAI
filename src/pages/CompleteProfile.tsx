@@ -617,8 +617,8 @@ const CompleteProfile = () => {
           await updateInvestmentProfile({
             investable_assets: toNum(investableAssets),
             total_liabilities: toNum(liabilities),
-            property_value: toNum(propertyValue),
-            mortgage_amount: toNum(mortgage),
+            property_value: ownsHome ? toNum(properties[0]?.value) : null,
+            mortgage_amount: ownsHome ? toNum(properties[0]?.mortgage) : null,
             planned_major_expenses: toNum(plannedExpenses),
             emergency_fund: toNum(emergencyFund),
             emergency_fund_months: emergencyTimeframe || null,
