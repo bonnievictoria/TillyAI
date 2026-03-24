@@ -491,8 +491,10 @@ const CompleteProfile = () => {
           }
           setInvestableAssets(parseNum(ip.investable_assets?.toString()));
           setLiabilities(parseNum(ip.total_liabilities?.toString()));
-          setPropertyValue(parseNum(ip.property_value?.toString()));
-          setMortgage(parseNum(ip.mortgage_amount?.toString()));
+          if (ip.property_value) {
+            setOwnsHome(true);
+            setProperties([{ value: parseNum(ip.property_value?.toString()), mortgage: parseNum(ip.mortgage_amount?.toString()), monthlyRepayment: "", yearPurchased: "" }]);
+          }
           setPlannedExpenses(parseNum(ip.planned_major_expenses?.toString()));
           setEmergencyFund(parseNum(ip.emergency_fund?.toString()));
           if (ip.emergency_fund_months) setEmergencyTimeframe(ip.emergency_fund_months);
