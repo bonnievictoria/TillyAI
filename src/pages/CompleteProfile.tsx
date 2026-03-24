@@ -536,16 +536,16 @@ const CompleteProfile = () => {
           if (ic.permitted_assets?.length) newStatuses[4] = "confirmed";
         }
 
-        // Section 6 — tax
+        // Section 5 — tax
         if (p.tax_profile) {
           const tp = p.tax_profile;
           if (tp.income_tax_rate != null) setIncomeTaxRate(String(tp.income_tax_rate));
           if (tp.capital_gains_tax_rate != null) setCgtRate(String(tp.capital_gains_tax_rate));
           if (tp.notes) setTaxNotes(tp.notes);
-          if (tp.income_tax_rate != null) newStatuses[6] = "confirmed";
+          if (tp.income_tax_rate != null) newStatuses[5] = "confirmed";
         }
 
-        // Section 7 — review
+        // Section 6 — review
         if (p.review_preference) {
           const rp = p.review_preference;
           if (rp.frequency) setReviewFreq(rp.frequency);
