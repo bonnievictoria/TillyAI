@@ -664,20 +664,13 @@ const CompleteProfile = () => {
           });
           break;
         case 5:
-          await updateInvestmentProfile({
-            is_multi_phase_horizon: multiPhase,
-            phase_description: phaseDescription || null,
-            total_horizon: totalHorizon || null,
-          });
-          break;
-        case 6:
           await updateTaxProfile({
             income_tax_rate: incomeTaxRate ? Number(incomeTaxRate) : null,
             capital_gains_tax_rate: cgtRate ? Number(cgtRate) : null,
             notes: taxNotes || null,
           });
           break;
-        case 7:
+        case 6:
           await updateReviewPreference({
             frequency: reviewFreq || null,
             triggers: reviewTriggers.length ? reviewTriggers : null,
