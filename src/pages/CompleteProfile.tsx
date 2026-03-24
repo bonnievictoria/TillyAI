@@ -445,12 +445,7 @@ const CompleteProfile = () => {
   const [derivativesNotes, setDerivativesNotes] = useState("");
   const [diversificationNotes, setDiversificationNotes] = useState("");
 
-  // Section 5 — Time horizon
-  const [multiPhase, setMultiPhase] = useState(false);
-  const [phaseDescription, setPhaseDescription] = useState("");
-  const [totalHorizon, setTotalHorizon] = useState("");
-
-  // Section 6 — Tax
+  // Section 5 — Tax
   const [incomeTaxRate, setIncomeTaxRate] = useState("");
   const [cgtRate, setCgtRate] = useState("");
   const [taxNotes, setTaxNotes] = useState("");
