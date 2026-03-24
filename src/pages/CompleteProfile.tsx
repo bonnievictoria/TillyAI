@@ -932,21 +932,6 @@ const CompleteProfile = () => {
       case 3:
         return (
           <div className="space-y-4">
-            <PrefilledBanner />
-            <div>
-              <FieldLabel>Risk tolerance</FieldLabel>
-              <RiskDial level={riskLevelIdx} onChangeLevel={setRiskLevelIdx} />
-            </div>
-
-            <div>
-              <FieldLabel>Risk capacity (ability to absorb losses)</FieldLabel>
-              <div className="flex flex-wrap gap-1.5">
-                {["Low", "Medium", "High"].map((c) => (
-                  <Chip key={c} label={c} active={riskCapacity === c} onClick={() => setRiskCapacity(c)} />
-                ))}
-              </div>
-            </div>
-
             <div>
               <FieldLabel>Investment experience</FieldLabel>
               <div className="flex flex-wrap gap-1.5">
