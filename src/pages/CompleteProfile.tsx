@@ -958,6 +958,17 @@ const CompleteProfile = () => {
               </div>
             </div>
 
+            <div>
+              <FieldLabel>Any specifics you'd like to share about your investment horizon?</FieldLabel>
+              <textarea
+                value={horizonNotes}
+                onChange={(e) => setHorizonNotes(e.target.value)}
+                placeholder="e.g. I plan to retire in 10 years but may need some funds in 3 years for a home purchase..."
+                rows={3}
+                className="w-full rounded-lg border border-border bg-card px-3 py-2 text-sm text-foreground outline-none focus:border-accent transition-colors placeholder:text-[12px] resize-none"
+              />
+            </div>
+
             {/* New Q1 */}
             <div>
               <FieldLabel>If your portfolio dropped 20%+ in one month, what would you do?</FieldLabel>
