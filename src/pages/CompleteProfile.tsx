@@ -465,7 +465,7 @@ const CompleteProfile = () => {
       try {
         const p = await getFullProfile();
         if (cancelled) return;
-        const newStatuses: SectionStatus[] = Array(8).fill("not_started");
+        const newStatuses: SectionStatus[] = Array(7).fill("not_started");
 
         // Section 0 — personal info
         if (p.personal_info) {
