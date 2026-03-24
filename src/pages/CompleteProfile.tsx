@@ -406,10 +406,7 @@ const CompleteProfile = () => {
   const [liabilities, setLiabilities] = useState("");
   const [otherAssets, setOtherAssets] = useState<OtherAsset[]>([]);
   const [ownsHome, setOwnsHome] = useState(false);
-  const [propertyValue, setPropertyValue] = useState("");
-  const [mortgage, setMortgage] = useState("");
-  const [monthlyRepayment, setMonthlyRepayment] = useState("");
-  const [yearPurchased, setYearPurchased] = useState("");
+  const [properties, setProperties] = useState<Property[]>([{ value: "", mortgage: "", monthlyRepayment: "", yearPurchased: "" }]);
   const [plannedExpenses, setPlannedExpenses] = useState("");
   const [expectingLargeIncome, setExpectingLargeIncome] = useState(false);
   const [largeIncomeAmount, setLargeIncomeAmount] = useState("");
