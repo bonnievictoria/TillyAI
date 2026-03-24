@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { ArrowRight, Check, RotateCcw, AlertTriangle, Mic } from "lucide-react";
 import BottomNav from "@/components/BottomNav";
 import AIChatSheet from "@/components/dashboard/AIChatSheet";
+import { getMyPortfolio, type PortfolioDetail } from "@/lib/api";
 
 /* ── ETF Data (original) ── */
 interface ETF {
@@ -71,7 +72,7 @@ const formatINRNoSymbol = (n: number) => {
 };
 
 /* ── Donut chart (SVG) — compact 140px ── */
-const DonutChart = ({ data }: { data: { label: string; value: number; color: string }[] }) => {
+const DonutChart = ({ data, centerLabel }: { data: { label: string; value: number; color: string }[]; centerLabel: string }) => {
   const total = data.reduce((s, d) => s + d.value, 0);
   const size = 140;
   const stroke = 22;
@@ -82,29 +83,30 @@ const DonutChart = ({ data }: { data: { label: string; value: number; color: str
   return (
     <div className="relative flex items-center justify-center shrink-0" style={{ width: size, height: size }}>
       <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} className="-rotate-90">
-        {data.map((seg) => {
-          const pct = seg.value / total;
-          const dashLen = pct * circumference;
-          const dashOff = cumulative * circumference;
-          cumulative += pct;
-          return (
-            <circle
-              key={seg.label}
-              cx={size / 2}
-              cy={size / 2}
-              r={radius}
-              fill="none"
-              stroke={seg.color}
-              strokeWidth={stroke}
-              strokeDasharray={`${dashLen} ${circumference - dashLen}`}
-              strokeDashoffset={-dashOff}
-              strokeLinecap="butt"
-            />
-          );
-        })}
+        {total > 0 &&
+          data.map((seg) => {
+            const pct = seg.value / total;
+            const dashLen = pct * circumference;
+            const dashOff = cumulative * circumference;
+            cumulative += pct;
+            return (
+              <circle
+                key={seg.label}
+                cx={size / 2}
+                cy={size / 2}
+                r={radius}
+                fill="none"
+                stroke={seg.color}
+                strokeWidth={stroke}
+                strokeDasharray={`${dashLen} ${circumference - dashLen}`}
+                strokeDashoffset={-dashOff}
+                strokeLinecap="butt"
+              />
+            );
+          })}
       </svg>
       <div className="absolute inset-0 flex flex-col items-center justify-center">
-        <p className="text-base font-bold text-foreground">₹83L</p>
+        <p className="text-base font-bold text-foreground">{centerLabel}</p>
         <p className="text-[9px] text-muted-foreground">Total</p>
       </div>
     </div>
@@ -228,14 +230,38 @@ const ALLOC_ASSETS: AllocAsset[] = [
 
 const houseDefaults = ALLOC_ASSETS.map((a) => a.houseRec);
 
+const DB_ALLOC_COLORS = ["#1B3A6B", "#4A7FA5", "#8BA7BC", "#C4B99A", "#D4AF70", "#10b981", "#f59e0b", "#6366f1", "#ec4899"];
+
+function portfolioToDonutData(p: PortfolioDetail): { label: string; value: number; color: string }[] {
+  const raw = p.allocations.map((a, i) => ({
+    label: a.asset_class,
+    value: a.allocation_percentage,
+    color: DB_ALLOC_COLORS[i % DB_ALLOC_COLORS.length],
+  }));
+  const sum = raw.reduce((s, x) => s + x.value, 0);
+  if (sum <= 0) return raw;
+  if (Math.abs(sum - 100) < 0.5) return raw;
+  return raw.map((x) => ({ ...x, value: (x.value / sum) * 100 }));
+}
+
 /* ── Page ── */
 const Invest = () => {
   const houseAllocations = defaultETFs.map((e) => e.allocation);
   const [allocations, setAllocations] = useState<number[]>([...houseDefaults]);
   const [totalInvestment, setTotalInvestment] = useState<number>(TOTAL);
+  const [portfolioDb, setPortfolioDb] = useState<PortfolioDetail | null>(null);
   const [selectedETF, setSelectedETF] = useState<number | null>(null);
   const [chatOpen, setChatOpen] = useState(false);
   const [showTillyPill, setShowTillyPill] = useState(true);
+
+  useEffect(() => {
+    getMyPortfolio()
+      .then((p) => {
+        setPortfolioDb(p);
+        if (p.total_value > 0) setTotalInvestment(Math.round(p.total_value));
+      })
+      .catch(() => setPortfolioDb(null));
+  }, []);
 
   useEffect(() => {
     const timer = setTimeout(() => setShowTillyPill(false), 5000);
@@ -265,7 +291,7 @@ const Invest = () => {
 
   const resetToHouse = () => setAllocations([...houseDefaults]);
 
-  // Build donut data by grouping categories
+  // Build donut data by grouping categories (or from DB allocations when available)
   const categoryMap = new Map<string, { value: number; color: string }>();
   defaultETFs.forEach((etf, i) => {
     const existing = categoryMap.get(etf.category);
@@ -275,9 +301,24 @@ const Invest = () => {
       categoryMap.set(etf.category, { value: allocations[i], color: etf.color });
     }
   });
-  const donutData = Array.from(categoryMap.entries()).map(([label, d]) => ({
+  const donutFromSliders = Array.from(categoryMap.entries()).map(([label, d]) => ({
     label, value: d.value, color: d.color,
   }));
+  const donutData =
+    portfolioDb && portfolioDb.allocations.length > 0 ? portfolioToDonutData(portfolioDb) : donutFromSliders;
+
+  const donutCenterLabel =
+    portfolioDb && portfolioDb.total_value > 0
+      ? portfolioDb.total_value >= 10000000
+        ? `₹${(portfolioDb.total_value / 10000000).toFixed(1)}Cr`
+        : portfolioDb.total_value >= 100000
+          ? `₹${(portfolioDb.total_value / 100000).toFixed(1)}L`
+          : `₹${Math.round(portfolioDb.total_value).toLocaleString("en-IN")}`
+      : totalInvestment >= 10000000
+        ? `₹${(totalInvestment / 10000000).toFixed(1)}Cr`
+        : totalInvestment >= 100000
+          ? `₹${(totalInvestment / 100000).toFixed(1)}L`
+          : `₹${Math.round(totalInvestment).toLocaleString("en-IN")}`;
 
   const activeETF = selectedETF !== null ? defaultETFs[selectedETF] : null;
 
@@ -288,15 +329,23 @@ const Invest = () => {
       {/* Header */}
       <div className="px-5 pt-12 pb-1">
         <h1 className="text-xl font-bold text-foreground">Recommended investment plan</h1>
-        <p className="text-sm text-foreground/80 mt-0.5">Recommended portfolio · ₹83,00,000 (~£100,000)</p>
-        <p className="text-xs text-muted-foreground mt-0.5">Built around your goals and risk profile</p>
+        <p className="text-sm text-foreground/80 mt-0.5">
+          {portfolioDb && portfolioDb.total_value > 0
+            ? `Your portfolio · ${formatINR(portfolioDb.total_value)}`
+            : `Recommended portfolio · ${formatINR(totalInvestment)}`}
+        </p>
+        <p className="text-xs text-muted-foreground mt-0.5">
+          {portfolioDb && portfolioDb.allocations.length > 0
+            ? "Allocation from your linked account — adjust below to explore scenarios"
+            : "Built around your goals and risk profile"}
+        </p>
       </div>
 
       <div className="pb-36">
         {/* Donut + Legend */}
         <div className="px-5 py-6">
           <div className="flex items-start gap-5">
-            <DonutChart data={donutData} />
+            <DonutChart data={donutData} centerLabel={donutCenterLabel} />
             <div className="flex-1 pt-2">
               <div className="grid grid-cols-1 gap-2">
                 {donutData.map((d) => (
@@ -334,7 +383,7 @@ const Invest = () => {
                       </div>
                       <div className="text-right shrink-0 ml-3">
                         <p className="text-sm font-bold text-foreground">{allocations[i]}%</p>
-                        <p className="text-[11px] text-muted-foreground">{formatINR(TOTAL * allocations[i] / 100)}</p>
+                        <p className="text-[11px] text-muted-foreground">{formatINR(totalInvestment * allocations[i] / 100)}</p>
                       </div>
                     </div>
                     <div className="flex items-center gap-1.5 mt-2 flex-wrap">

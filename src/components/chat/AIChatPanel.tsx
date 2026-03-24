@@ -4,7 +4,14 @@ import { motion, AnimatePresence } from "framer-motion";
 import { X, Send, Mic, MicOff, AlertCircle, Loader2, Sparkles } from "lucide-react";
 import { useState, useRef, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import { createChatSession, sendChatMessage } from "@/lib/api";
+import {
+  createChatSession,
+  sendChatMessage,
+  getMe,
+  getFullProfile,
+  getMyPortfolio,
+  type PortfolioDetail,
+} from "@/lib/api";
 import ReactMarkdown from "react-markdown";
 
 interface AIChatPanelProps {
@@ -80,6 +87,7 @@ const AIChatPanel = ({ isOpen, onClose, embedded = false, chatFirst = false }: A
   const [interimTranscript, setInterimTranscript] = useState("");
   const [showFirstUseHint, setShowFirstUseHint] = useState(true);
   const [micError, setMicError] = useState(false);
+  const [clientContext, setClientContext] = useState<Record<string, unknown> | null>(null);
   const [chatStartTime] = useState(formatTimestamp);
   const scrollRef = useRef<HTMLDivElement>(null);
   const recognitionRef = useRef<any>(null);
@@ -90,6 +98,50 @@ const AIChatPanel = ({ isOpen, onClose, embedded = false, chatFirst = false }: A
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
     }
   }, [messages, isTyping, interimTranscript]);
+
+  useEffect(() => {
+    let mounted = true;
+    const loadContext = async () => {
+      try {
+        const [me, profile, portfolio] = await Promise.all([
+          getMe(),
+          getFullProfile(),
+          getMyPortfolio().catch(() => null),
+        ]);
+        if (!mounted) return;
+        setClientContext({
+          user: {
+            id: me.id,
+            first_name: me.first_name,
+            last_name: me.last_name,
+            is_onboarding_complete: me.is_onboarding_complete,
+          },
+          profile,
+          portfolio,
+        });
+      } catch {
+        if (mounted) setClientContext(null);
+      }
+    };
+    loadContext();
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
+  const tillyInsight = (() => {
+    const p = clientContext?.portfolio as PortfolioDetail | null | undefined;
+    if (!p || p.total_value <= 0) {
+      return "Connect your profile and portfolio to get personalised insights here.";
+    }
+    const fmt = (n: number) =>
+      n >= 100000 ? `₹${(n / 100000).toFixed(1)}L` : `₹${Math.round(n).toLocaleString("en-IN")}`;
+    if (!p.allocations.length) {
+      return `Your portfolio is valued at ${fmt(p.total_value)}. Add allocation details for richer guidance.`;
+    }
+    const top = [...p.allocations].sort((a, b) => b.allocation_percentage - a.allocation_percentage)[0];
+    return `Your portfolio is ${fmt(p.total_value)}. Top sleeve: ${top.asset_class} (~${top.allocation_percentage.toFixed(0)}%). Ask me how to rebalance or align with your goals.`;
+  })();
 
   const ensureSession = useCallback(async (): Promise<string> => {
     if (sessionIdRef.current) return sessionIdRef.current;
@@ -109,17 +161,17 @@ const AIChatPanel = ({ isOpen, onClose, embedded = false, chatFirst = false }: A
 
     try {
       const sid = await ensureSession();
-      const resp = await sendChatMessage(sid, trimmed);
+      const resp = await sendChatMessage(sid, trimmed, clientContext ?? undefined);
       setIsTyping(false);
       setMessages((prev) => [...prev, { role: "ai", content: resp.assistant_message.content }]);
     } catch (err: any) {
       setIsTyping(false);
       const fallback = err?.message?.includes("401") || err?.message?.includes("Not authenticated")
         ? "Please log in to use the chat."
-        : "Sorry, something went wrong. Please try again.";
+        : (err?.message ? `Request failed: ${err.message}` : "Sorry, something went wrong. Please try again.");
       setMessages((prev) => [...prev, { role: "ai", content: fallback }]);
     }
-  }, [ensureSession]);
+  }, [ensureSession, clientContext]);
 
   const toggleListening = useCallback(() => {
     setMicError(false);
@@ -290,7 +342,7 @@ const AIChatPanel = ({ isOpen, onClose, embedded = false, chatFirst = false }: A
                   }}
                 >
                   <p className="mb-0.5 text-[10px] font-semibold" style={{ color: "hsl(38, 45%, 54%)" }}>💡 Tilly Insight</p>
-                  Your portfolio is currently equity-heavy at 62%. Consider rebalancing with more debt instruments for stability.
+                  {tillyInsight}
                 </div>
               </div>
             </motion.div>
