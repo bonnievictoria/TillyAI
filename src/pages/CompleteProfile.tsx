@@ -551,7 +551,7 @@ const CompleteProfile = () => {
           if (rp.frequency) setReviewFreq(rp.frequency);
           if (rp.triggers) setReviewTriggers(rp.triggers);
           if (rp.update_process) setUpdateProcess(rp.update_process);
-          if (rp.frequency) newStatuses[7] = "confirmed";
+          if (rp.frequency) newStatuses[6] = "confirmed";
         }
 
         setStatuses(newStatuses);
