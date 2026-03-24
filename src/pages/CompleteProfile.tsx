@@ -64,7 +64,6 @@ const SECTION_TITLES = [
   "What are you trying to achieve?",
   "How much risk can you handle?",
   "Rules & limits",
-  "Time horizon",
   "Tax situation",
   "Staying involved",
 ];
