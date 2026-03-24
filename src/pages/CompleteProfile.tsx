@@ -838,11 +838,29 @@ const CompleteProfile = () => {
               <FieldLabel>Do you own a home?</FieldLabel>
               <Toggle value={ownsHome} onChange={setOwnsHome} labelA="No" labelB="Yes" />
               {ownsHome && (
-                <div className="mt-3 space-y-2 pl-1 border-l-2 border-accent/20 ml-1">
-                  <div><label className="text-[10px] text-muted-foreground">Property value</label><TextInput value={propertyValue} onChange={setPropertyValue} prefix="₹" placeholder="e.g. 1.20 Cr" /></div>
-                  <div><label className="text-[10px] text-muted-foreground">Total outstanding mortgage</label><TextInput value={mortgage} onChange={setMortgage} prefix="₹" placeholder="e.g. 45,00,000" /></div>
-                  <div><label className="text-[10px] text-muted-foreground">Current monthly repayment</label><TextInput value={monthlyRepayment} onChange={setMonthlyRepayment} prefix="₹" placeholder="e.g. 35,000" /></div>
-                  <div><label className="text-[10px] text-muted-foreground">Year purchased</label><TextInput value={yearPurchased} onChange={setYearPurchased} placeholder="e.g. 2018" /></div>
+                <div className="mt-3 space-y-3">
+                  {properties.map((prop, idx) => {
+                    const updateProp = (field: keyof Property, val: string) => {
+                      setProperties(prev => prev.map((p, i) => i === idx ? { ...p, [field]: val } : p));
+                    };
+                    return (
+                      <div key={idx} className="relative space-y-2 pl-1 border-l-2 border-accent/20 ml-1 rounded-lg bg-card p-3">
+                        {properties.length > 1 && (
+                          <button onClick={() => setProperties(prev => prev.filter((_, i) => i !== idx))} className="absolute top-2 right-2 h-5 w-5 flex items-center justify-center rounded-full bg-muted hover:bg-destructive/20 transition-colors">
+                            <X className="h-3 w-3 text-muted-foreground" />
+                          </button>
+                        )}
+                        {properties.length > 1 && <p className="text-[10px] font-semibold text-muted-foreground mb-1">Property {idx + 1}</p>}
+                        <div><label className="text-[10px] text-muted-foreground">Property value</label><TextInput value={prop.value} onChange={(v) => updateProp("value", v)} prefix="₹" placeholder="e.g. 1.20 Cr" /></div>
+                        <div><label className="text-[10px] text-muted-foreground">Total outstanding mortgage</label><TextInput value={prop.mortgage} onChange={(v) => updateProp("mortgage", v)} prefix="₹" placeholder="e.g. 45,00,000" /></div>
+                        <div><label className="text-[10px] text-muted-foreground">Current monthly repayment</label><TextInput value={prop.monthlyRepayment} onChange={(v) => updateProp("monthlyRepayment", v)} prefix="₹" placeholder="e.g. 35,000" /></div>
+                        <div><label className="text-[10px] text-muted-foreground">Year purchased</label><TextInput value={prop.yearPurchased} onChange={(v) => updateProp("yearPurchased", v)} placeholder="e.g. 2018" /></div>
+                      </div>
+                    );
+                  })}
+                  <button onClick={() => setProperties(prev => [...prev, { value: "", mortgage: "", monthlyRepayment: "", yearPurchased: "" }])} className="flex items-center gap-1 text-xs font-medium text-accent hover:text-accent/80 transition-colors mt-1">
+                    <Plus className="h-3 w-3" /> Add another property
+                  </button>
                 </div>
               )}
             </div>
