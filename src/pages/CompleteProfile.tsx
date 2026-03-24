@@ -24,6 +24,13 @@ interface OtherAsset {
   value: string;
 }
 
+interface Property {
+  value: string;
+  mortgage: string;
+  monthlyRepayment: string;
+  yearPurchased: string;
+}
+
 interface GoalDetail {
   amount: string;
   currency: string;
