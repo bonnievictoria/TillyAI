@@ -64,7 +64,6 @@ const SECTION_TITLES = [
   "What are you trying to achieve?",
   "How much risk can you handle?",
   "Rules & limits",
-  "Time horizon",
   "Tax situation",
   "Staying involved",
 ];
@@ -390,7 +389,7 @@ const toNum = (s: string): number | null => {
 const CompleteProfile = () => {
   const navigate = useNavigate();
   const [openSection, setOpenSection] = useState(0);
-  const [statuses, setStatuses] = useState<SectionStatus[]>(Array(8).fill("not_started"));
+  const [statuses, setStatuses] = useState<SectionStatus[]>(Array(7).fill("not_started"));
   const [profileLoaded, setProfileLoaded] = useState(false);
 
   // Section 0 — Who are you?
@@ -446,17 +445,15 @@ const CompleteProfile = () => {
   const [derivativesNotes, setDerivativesNotes] = useState("");
   const [diversificationNotes, setDiversificationNotes] = useState("");
 
-  // Section 5 — Time horizon
-  const [multiPhase, setMultiPhase] = useState(false);
-  const [phaseDescription, setPhaseDescription] = useState("");
-  const [totalHorizon, setTotalHorizon] = useState("");
-
-  // Section 6 — Tax
+  // Section 5 — Tax
   const [incomeTaxRate, setIncomeTaxRate] = useState("");
   const [cgtRate, setCgtRate] = useState("");
   const [taxNotes, setTaxNotes] = useState("");
 
-  // Section 7 — Review
+  // Investment horizon notes (in risk section)
+  const [horizonNotes, setHorizonNotes] = useState("");
+
+  // Section 6 — Review
   const [reviewFreq, setReviewFreq] = useState("Quarterly");
   const [reviewTriggers, setReviewTriggers] = useState<string[]>([]);
   const [updateProcess, setUpdateProcess] = useState("");
@@ -468,7 +465,7 @@ const CompleteProfile = () => {
       try {
         const p = await getFullProfile();
         if (cancelled) return;
-        const newStatuses: SectionStatus[] = Array(8).fill("not_started");
+        const newStatuses: SectionStatus[] = Array(7).fill("not_started");
 
         // Section 0 — personal info
         if (p.personal_info) {
@@ -504,11 +501,6 @@ const CompleteProfile = () => {
           if (ip.objectives?.length) setSelectedObjectives(ip.objectives);
           if (ip.objectives?.length) newStatuses[2] = "confirmed";
 
-          // Section 5 — time horizon
-          if (ip.is_multi_phase_horizon != null) setMultiPhase(ip.is_multi_phase_horizon);
-          if (ip.phase_description) setPhaseDescription(ip.phase_description);
-          if (ip.total_horizon) setTotalHorizon(ip.total_horizon);
-          if (ip.total_horizon) newStatuses[5] = "confirmed";
         }
 
         // Section 3 — risk
@@ -544,22 +536,22 @@ const CompleteProfile = () => {
           if (ic.permitted_assets?.length) newStatuses[4] = "confirmed";
         }
 
-        // Section 6 — tax
+        // Section 5 — tax
         if (p.tax_profile) {
           const tp = p.tax_profile;
           if (tp.income_tax_rate != null) setIncomeTaxRate(String(tp.income_tax_rate));
           if (tp.capital_gains_tax_rate != null) setCgtRate(String(tp.capital_gains_tax_rate));
           if (tp.notes) setTaxNotes(tp.notes);
-          if (tp.income_tax_rate != null) newStatuses[6] = "confirmed";
+          if (tp.income_tax_rate != null) newStatuses[5] = "confirmed";
         }
 
-        // Section 7 — review
+        // Section 6 — review
         if (p.review_preference) {
           const rp = p.review_preference;
           if (rp.frequency) setReviewFreq(rp.frequency);
           if (rp.triggers) setReviewTriggers(rp.triggers);
           if (rp.update_process) setUpdateProcess(rp.update_process);
-          if (rp.frequency) newStatuses[7] = "confirmed";
+          if (rp.frequency) newStatuses[6] = "confirmed";
         }
 
         setStatuses(newStatuses);
@@ -575,8 +567,8 @@ const CompleteProfile = () => {
   }, []);
 
   const confirmedCount = statuses.filter((s) => s === "confirmed").length;
-  const progressPercent = Math.round((confirmedCount / 8) * 100);
-  const allConfirmed = confirmedCount === 8;
+  const progressPercent = Math.round((confirmedCount / 7) * 100);
+  const allConfirmed = confirmedCount === 7;
 
   const totalMaxAllocation = useMemo(() => {
     return permittedAssets.reduce((sum, a) => sum + (allocations[a]?.max || 0), 0);
@@ -672,20 +664,13 @@ const CompleteProfile = () => {
           });
           break;
         case 5:
-          await updateInvestmentProfile({
-            is_multi_phase_horizon: multiPhase,
-            phase_description: phaseDescription || null,
-            total_horizon: totalHorizon || null,
-          });
-          break;
-        case 6:
           await updateTaxProfile({
             income_tax_rate: incomeTaxRate ? Number(incomeTaxRate) : null,
             capital_gains_tax_rate: cgtRate ? Number(cgtRate) : null,
             notes: taxNotes || null,
           });
           break;
-        case 7:
+        case 6:
           await updateReviewPreference({
             frequency: reviewFreq || null,
             triggers: reviewTriggers.length ? reviewTriggers : null,
@@ -704,15 +689,14 @@ const CompleteProfile = () => {
       next[idx] = "confirmed";
       return next;
     });
-    if (idx < 7) setOpenSection(idx + 1);
+    if (idx < 6) setOpenSection(idx + 1);
     toast.success(`Section ${idx + 1} confirmed ✓`);
   }, [
     occupation, primaryResidence, earningMembers, dependents, values,
     primaryWealthSource, investableAssets, liabilities, properties, plannedExpenses, emergencyFund, emergencyTimeframe, otherAssets, ownsHome, expectingLargeIncome, largeIncomeAmount, largeIncomeCurrency, largeIncomeYear,
     selectedObjectives, goalDetails,
-    riskLevelIdx, riskCapacity, investmentExperience, investmentHorizon, riskQ1, riskQ2, riskQ3, maxDrawdown, comfortAssets,
+    riskLevelIdx, riskCapacity, investmentExperience, investmentHorizon, horizonNotes, riskQ1, riskQ2, riskQ3, maxDrawdown, comfortAssets,
     permittedAssets, allocations, prohibited, leverage, derivatives, diversificationNotes,
-    multiPhase, phaseDescription, totalHorizon,
     incomeTaxRate, cgtRate, taxNotes,
     reviewFreq, reviewTriggers, updateProcess,
   ]);
@@ -974,6 +958,17 @@ const CompleteProfile = () => {
               </div>
             </div>
 
+            <div>
+              <FieldLabel>Any specifics you'd like to share about your investment horizon?</FieldLabel>
+              <textarea
+                value={horizonNotes}
+                onChange={(e) => setHorizonNotes(e.target.value)}
+                placeholder="e.g. I plan to retire in 10 years but may need some funds in 3 years for a home purchase..."
+                rows={3}
+                className="w-full rounded-lg border border-border bg-card px-3 py-2 text-sm text-foreground outline-none focus:border-accent transition-colors placeholder:text-[12px] resize-none"
+              />
+            </div>
+
             {/* New Q1 */}
             <div>
               <FieldLabel>If your portfolio dropped 20%+ in one month, what would you do?</FieldLabel>
@@ -1077,21 +1072,8 @@ const CompleteProfile = () => {
           </div>
         );
 
-      /* ── Section 5: Time horizon ── */
+      /* ── Section 5: Tax situation ── */
       case 5:
-        return (
-          <div className="space-y-4">
-            <div>
-              <FieldLabel>Single or multi-phase</FieldLabel>
-              <Toggle value={multiPhase} onChange={setMultiPhase} labelA="One continuous period" labelB="Multiple phases" />
-            </div>
-            {multiPhase && <div><FieldLabel>Phase description</FieldLabel><TextInput value={phaseDescription} onChange={setPhaseDescription} placeholder="Describe your investment phases" /></div>}
-            <div><FieldLabel>Total horizon (years)</FieldLabel><TextInput value={totalHorizon} onChange={setTotalHorizon} placeholder="e.g. 15" /></div>
-          </div>
-        );
-
-      /* ── Section 6: Tax situation ── */
-      case 6:
         return (
           <div className="space-y-3">
             <div><FieldLabel>Income tax rate</FieldLabel><TextInput value={incomeTaxRate} onChange={setIncomeTaxRate} placeholder="e.g. 30" /></div>
@@ -1100,8 +1082,8 @@ const CompleteProfile = () => {
           </div>
         );
 
-      /* ── Section 7: Staying involved ── */
-      case 7:
+      /* ── Section 6: Staying involved ── */
+      case 6:
         return (
           <div className="space-y-4">
             <div>
@@ -1148,8 +1130,8 @@ const CompleteProfile = () => {
       {/* Progress */}
       <div className="px-5 pt-3 pb-2">
         <div className="flex items-center justify-between mb-1">
-          <span className="text-[11px] text-muted-foreground font-medium">Section {Math.min(openSection + 1, 8)} of 8</span>
-          <span className="text-[11px] text-muted-foreground">{confirmedCount}/8 confirmed</span>
+          <span className="text-[11px] text-muted-foreground font-medium">Section {Math.min(openSection + 1, 7)} of 7</span>
+          <span className="text-[11px] text-muted-foreground">{confirmedCount}/7 confirmed</span>
         </div>
         <div className="h-1.5 w-full rounded-full bg-muted overflow-hidden">
           <motion.div className="h-full rounded-full bg-accent" initial={{ width: 0 }} animate={{ width: `${progressPercent}%` }} transition={{ duration: 0.5 }} />
