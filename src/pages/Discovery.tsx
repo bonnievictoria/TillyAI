@@ -1,10 +1,18 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   TrendingUp, ArrowUpRight, ArrowDownRight, Search, ArrowRight, ArrowLeft, X,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import BottomNav from "@/components/BottomNav";
+import {
+  listDiscoveryFunds,
+  listDiscoveryHouseView,
+  listDiscoverySectors,
+  listDiscoveryTrending,
+  type DiscoveryFund,
+  type DiscoverySector,
+} from "@/lib/api";
 
 /* ── Sparkline SVGs — unique per sector ── */
 const sparklines: Record<string, string> = {
@@ -29,12 +37,13 @@ const SectorIcon = ({ sector }: { sector: string }) => {
     Infrastructure: <path d="M4 21V8l4-4 4 4v13M16 21V12l4-4v13M8 11v2M8 16v2M12 11v2M12 16v2" strokeWidth="1.5" stroke="currentColor" fill="none" strokeLinecap="round" />,
     FMCG: <><rect x="4" y="4" width="16" height="16" rx="2" strokeWidth="1.5" stroke="currentColor" fill="none" /><path d="M8 10h8M8 14h5" strokeWidth="1.5" stroke="currentColor" fill="none" strokeLinecap="round" /></>,
     Auto: <><path d="M5 17h14M7 17l1-5h8l1 5" strokeWidth="1.5" stroke="currentColor" fill="none" strokeLinecap="round" strokeLinejoin="round" /><circle cx="8" cy="17" r="1.5" strokeWidth="1.5" stroke="currentColor" fill="none" /><circle cx="16" cy="17" r="1.5" strokeWidth="1.5" stroke="currentColor" fill="none" /><path d="M9 12l1-3h4l1 3" strokeWidth="1.5" stroke="currentColor" fill="none" strokeLinecap="round" /></>,
+    default: <circle cx="12" cy="12" r="8" strokeWidth="1.5" stroke="currentColor" fill="none" />,
   };
-  return <svg viewBox="0 0 24 24" className="h-5 w-5">{icons[sector]}</svg>;
+  return <svg viewBox="0 0 24 24" className="h-5 w-5">{icons[sector] ?? icons.default}</svg>;
 };
 
 /* ── Sectors ── */
-const sectors = [
+const FALLBACK_SECTORS = [
   { label: "Technology", badgeBg: "bg-blue-100 dark:bg-blue-900/40", badgeText: "text-blue-700 dark:text-blue-300", return1Y: "+22.1%" },
   { label: "Healthcare", badgeBg: "bg-teal-100 dark:bg-teal-900/40", badgeText: "text-teal-700 dark:text-teal-300", return1Y: "+9.8%" },
   { label: "Banking & Finance", badgeBg: "bg-amber-100 dark:bg-amber-900/40", badgeText: "text-amber-700 dark:text-amber-300", return1Y: "+14.2%" },
@@ -83,7 +92,7 @@ const sectorFunds: Record<string, { name: string; category: string; returns1Y: s
 };
 
 /* ── Trending funds ── */
-const trending = [
+const FALLBACK_TRENDING = [
   { name: "HDFC Mid-Cap Opportunities", category: "Mid Cap", returns: "+18.2%", returns3Y: "+14.6%", returns5Y: "+12.1%", positive: true, risk: "Moderate", minInvestment: "₹5,000", description: "Invests in high-growth mid-cap companies with strong fundamentals." },
   { name: "SBI Small Cap Fund", category: "Small Cap", returns: "+22.4%", returns3Y: "+18.1%", returns5Y: "+15.3%", positive: true, risk: "High", minInvestment: "₹5,000", description: "Focuses on emerging small-cap stocks with high return potential." },
   { name: "Axis Bluechip Fund", category: "Large Cap", returns: "+14.1%", returns3Y: "+12.4%", returns5Y: "+11.2%", positive: true, risk: "Low", minInvestment: "₹1,000", description: "Stable large-cap fund investing in top blue-chip companies." },
@@ -92,7 +101,7 @@ const trending = [
 ];
 
 /* ── For you funds ── */
-const forYouFunds = [
+const FALLBACK_FOR_YOU = [
   { name: "HDFC Mid-Cap Opportunities", subtitle: "Matches your long-term goal", category: "Mid Cap", returns: "+18.2%", returns3Y: "+14.6%", returns5Y: "+12.1%", positive: true, risk: "Moderate", minInvestment: "₹5,000", description: "Invests in high-growth mid-cap companies with strong fundamentals.", badgeBg: "bg-emerald-100 dark:bg-emerald-900/40", badgeText: "text-emerald-700 dark:text-emerald-300" },
   { name: "Parag Parikh Flexi Cap", subtitle: "Good for your retirement horizon", category: "Flexi Cap", returns: "+22.1%", returns3Y: "+16.8%", returns5Y: "+14.2%", positive: true, risk: "Moderate", minInvestment: "₹1,000", description: "Diversified flexi-cap fund with international equity allocation.", badgeBg: "bg-violet-100 dark:bg-violet-900/40", badgeText: "text-violet-700 dark:text-violet-300" },
 ];
@@ -102,6 +111,68 @@ const riskColor = (r: string) => {
   if (r === "High") return "bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400";
   return "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400";
 };
+
+const SECTOR_STYLES = FALLBACK_SECTORS.map((s) => ({ badgeBg: s.badgeBg, badgeText: s.badgeText }));
+
+function fmtRetPct(n: number | null | undefined): string {
+  if (n == null) return "—";
+  return `${n >= 0 ? "+" : ""}${n.toFixed(1)}%`;
+}
+
+function mapApiTrending(f: DiscoveryFund): (typeof FALLBACK_TRENDING)[number] {
+  const r1 = f.return_1y;
+  const positive = r1 == null || r1 >= 0;
+  return {
+    name: f.name,
+    category: f.category ?? "—",
+    returns: fmtRetPct(r1),
+    returns3Y: fmtRetPct(f.return_3y),
+    returns5Y: fmtRetPct(f.return_5y),
+    positive,
+    risk: f.risk_level ?? "Moderate",
+    minInvestment: f.min_investment != null ? `₹${f.min_investment.toLocaleString("en-IN")}` : "—",
+    description: f.description ?? "",
+  };
+}
+
+function mapApiSector(s: DiscoverySector, i: number): (typeof FALLBACK_SECTORS)[number] {
+  const st = SECTOR_STYLES[i % SECTOR_STYLES.length];
+  const staticMatch = FALLBACK_SECTORS.find((x) => x.label.toLowerCase() === s.sector.toLowerCase());
+  return {
+    label: s.sector,
+    badgeBg: st.badgeBg,
+    badgeText: st.badgeText,
+    return1Y: staticMatch?.return1Y ?? `${s.fund_count} funds`,
+  };
+}
+
+function mapForYouFromFunds(funds: DiscoveryFund[]): typeof FALLBACK_FOR_YOU {
+  const subtitles = ["Matches your long-term goal", "Aligned with your profile"];
+  return funds.map((f, i) => ({
+    name: f.name,
+    subtitle: subtitles[i % subtitles.length],
+    category: f.category ?? "—",
+    returns: fmtRetPct(f.return_1y),
+    returns3Y: fmtRetPct(f.return_3y),
+    returns5Y: fmtRetPct(f.return_5y),
+    positive: f.return_1y == null || f.return_1y >= 0,
+    risk: f.risk_level ?? "Moderate",
+    minInvestment: f.min_investment != null ? `₹${f.min_investment.toLocaleString("en-IN")}` : "—",
+    description: f.description ?? "",
+    badgeBg: SECTOR_STYLES[i % SECTOR_STYLES.length].badgeBg,
+    badgeText: SECTOR_STYLES[i % SECTOR_STYLES.length].badgeText,
+  }));
+}
+
+function mapFundToSectorRows(funds: DiscoveryFund[]): { name: string; category: string; returns1Y: string; returns3Y: string; risk: string }[] {
+  return funds.map((f) => ({
+    name: f.name,
+    category: f.category ?? "—",
+    returns1Y: fmtRetPct(f.return_1y),
+    returns3Y: fmtRetPct(f.return_3y),
+    risk: f.risk_level ?? "Moderate",
+  }));
+}
 
 interface FundDetail {
   name: string;
@@ -118,6 +189,48 @@ const Discovery = () => {
   const navigate = useNavigate();
   const [viewFund, setViewFund] = useState<FundDetail | null>(null);
   const [viewSector, setViewSector] = useState<string | null>(null);
+  const [trendingRows, setTrendingRows] = useState<(typeof FALLBACK_TRENDING)[number][] | null>(null);
+  const [sectorRows, setSectorRows] = useState<(typeof FALLBACK_SECTORS)[number][] | null>(null);
+  const [forYouFunds, setForYouFunds] = useState<typeof FALLBACK_FOR_YOU>(FALLBACK_FOR_YOU);
+  const [sectorFundsFromApi, setSectorFundsFromApi] = useState<
+    Record<string, ReturnType<typeof mapFundToSectorRows>>
+  >({});
+  const sectorFetchStarted = useRef<Set<string>>(new Set());
+
+  useEffect(() => {
+    listDiscoveryTrending()
+      .then((funds) => {
+        if (funds.length) setTrendingRows(funds.map(mapApiTrending));
+      })
+      .catch(() => {});
+    listDiscoverySectors()
+      .then((secs) => {
+        if (secs.length) setSectorRows(secs.map(mapApiSector));
+      })
+      .catch(() => {});
+    Promise.all([listDiscoveryHouseView(), listDiscoveryFunds({ limit: 4 })])
+      .then(([hv, fl]) => {
+        const src = hv.length ? hv : fl.funds;
+        if (src.length) setForYouFunds(mapForYouFromFunds(src.slice(0, 2)));
+      })
+      .catch(() => {});
+  }, []);
+
+  useEffect(() => {
+    if (!viewSector) return;
+    if (sectorFetchStarted.current.has(viewSector)) return;
+    sectorFetchStarted.current.add(viewSector);
+    listDiscoveryFunds({ sector: viewSector, limit: 20 })
+      .then((res) => {
+        setSectorFundsFromApi((prev) => ({ ...prev, [viewSector]: mapFundToSectorRows(res.funds) }));
+      })
+      .catch(() => {
+        setSectorFundsFromApi((prev) => ({ ...prev, [viewSector]: [] }));
+      });
+  }, [viewSector]);
+
+  const trending = trendingRows ?? FALLBACK_TRENDING;
+  const sectors = sectorRows ?? FALLBACK_SECTORS;
 
   return (
     <div className="mobile-container bg-background min-h-screen pb-20">
@@ -224,7 +337,7 @@ const Discovery = () => {
                 {/* Sparkline */}
                 <svg viewBox="0 0 40 22" className="w-full h-4 mt-2" preserveAspectRatio="none">
                   <polyline
-                    points={sparklines[s.label]}
+                    points={sparklines[s.label] ?? sparklines.Technology}
                     fill="none"
                     stroke="hsl(var(--wealth-green))"
                     strokeWidth="1.5"
@@ -379,7 +492,7 @@ const Discovery = () => {
               </div>
 
               <div className="space-y-2.5">
-                {(sectorFunds[viewSector] || []).map((fund) => (
+                {(sectorFundsFromApi[viewSector] ?? sectorFunds[viewSector] ?? []).map((fund) => (
                   <div key={fund.name} className="rounded-xl bg-secondary/40 border border-border/40 p-3.5">
                     <div className="flex items-center justify-between mb-1">
                       <p className="text-xs font-semibold text-foreground">{fund.name}</p>
