@@ -450,7 +450,10 @@ const CompleteProfile = () => {
   const [cgtRate, setCgtRate] = useState("");
   const [taxNotes, setTaxNotes] = useState("");
 
-  // Section 7 — Review
+  // Investment horizon notes (in risk section)
+  const [horizonNotes, setHorizonNotes] = useState("");
+
+  // Section 6 — Review
   const [reviewFreq, setReviewFreq] = useState("Quarterly");
   const [reviewTriggers, setReviewTriggers] = useState<string[]>([]);
   const [updateProcess, setUpdateProcess] = useState("");
