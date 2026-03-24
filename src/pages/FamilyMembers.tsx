@@ -129,6 +129,7 @@ const FamilyMembers = () => {
         ...form,
         nickname: form.nickname.trim(),
         phone: form.phone.trim(),
+        country_code: "+91",
         email: form.email?.trim() || undefined,
       });
       toast.success(`OTP sent to ${form.phone}`);
@@ -183,7 +184,12 @@ const FamilyMembers = () => {
       await refreshMembers();
     } catch (err) {
       if (err instanceof BackendOfflineError) return;
-      toast.error(err instanceof Error ? err.message : "Failed to create account");
+      const msg = err instanceof Error ? err.message : "";
+      if (msg.includes("already exists") || msg.includes("409")) {
+        toast.error("An account already exists for this number. Use “Add member” (link existing user), not “Create account”.");
+      } else {
+        toast.error(msg || "Failed to create account");
+      }
     } finally {
       setSubmitting(false);
     }
