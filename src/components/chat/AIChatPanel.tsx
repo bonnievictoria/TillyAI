@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { motion, AnimatePresence } from "framer-motion";
-import { X, Send, Mic, MicOff, AlertCircle, Loader2, Sparkles, Check, Square } from "lucide-react";
+import { X, Send, Mic, MicOff, AlertCircle, Loader2, Sparkles, Check, Square, ChevronDown, ChevronUp, Pencil } from "lucide-react";
 import { useState, useRef, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import {
@@ -26,9 +26,10 @@ interface AIChatPanelProps {
 interface Message {
   role: "user" | "ai";
   content: string;
-  type?: "section-start" | "summary";
+  type?: "section-start" | "summary" | "kudos";
   sectionName?: string;
   summaryNotes?: string[];
+  kudosId?: number;
 }
 
 type MicState = "idle" | "listening" | "processing";
@@ -58,6 +59,16 @@ const CHAT_ONBOARDING_NOTES: Record<number, string[]> = {
   5: ["Indian tax resident", "30% tax bracket", "Has PPF and NPS accounts", "Interested in ELSS for tax saving"],
   6: ["Quarterly review preferred", "Email updates are fine", "Wants alerts for major rebalancing", "Comfortable with advisor-led decisions"],
 };
+
+const KUDOS_MESSAGES = [
+  "Great progress — that's one more piece of the picture. 🌟",
+  "You're doing brilliantly. Keep going.",
+  "Section complete. You're ahead of 80% of people who start this.",
+  "Nice work. Every answer brings your plan closer to reality.",
+  "That was smooth — onwards! ✨",
+  "You're building something great here.",
+  "Another step closer to your financial clarity. 💎",
+];
 
 const formatTimestamp = () => {
   const now = new Date();
@@ -104,6 +115,169 @@ const TillyAvatar = () => (
   </div>
 );
 
+/* ── Particle burst component ── */
+const ParticleBurst = ({ active }: { active: boolean }) => {
+  if (!active) return null;
+  const particles = Array.from({ length: 14 }, (_, i) => ({
+    id: i,
+    x: (Math.random() - 0.5) * 120,
+    y: -(Math.random() * 80 + 30),
+    size: Math.random() * 4 + 2,
+    delay: Math.random() * 0.3,
+    isStar: i % 3 === 0,
+  }));
+
+  return (
+    <div className="absolute inset-0 pointer-events-none overflow-visible" style={{ zIndex: 10 }}>
+      {particles.map((p) => (
+        <motion.span
+          key={p.id}
+          initial={{ opacity: 1, x: 0, y: 0, scale: 1 }}
+          animate={{ opacity: 0, x: p.x, y: p.y, scale: 0.3 }}
+          transition={{ duration: 1.2, delay: p.delay, ease: "easeOut" }}
+          className="absolute left-1/2 top-0"
+          style={{ fontSize: p.size + "px", color: p.isStar ? "hsl(var(--accent))" : "hsl(var(--primary))" }}
+        >
+          {p.isStar ? "✦" : "●"}
+        </motion.span>
+      ))}
+    </div>
+  );
+};
+
+/* ── Collapsible summary card ── */
+const SummaryCard = ({ sectionName, notes }: { sectionName: string; notes: string[] }) => {
+  const [expanded, setExpanded] = useState(true);
+  const [editing, setEditing] = useState(false);
+  const [editNotes, setEditNotes] = useState(notes);
+  const [showParticles, setShowParticles] = useState(true);
+
+  useEffect(() => {
+    const t = setTimeout(() => setShowParticles(false), 1400);
+    return () => clearTimeout(t);
+  }, []);
+
+  const handleSave = () => {
+    setEditing(false);
+  };
+
+  return (
+    <div className="relative flex gap-2 items-start max-w-[88%]">
+      <TillyAvatar />
+      <div
+        className="rounded-xl flex-1 px-3 py-2.5 relative overflow-visible"
+        style={{
+          background: "linear-gradient(135deg, hsla(222, 47%, 14%, 0.85), hsla(220, 35%, 20%, 0.9))",
+          border: "1px solid hsla(215, 60%, 48%, 0.35)",
+          backdropFilter: "blur(12px)",
+          boxShadow: "0 4px 20px -4px hsla(215, 60%, 48%, 0.15)",
+        }}
+      >
+        <ParticleBurst active={showParticles} />
+        {/* Header */}
+        <div className="flex items-center justify-between gap-1.5 mb-1">
+          <div className="flex items-center gap-1.5">
+            <span className="text-[11px]">✅</span>
+            <span className="text-[11px] font-semibold text-primary-foreground/90">{sectionName} — captured</span>
+          </div>
+          <div className="flex items-center gap-1">
+            {!editing && (
+              <button
+                onClick={() => setEditing(true)}
+                className="p-0.5 rounded hover:bg-white/10 transition-colors"
+              >
+                <Pencil className="h-2.5 w-2.5 text-primary-foreground/50" />
+              </button>
+            )}
+            <button
+              onClick={() => setExpanded(!expanded)}
+              className="p-0.5 rounded hover:bg-white/10 transition-colors"
+            >
+              {expanded ? (
+                <ChevronUp className="h-3 w-3 text-primary-foreground/50" />
+              ) : (
+                <ChevronDown className="h-3 w-3 text-primary-foreground/50" />
+              )}
+            </button>
+          </div>
+        </div>
+        {/* Content */}
+        <AnimatePresence>
+          {expanded && (
+            <motion.div
+              initial={{ height: 0, opacity: 0 }}
+              animate={{ height: "auto", opacity: 1 }}
+              exit={{ height: 0, opacity: 0 }}
+              transition={{ duration: 0.2 }}
+              className="overflow-hidden"
+            >
+              {editing ? (
+                <div className="space-y-1 mt-1">
+                  {editNotes.map((note, ni) => (
+                    <input
+                      key={ni}
+                      value={note}
+                      onChange={(e) => {
+                        const updated = [...editNotes];
+                        updated[ni] = e.target.value;
+                        setEditNotes(updated);
+                      }}
+                      className="w-full bg-white/10 rounded px-2 py-1 text-[10px] text-primary-foreground/80 outline-none border border-white/10 focus:border-accent/50"
+                    />
+                  ))}
+                  <button
+                    onClick={handleSave}
+                    className="mt-1 rounded-full bg-accent/20 border border-accent/30 px-3 py-0.5 text-[10px] font-medium text-accent hover:bg-accent/30 transition-colors"
+                  >
+                    Save
+                  </button>
+                </div>
+              ) : (
+                <ul className="space-y-0.5">
+                  {editNotes.map((note, ni) => (
+                    <li key={ni} className="text-[10px] text-primary-foreground/60 leading-relaxed">• {note}</li>
+                  ))}
+                </ul>
+              )}
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
+    </div>
+  );
+};
+
+/* ── Kudos bubble (auto-fades) ── */
+const KudosBubble = ({ text, onDismiss }: { text: string; onDismiss: () => void }) => {
+  useEffect(() => {
+    const t = setTimeout(onDismiss, 4000);
+    return () => clearTimeout(t);
+  }, [onDismiss]);
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, scale: 0.95 }}
+      animate={{ opacity: 1, scale: 1 }}
+      exit={{ opacity: 0, scale: 0.95 }}
+      transition={{ duration: 0.3 }}
+      className="flex justify-center my-1"
+      onClick={onDismiss}
+    >
+      <div
+        className="rounded-2xl px-4 py-2 text-center text-[11px] italic cursor-pointer"
+        style={{
+          background: "linear-gradient(135deg, hsla(215, 60%, 48%, 0.12), hsla(222, 47%, 14%, 0.08))",
+          border: "1px solid hsla(215, 60%, 48%, 0.2)",
+          boxShadow: "0 0 16px -4px hsla(215, 60%, 48%, 0.2)",
+          color: "hsl(var(--accent))",
+        }}
+      >
+        {text}
+      </div>
+    </motion.div>
+  );
+};
+
 const AIChatPanel = ({ isOpen, onClose, embedded = false, chatFirst = false, completionMessage, onCompletionShown }: AIChatPanelProps) => {
   const navigate = useNavigate();
   const [messages, setMessages] = useState<Message[]>([]);
@@ -118,6 +292,14 @@ const AIChatPanel = ({ isOpen, onClose, embedded = false, chatFirst = false, com
   const scrollRef = useRef<HTMLDivElement>(null);
   const recognitionRef = useRef<any>(null);
   const sessionIdRef = useRef<string | null>(null);
+  const kudosCounterRef = useRef(0);
+
+  /* ── Kudos dismissal ── */
+  const [dismissedKudos, setDismissedKudos] = useState<Set<number>>(new Set());
+
+  const dismissKudos = useCallback((id: number) => {
+    setDismissedKudos((prev) => new Set(prev).add(id));
+  }, []);
 
   /* ── Onboarding state ── */
   const [onboardingActive, setOnboardingActive] = useState(false);
@@ -193,14 +375,24 @@ const AIChatPanel = ({ isOpen, onClose, embedded = false, chatFirst = false, com
   const startOnboarding = useCallback(() => {
     setOnboardingActive(true);
     setOnboardingSection(0);
-    setAwaitingResponse(true);
+    setAwaitingResponse(false);
     setShowFirstUseHint(false);
-    const section = CHAT_ONBOARDING_SECTIONS[0];
+
+    // Show greeting first, then first question after a delay
     setMessages((prev) => [
       ...prev,
-      { role: "ai", content: `Section 1 of 7 · ${section.name}`, type: "section-start", sectionName: section.name },
-      { role: "ai", content: section.prompt },
+      { role: "ai", content: "Hi there! 👋 Great to have you here. I'm Tilly, your personal financial guide. There are no wrong answers — we'll go at your pace. Ready to get started? 😊" },
     ]);
+
+    setTimeout(() => {
+      const section = CHAT_ONBOARDING_SECTIONS[0];
+      setMessages((prev) => [
+        ...prev,
+        { role: "ai", content: `Section 1 of 7 · ${section.name}`, type: "section-start", sectionName: section.name },
+        { role: "ai", content: section.prompt },
+      ]);
+      setAwaitingResponse(true);
+    }, 1000);
   }, []);
 
   const stopOnboarding = useCallback(() => {
@@ -222,9 +414,17 @@ const AIChatPanel = ({ isOpen, onClose, embedded = false, chatFirst = false, com
     setTimeout(() => {
       const notes = CHAT_ONBOARDING_NOTES[onboardingSection] || ["Response captured"];
       const sName = CHAT_ONBOARDING_SECTIONS[onboardingSection].name;
+
+      // Pick a kudos message
+      const kudosIdx = kudosCounterRef.current % KUDOS_MESSAGES.length;
+      const kudosText = KUDOS_MESSAGES[kudosIdx];
+      const kudosId = kudosCounterRef.current;
+      kudosCounterRef.current += 1;
+
       setMessages((prev) => [
         ...prev,
         { role: "ai", content: "", type: "summary", sectionName: sName, summaryNotes: notes },
+        { role: "ai", content: kudosText, type: "kudos", kudosId },
       ]);
 
       // Advance to next section
@@ -255,6 +455,13 @@ const AIChatPanel = ({ isOpen, onClose, embedded = false, chatFirst = false, com
     if (!text.trim()) return;
     const trimmed = text.trim();
 
+    // Dismiss any active kudos on interaction
+    setDismissedKudos((prev) => {
+      const next = new Set(prev);
+      messages.forEach((m) => { if (m.type === "kudos" && m.kudosId !== undefined) next.add(m.kudosId); });
+      return next;
+    });
+
     // Intercept during onboarding
     if (onboardingActive && awaitingResponse) {
       handleOnboardingResponse(trimmed);
@@ -279,7 +486,7 @@ const AIChatPanel = ({ isOpen, onClose, embedded = false, chatFirst = false, com
         : (err?.message ? `Request failed: ${err.message}` : "Sorry, something went wrong. Please try again.");
       setMessages((prev) => [...prev, { role: "ai", content: fallback }]);
     }
-  }, [ensureSession, clientContext, onboardingActive, awaitingResponse, handleOnboardingResponse]);
+  }, [ensureSession, clientContext, onboardingActive, awaitingResponse, handleOnboardingResponse, messages]);
 
   const toggleListening = useCallback(() => {
     setMicError(false);
@@ -370,23 +577,15 @@ const AIChatPanel = ({ isOpen, onClose, embedded = false, chatFirst = false, com
               </span>
             </div>
           ) : msg.type === "summary" && msg.summaryNotes ? (
-            /* ── Summary card ── */
-            <div className="flex gap-2 items-start max-w-[88%]">
-              <TillyAvatar />
-              <div
-                className="rounded-xl border border-border/50 bg-card px-3 py-2.5 shadow-sm flex-1"
-              >
-                <div className="flex items-center gap-1.5 mb-1.5">
-                  <Check className="h-3 w-3 text-primary" />
-                  <span className="text-[11px] font-semibold text-foreground">{msg.sectionName} — captured</span>
-                </div>
-                <ul className="space-y-0.5">
-                  {msg.summaryNotes.map((note, ni) => (
-                    <li key={ni} className="text-[10px] text-muted-foreground leading-relaxed">• {note}</li>
-                  ))}
-                </ul>
-              </div>
-            </div>
+            /* ── Collapsible summary card ── */
+            <SummaryCard sectionName={msg.sectionName || ""} notes={msg.summaryNotes} />
+          ) : msg.type === "kudos" ? (
+            /* ── Kudos bubble ── */
+            <AnimatePresence>
+              {msg.kudosId !== undefined && !dismissedKudos.has(msg.kudosId) && (
+                <KudosBubble text={msg.content} onDismiss={() => dismissKudos(msg.kudosId!)} />
+              )}
+            </AnimatePresence>
           ) : msg.role === "user" ? (
             <div className="flex justify-end">
               <div className="max-w-[80%] rounded-2xl rounded-tr-sm px-3 py-2 text-[12px] leading-relaxed text-primary-foreground"
@@ -505,17 +704,32 @@ const AIChatPanel = ({ isOpen, onClose, embedded = false, chatFirst = false, com
               <span className="text-[10px] font-medium text-muted-foreground">
                 Section {onboardingSection + 1} of 7 · {CHAT_ONBOARDING_SECTIONS[onboardingSection].name}
               </span>
-              <button
+              <motion.button
                 onClick={stopOnboarding}
-                className="flex items-center gap-1 rounded-full border border-destructive/30 bg-destructive/10 px-2.5 py-1 text-[10px] font-medium text-destructive/80 hover:text-destructive hover:bg-destructive/15 transition-colors"
+                className="flex items-center gap-1 rounded-full px-2.5 py-1 text-[10px] font-medium transition-all"
+                style={{
+                  background: "rgba(50, 110, 230, 0.18)",
+                  color: "#7ab8ff",
+                  border: "1px solid rgba(80, 150, 255, 0.5)",
+                  boxShadow: "0 0 12px -2px rgba(80, 150, 255, 0.3)",
+                }}
+                animate={{
+                  boxShadow: [
+                    "0 0 12px -2px rgba(80, 150, 255, 0.3)",
+                    "0 0 20px -2px rgba(80, 150, 255, 0.5)",
+                    "0 0 12px -2px rgba(80, 150, 255, 0.3)",
+                  ],
+                }}
+                transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+                whileHover={{ scale: 1.02, backgroundColor: "rgba(50, 110, 230, 0.25)" }}
               >
                 <Square className="h-2.5 w-2.5" />
                 Stop & return to chat
-              </button>
+              </motion.button>
             </div>
           )}
 
-          {/* Quick-action chips — wrapped in 2 rows */}
+          {/* Quick-action chips — wrapped & centered */}
           {!onboardingActive && (
             (!hasMessages && !chatFirst) ? (
               <div className="flex flex-col items-center gap-3 px-4 pb-2">
@@ -549,7 +763,7 @@ const AIChatPanel = ({ isOpen, onClose, embedded = false, chatFirst = false, com
                 </div>
               </div>
             ) : (
-              <div className="flex flex-wrap gap-2 px-4 pb-1.5">
+              <div className="flex flex-wrap justify-center gap-2 px-4 pb-1.5">
                 <button
                   onClick={startOnboarding}
                   className="shrink-0 whitespace-nowrap rounded-full border border-primary/30 bg-primary/10 px-3 py-1.5 text-[11px] font-medium text-primary shadow-sm transition-colors hover:bg-primary/20 flex items-center gap-1.5"
