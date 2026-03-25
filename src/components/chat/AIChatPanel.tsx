@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { motion, AnimatePresence } from "framer-motion";
-import { X, Send, Mic, MicOff, AlertCircle, Loader2, Sparkles } from "lucide-react";
+import { X, Send, Mic, MicOff, AlertCircle, Loader2, Sparkles, Check, Square } from "lucide-react";
 import { useState, useRef, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import {
@@ -19,7 +19,6 @@ interface AIChatPanelProps {
   onClose: () => void;
   embedded?: boolean;
   chatFirst?: boolean;
-  onVoiceOnboard?: () => void;
   completionMessage?: string;
   onCompletionShown?: () => void;
 }
@@ -27,6 +26,9 @@ interface AIChatPanelProps {
 interface Message {
   role: "user" | "ai";
   content: string;
+  type?: "section-start" | "summary";
+  sectionName?: string;
+  summaryNotes?: string[];
 }
 
 type MicState = "idle" | "listening" | "processing";
@@ -35,6 +37,27 @@ const suggestedQuestions = [
   "Best performing asset?",
   "How should I rebalance?",
 ];
+
+/* ── Onboarding sections (matches /profile/complete) ── */
+const CHAT_ONBOARDING_SECTIONS = [
+  { name: "Who are you?", prompt: "Let's start with the basics — tell me about yourself. Where do you live, what's your family situation, and who depends on you financially?" },
+  { name: "Your financial picture", prompt: "Now let's talk about your finances. Walk me through your income, savings, assets, any property you own, and any large expenses coming up." },
+  { name: "What are you trying to achieve?", prompt: "What are your main investment goals? Think about what you're saving for, how much you need, and when you'll need the money." },
+  { name: "How much risk can you handle?", prompt: "Let's talk about risk. How much investing experience do you have, and how would you react if your portfolio dropped 20% in a month?" },
+  { name: "Rules & limits", prompt: "Are there any rules or constraints for your investments? For example, asset classes to avoid, ethical preferences, or minimum allocations you'd like." },
+  { name: "Tax situation", prompt: "Tell me about your tax situation — your tax residency, approximate bracket, and whether you use any tax-advantaged accounts." },
+  { name: "Staying involved", prompt: "Last one — how hands-on do you want to be? How often would you like portfolio reviews and what's your preferred way to stay updated?" },
+];
+
+const CHAT_ONBOARDING_NOTES: Record<number, string[]> = {
+  0: ["Primary residence: Mumbai", "Married, spouse also earning", "Two dependents (children)", "Age 38, mid-career professional"],
+  1: ["Monthly income ₹1.8L", "Expenses around ₹90K/month", "Existing FD of ₹12L", "Property valued at ₹85L, no major liabilities"],
+  2: ["Retirement by 55 — primary goal", "Children's education fund in 8 years", "Target corpus: ₹2Cr", "Secondary: vacation fund"],
+  3: ["Moderate experience with mutual funds", "Comfortable with 15-20% drawdowns", "Prefers steady growth over quick gains", "10-15 year horizon"],
+  4: ["No crypto or speculative assets", "Prefers ESG-compliant options", "Minimum 20% in fixed income", "Open to international diversification"],
+  5: ["Indian tax resident", "30% tax bracket", "Has PPF and NPS accounts", "Interested in ELSS for tax saving"],
+  6: ["Quarterly review preferred", "Email updates are fine", "Wants alerts for major rebalancing", "Comfortable with advisor-led decisions"],
+};
 
 const formatTimestamp = () => {
   const now = new Date();
@@ -81,7 +104,7 @@ const TillyAvatar = () => (
   </div>
 );
 
-const AIChatPanel = ({ isOpen, onClose, embedded = false, chatFirst = false, onVoiceOnboard, completionMessage, onCompletionShown }: AIChatPanelProps) => {
+const AIChatPanel = ({ isOpen, onClose, embedded = false, chatFirst = false, completionMessage, onCompletionShown }: AIChatPanelProps) => {
   const navigate = useNavigate();
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
@@ -96,6 +119,11 @@ const AIChatPanel = ({ isOpen, onClose, embedded = false, chatFirst = false, onV
   const recognitionRef = useRef<any>(null);
   const sessionIdRef = useRef<string | null>(null);
 
+  /* ── Onboarding state ── */
+  const [onboardingActive, setOnboardingActive] = useState(false);
+  const [onboardingSection, setOnboardingSection] = useState(0);
+  const [awaitingResponse, setAwaitingResponse] = useState(false);
+
   useEffect(() => {
     if (scrollRef.current) {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
@@ -109,6 +137,7 @@ const AIChatPanel = ({ isOpen, onClose, embedded = false, chatFirst = false, onV
       onCompletionShown?.();
     }
   }, [completionMessage, onCompletionShown]);
+
   useEffect(() => {
     let mounted = true;
     const loadContext = async () => {
@@ -160,9 +189,78 @@ const AIChatPanel = ({ isOpen, onClose, embedded = false, chatFirst = false, onV
     return session.id;
   }, []);
 
+  /* ── Onboarding handlers ── */
+  const startOnboarding = useCallback(() => {
+    setOnboardingActive(true);
+    setOnboardingSection(0);
+    setAwaitingResponse(true);
+    setShowFirstUseHint(false);
+    const section = CHAT_ONBOARDING_SECTIONS[0];
+    setMessages((prev) => [
+      ...prev,
+      { role: "ai", content: `Section 1 of 7 · ${section.name}`, type: "section-start", sectionName: section.name },
+      { role: "ai", content: section.prompt },
+    ]);
+  }, []);
+
+  const stopOnboarding = useCallback(() => {
+    setOnboardingActive(false);
+    setAwaitingResponse(false);
+    setMessages((prev) => [
+      ...prev,
+      { role: "ai", content: "No problem — I've saved your progress. You can resume anytime by tapping **Voice onboarding** again." },
+    ]);
+  }, []);
+
+  const handleOnboardingResponse = useCallback((text: string) => {
+    setMessages((prev) => [...prev, { role: "user", content: text }]);
+    setInput("");
+    setInterimTranscript("");
+    setAwaitingResponse(false);
+
+    // Show summary card after a brief pause
+    setTimeout(() => {
+      const notes = CHAT_ONBOARDING_NOTES[onboardingSection] || ["Response captured"];
+      const sName = CHAT_ONBOARDING_SECTIONS[onboardingSection].name;
+      setMessages((prev) => [
+        ...prev,
+        { role: "ai", content: "", type: "summary", sectionName: sName, summaryNotes: notes },
+      ]);
+
+      // Advance to next section
+      setTimeout(() => {
+        const next = onboardingSection + 1;
+        if (next < CHAT_ONBOARDING_SECTIONS.length) {
+          setOnboardingSection(next);
+          setAwaitingResponse(true);
+          const section = CHAT_ONBOARDING_SECTIONS[next];
+          setMessages((prev) => [
+            ...prev,
+            { role: "ai", content: `Section ${next + 1} of 7 · ${section.name}`, type: "section-start", sectionName: section.name },
+            { role: "ai", content: section.prompt },
+          ]);
+        } else {
+          // All done
+          setOnboardingActive(false);
+          setMessages((prev) => [
+            ...prev,
+            { role: "ai", content: "Great — your investment profile is complete! I've saved everything. You can now ask me anything about your portfolio." },
+          ]);
+        }
+      }, 800);
+    }, 500);
+  }, [onboardingSection]);
+
   const sendMessage = useCallback(async (text: string) => {
     if (!text.trim()) return;
     const trimmed = text.trim();
+
+    // Intercept during onboarding
+    if (onboardingActive && awaitingResponse) {
+      handleOnboardingResponse(trimmed);
+      return;
+    }
+
     setMessages((prev) => [...prev, { role: "user", content: trimmed }]);
     setInput("");
     setInterimTranscript("");
@@ -181,7 +279,7 @@ const AIChatPanel = ({ isOpen, onClose, embedded = false, chatFirst = false, onV
         : (err?.message ? `Request failed: ${err.message}` : "Sorry, something went wrong. Please try again.");
       setMessages((prev) => [...prev, { role: "ai", content: fallback }]);
     }
-  }, [ensureSession, clientContext]);
+  }, [ensureSession, clientContext, onboardingActive, awaitingResponse, handleOnboardingResponse]);
 
   const toggleListening = useCallback(() => {
     setMicError(false);
@@ -264,7 +362,32 @@ const AIChatPanel = ({ isOpen, onClose, embedded = false, chatFirst = false, onV
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.2 }}
         >
-          {msg.role === "user" ? (
+          {msg.type === "section-start" ? (
+            /* ── Section label pill ── */
+            <div className="flex justify-center my-1">
+              <span className="rounded-full bg-primary/10 px-3 py-1 text-[10px] font-semibold text-primary tracking-wide">
+                {msg.content}
+              </span>
+            </div>
+          ) : msg.type === "summary" && msg.summaryNotes ? (
+            /* ── Summary card ── */
+            <div className="flex gap-2 items-start max-w-[88%]">
+              <TillyAvatar />
+              <div
+                className="rounded-xl border border-border/50 bg-card px-3 py-2.5 shadow-sm flex-1"
+              >
+                <div className="flex items-center gap-1.5 mb-1.5">
+                  <Check className="h-3 w-3 text-primary" />
+                  <span className="text-[11px] font-semibold text-foreground">{msg.sectionName} — captured</span>
+                </div>
+                <ul className="space-y-0.5">
+                  {msg.summaryNotes.map((note, ni) => (
+                    <li key={ni} className="text-[10px] text-muted-foreground leading-relaxed">• {note}</li>
+                  ))}
+                </ul>
+              </div>
+            </div>
+          ) : msg.role === "user" ? (
             <div className="flex justify-end">
               <div className="max-w-[80%] rounded-2xl rounded-tr-sm px-3 py-2 text-[12px] leading-relaxed text-primary-foreground"
                 style={{ backgroundColor: "hsl(var(--user-bubble) / 0.85)" }}
@@ -376,28 +499,63 @@ const AIChatPanel = ({ isOpen, onClose, embedded = false, chatFirst = false, onV
 
         {/* Input bar — always anchored at bottom */}
         <div className="mt-auto shrink-0">
-          {(!hasMessages && !chatFirst) ? (
-            <div className="flex flex-col items-center gap-3 px-4 pb-2">
+          {/* Onboarding exit bar */}
+          {onboardingActive && (
+            <div className="flex items-center justify-between px-4 py-2 border-t border-border/30 bg-muted/30">
+              <span className="text-[10px] font-medium text-muted-foreground">
+                Section {onboardingSection + 1} of 7 · {CHAT_ONBOARDING_SECTIONS[onboardingSection].name}
+              </span>
               <button
-                type="button"
-                onClick={toggleListening}
-                className={`flex h-12 w-12 items-center justify-center rounded-full shadow-md transition-all ${
-                  micState === "listening"
-                    ? "bg-accent text-accent-foreground"
-                    : "bg-primary text-primary-foreground"
-                }`}
+                onClick={stopOnboarding}
+                className="flex items-center gap-1 rounded-full border border-destructive/30 bg-destructive/10 px-2.5 py-1 text-[10px] font-medium text-destructive/80 hover:text-destructive hover:bg-destructive/15 transition-colors"
               >
-                {micState === "listening" ? <MicOff className="h-4.5 w-4.5" /> : <Mic className="h-4.5 w-4.5" />}
+                <Square className="h-2.5 w-2.5" />
+                Stop & return to chat
               </button>
-              <div className="flex items-center gap-2 overflow-x-auto">
-                {onVoiceOnboard && (
+            </div>
+          )}
+
+          {/* Quick-action chips — wrapped in 2 rows */}
+          {!onboardingActive && (
+            (!hasMessages && !chatFirst) ? (
+              <div className="flex flex-col items-center gap-3 px-4 pb-2">
+                <button
+                  type="button"
+                  onClick={toggleListening}
+                  className={`flex h-12 w-12 items-center justify-center rounded-full shadow-md transition-all ${
+                    micState === "listening"
+                      ? "bg-accent text-accent-foreground"
+                      : "bg-primary text-primary-foreground"
+                  }`}
+                >
+                  {micState === "listening" ? <MicOff className="h-4.5 w-4.5" /> : <Mic className="h-4.5 w-4.5" />}
+                </button>
+                <div className="flex flex-wrap justify-center gap-2">
                   <button
-                    onClick={onVoiceOnboard}
+                    onClick={startOnboarding}
                     className="shrink-0 whitespace-nowrap rounded-full border border-primary/30 bg-primary/10 px-3 py-1.5 text-[11px] font-medium text-primary shadow-sm transition-colors hover:bg-primary/20 flex items-center gap-1.5"
                   >
                     <Mic className="h-3 w-3" /> Voice onboarding
                   </button>
-                )}
+                  {embeddedSuggestions.map((q) => (
+                    <button
+                      key={q}
+                      onClick={() => sendMessage(q)}
+                      className="shrink-0 whitespace-nowrap rounded-full border border-border/50 bg-card px-3 py-1.5 text-[11px] font-medium text-muted-foreground shadow-sm transition-colors hover:bg-muted/60"
+                    >
+                      {q}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            ) : (
+              <div className="flex flex-wrap gap-2 px-4 pb-1.5">
+                <button
+                  onClick={startOnboarding}
+                  className="shrink-0 whitespace-nowrap rounded-full border border-primary/30 bg-primary/10 px-3 py-1.5 text-[11px] font-medium text-primary shadow-sm transition-colors hover:bg-primary/20 flex items-center gap-1.5"
+                >
+                  <Mic className="h-3 w-3" /> Voice onboarding
+                </button>
                 {embeddedSuggestions.map((q) => (
                   <button
                     key={q}
@@ -408,28 +566,9 @@ const AIChatPanel = ({ isOpen, onClose, embedded = false, chatFirst = false, onV
                   </button>
                 ))}
               </div>
-            </div>
-          ) : (
-            <div className="flex items-center gap-2 overflow-x-auto px-4 pb-1.5">
-              {onVoiceOnboard && (
-                <button
-                  onClick={onVoiceOnboard}
-                  className="shrink-0 whitespace-nowrap rounded-full border border-primary/30 bg-primary/10 px-3 py-1.5 text-[11px] font-medium text-primary shadow-sm transition-colors hover:bg-primary/20 flex items-center gap-1.5"
-                >
-                  <Mic className="h-3 w-3" /> Voice onboarding
-                </button>
-              )}
-              {embeddedSuggestions.map((q) => (
-                <button
-                  key={q}
-                  onClick={() => sendMessage(q)}
-                  className="shrink-0 whitespace-nowrap rounded-full border border-border/50 bg-card px-3 py-1.5 text-[11px] font-medium text-muted-foreground shadow-sm transition-colors hover:bg-muted/60"
-                >
-                  {q}
-                </button>
-              ))}
-            </div>
+            )
           )}
+
           <form
             onSubmit={(e) => {
               e.preventDefault();
@@ -441,12 +580,12 @@ const AIChatPanel = ({ isOpen, onClose, embedded = false, chatFirst = false, onV
               <input
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
-                placeholder="Ask Tilly…"
+                placeholder={onboardingActive ? "Speak or type your answer…" : "Ask Tilly…"}
                 className="flex-1 bg-transparent text-[12px] text-foreground outline-none placeholder:text-muted-foreground/40"
               />
             </div>
             <div className="relative flex shrink-0 items-center justify-center">
-              {micState !== "listening" && (
+              {micState !== "listening" && !onboardingActive && (
                 <span className="absolute inset-0 rounded-full bg-primary/30 animate-[pulse_2.5s_cubic-bezier(0.4,0,0.6,1)_infinite]" style={{ transform: "scale(1.5)" }} />
               )}
               <button
