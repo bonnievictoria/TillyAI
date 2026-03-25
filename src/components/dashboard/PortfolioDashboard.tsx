@@ -313,7 +313,7 @@ const PortfolioDashboard = () => {
       : `${activeView.member.nickname}'s Portfolio`;
 
   return (
-    <div className="mobile-container bg-background flex flex-col min-h-screen">
+    <div className="mobile-container flex flex-col min-h-screen bg-pink-50 dark:bg-pink-950/35">
       {/* Top bar with profile switcher */}
       <div className="flex items-center justify-between px-5 pt-12 pb-2">
         <div>
