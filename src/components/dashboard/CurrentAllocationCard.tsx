@@ -1,5 +1,6 @@
 import { PieChart, Pie, Cell, ResponsiveContainer } from "recharts";
 import type { PortfolioDetail } from "@/lib/api";
+import { formatInrCompact } from "@/lib/utils";
 
 const PALETTE = [
   "hsl(var(--wealth-blue))",
@@ -34,11 +35,7 @@ const CurrentAllocationCard = ({ portfolio, riskCategory, horizonLabel }: Curren
       ];
 
   const centerLabel =
-    portfolio && portfolio.total_value > 0
-      ? portfolio.total_value >= 100000
-        ? `₹${(portfolio.total_value / 100000).toFixed(1)}L`
-        : `₹${Math.round(portfolio.total_value).toLocaleString("en-IN")}`
-      : "₹—";
+    portfolio && portfolio.total_value > 0 ? formatInrCompact(portfolio.total_value) : "₹—";
 
   const stats = [
     { label: "Holdings", value: portfolio ? String(portfolio.holdings.length) : "—" },

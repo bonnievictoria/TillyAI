@@ -18,12 +18,14 @@ import {
   type FullProfileResponse,
   type PortfolioDetail,
 } from "@/lib/api";
-
-const fmtInr = (n: number) => {
-  if (n >= 10000000) return `₹${(n / 10000000).toFixed(2)}Cr`;
-  if (n >= 100000) return `₹${(n / 100000).toFixed(1)}L`;
-  return `₹${n.toLocaleString("en-IN")}`;
-};
+import {
+  buildDemoSparkline,
+  cloneDemoCumulativePortfolio,
+  cloneDemoFullProfile,
+  cloneDemoMemberPortfolio,
+  cloneDemoSelfPortfolio,
+} from "@/lib/portfolioDemoData";
+import { formatInrCompact, formatInrPaisa } from "@/lib/utils";
 
 /** Map cumulative API payload into a PortfolioDetail so we can reuse PortfolioMainPanel / CurrentAllocationCard. */
 function cumulativeToPortfolioDetail(c: CumulativePortfolioResponse): PortfolioDetail {
@@ -72,7 +74,7 @@ function PortfolioMainPanel({
     <>
       <div className="px-5 pb-2">
         <div className="flex items-center gap-2.5">
-          <p className="text-2xl font-bold text-foreground tracking-tight">{fmtInr(portfolio.total_value)}</p>
+          <p className="text-2xl font-bold text-foreground tracking-tight">{formatInrPaisa(portfolio.total_value)}</p>
           {portfolio.total_gain_percentage != null && (
             <span
               className={`inline-flex items-center gap-0.5 rounded-full px-2 py-0.5 text-[10px] font-semibold ${
@@ -91,7 +93,7 @@ function PortfolioMainPanel({
             </span>
           )}
         </div>
-        <p className="text-[10px] text-muted-foreground/80 mt-1">Invested {fmtInr(portfolio.total_invested)}</p>
+        <p className="text-[10px] text-muted-foreground/80 mt-1">Invested {formatInrPaisa(portfolio.total_invested)}</p>
       </div>
 
       <div className="px-5 pb-2">
@@ -142,7 +144,7 @@ function PortfolioMainPanel({
                         {h.ticker_symbol ? ` · ${h.ticker_symbol}` : ""}
                       </p>
                     </div>
-                    <p className="text-xs font-semibold text-foreground">{fmtInr(h.current_value)}</p>
+                    <p className="text-xs font-semibold text-foreground">{formatInrPaisa(h.current_value)}</p>
                   </div>
                   {i < arr.length - 1 && <div className="h-px bg-border/20" />}
                 </div>
@@ -162,7 +164,7 @@ function PortfolioMainPanel({
                 <div className="flex items-center justify-between py-1.5">
                   <span className="text-xs text-muted-foreground">{item.asset_class}</span>
                   <div className="flex items-center gap-3">
-                    <span className="text-xs font-semibold text-foreground">{fmtInr(item.amount)}</span>
+                    <span className="text-xs font-semibold text-foreground">{formatInrCompact(item.amount)}</span>
                     {perf != null && (
                       <span
                         className={`text-[10px] font-medium ${
@@ -211,7 +213,7 @@ function CumulativeMemberBreakdownCard({ data }: { data: CumulativePortfolioResp
                   </div>
                 </div>
                 <div className="text-right shrink-0 ml-2">
-                  <p className="text-xs font-semibold text-foreground">{fmtInr(m.portfolio_value)}</p>
+                  <p className="text-xs font-semibold text-foreground">{formatInrPaisa(m.portfolio_value)}</p>
                   {m.gain_percentage != null && (
                     <p
                       className={`text-[9px] font-medium ${
@@ -245,7 +247,8 @@ const PortfolioDashboard = () => {
   const [selfPortfolio, setSelfPortfolio] = useState<PortfolioDetail | null>(null);
   const [selfProfile, setSelfProfile] = useState<FullProfileResponse | null>(null);
   const [selfSparkline, setSelfSparkline] = useState<number[] | undefined>(undefined);
-  const [selfLoading, setSelfLoading] = useState(false);
+  /** Start true so we never flash the error state before the first fetch (or demo fallback). */
+  const [selfLoading, setSelfLoading] = useState(true);
 
   useEffect(() => {
     let cancelled = false;
@@ -253,13 +256,18 @@ const PortfolioDashboard = () => {
       setFamilyLoading(true);
       getCumulativePortfolio()
         .then((d) => { if (!cancelled) setCumulativeData(d); })
-        .catch(() => {})
+        .catch(() => {
+          if (!cancelled) setCumulativeData(cloneDemoCumulativePortfolio());
+        })
         .finally(() => { if (!cancelled) setFamilyLoading(false); });
     } else if (activeView.type === "member") {
       setFamilyLoading(true);
+      const nick = activeView.member.nickname;
       getFamilyMemberPortfolio(activeView.member.id)
         .then((d) => { if (!cancelled) setMemberPortfolio(d); })
-        .catch(() => {})
+        .catch(() => {
+          if (!cancelled) setMemberPortfolio(cloneDemoMemberPortfolio(nick));
+        })
         .finally(() => { if (!cancelled) setFamilyLoading(false); });
     }
     return () => { cancelled = true; };
@@ -276,8 +284,9 @@ const PortfolioDashboard = () => {
     ])
       .then(([port, prof, hist]) => {
         if (cancelled) return;
-        setSelfPortfolio(port);
-        setSelfProfile(prof);
+        const useDemoPortfolio = port === null;
+        setSelfPortfolio(useDemoPortfolio ? cloneDemoSelfPortfolio() : port);
+        setSelfProfile(useDemoPortfolio ? (prof ?? cloneDemoFullProfile()) : prof);
         const sorted = [...hist].sort(
           (a, b) => new Date(a.recorded_date).getTime() - new Date(b.recorded_date).getTime()
         );
@@ -287,14 +296,14 @@ const PortfolioDashboard = () => {
         } else if (sorted.length === 1) {
           setSelfSparkline([sorted[0].total_value / 100000]);
         } else {
-          setSelfSparkline(undefined);
+          setSelfSparkline(useDemoPortfolio ? buildDemoSparkline() : undefined);
         }
       })
       .catch(() => {
         if (!cancelled) {
-          setSelfPortfolio(null);
-          setSelfProfile(null);
-          setSelfSparkline(undefined);
+          setSelfPortfolio(cloneDemoSelfPortfolio());
+          setSelfProfile(cloneDemoFullProfile());
+          setSelfSparkline(buildDemoSparkline());
         }
       })
       .finally(() => {
