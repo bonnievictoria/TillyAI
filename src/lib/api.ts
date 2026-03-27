@@ -1,5 +1,12 @@
+import { mockApiRequest } from "./apiMock";
+
 const API = "/api/v1";
 const TOKEN_KEY = "asktilly_token";
+
+/** When true (set via VITE_FRONTEND_ONLY), all API functions use in-memory mocks — no network. */
+export function isFrontendOnlyMode(): boolean {
+  return import.meta.env.VITE_FRONTEND_ONLY === "true";
+}
 const FAMILY_MEMBER_KEY = "asktilly_family_member_id";
 
 export function getToken(): string | null {
@@ -48,6 +55,10 @@ async function request<T>(
   auth = true,
   timeoutMs: number = REQUEST_TIMEOUT_MS
 ): Promise<T> {
+  if (isFrontendOnlyMode()) {
+    return mockApiRequest<T>(path, init);
+  }
+
   const headers: Record<string, string> = {
     "Content-Type": "application/json",
     ...((init?.headers as Record<string, string>) ?? {}),

@@ -18,6 +18,13 @@ import {
   type FullProfileResponse,
   type PortfolioDetail,
 } from "@/lib/api";
+import {
+  buildDemoSparkline,
+  cloneDemoCumulativePortfolio,
+  cloneDemoFullProfile,
+  cloneDemoMemberPortfolio,
+  cloneDemoSelfPortfolio,
+} from "@/lib/portfolioDemoData";
 import { formatInrCompact, formatInrPaisa } from "@/lib/utils";
 
 /** Map cumulative API payload into a PortfolioDetail so we can reuse PortfolioMainPanel / CurrentAllocationCard. */
@@ -240,7 +247,8 @@ const PortfolioDashboard = () => {
   const [selfPortfolio, setSelfPortfolio] = useState<PortfolioDetail | null>(null);
   const [selfProfile, setSelfProfile] = useState<FullProfileResponse | null>(null);
   const [selfSparkline, setSelfSparkline] = useState<number[] | undefined>(undefined);
-  const [selfLoading, setSelfLoading] = useState(false);
+  /** Start true so we never flash the error state before the first fetch (or demo fallback). */
+  const [selfLoading, setSelfLoading] = useState(true);
 
   useEffect(() => {
     let cancelled = false;
@@ -248,13 +256,18 @@ const PortfolioDashboard = () => {
       setFamilyLoading(true);
       getCumulativePortfolio()
         .then((d) => { if (!cancelled) setCumulativeData(d); })
-        .catch(() => {})
+        .catch(() => {
+          if (!cancelled) setCumulativeData(cloneDemoCumulativePortfolio());
+        })
         .finally(() => { if (!cancelled) setFamilyLoading(false); });
     } else if (activeView.type === "member") {
       setFamilyLoading(true);
+      const nick = activeView.member.nickname;
       getFamilyMemberPortfolio(activeView.member.id)
         .then((d) => { if (!cancelled) setMemberPortfolio(d); })
-        .catch(() => {})
+        .catch(() => {
+          if (!cancelled) setMemberPortfolio(cloneDemoMemberPortfolio(nick));
+        })
         .finally(() => { if (!cancelled) setFamilyLoading(false); });
     }
     return () => { cancelled = true; };
@@ -271,8 +284,9 @@ const PortfolioDashboard = () => {
     ])
       .then(([port, prof, hist]) => {
         if (cancelled) return;
-        setSelfPortfolio(port);
-        setSelfProfile(prof);
+        const useDemoPortfolio = port === null;
+        setSelfPortfolio(useDemoPortfolio ? cloneDemoSelfPortfolio() : port);
+        setSelfProfile(useDemoPortfolio ? (prof ?? cloneDemoFullProfile()) : prof);
         const sorted = [...hist].sort(
           (a, b) => new Date(a.recorded_date).getTime() - new Date(b.recorded_date).getTime()
         );
@@ -282,14 +296,14 @@ const PortfolioDashboard = () => {
         } else if (sorted.length === 1) {
           setSelfSparkline([sorted[0].total_value / 100000]);
         } else {
-          setSelfSparkline(undefined);
+          setSelfSparkline(useDemoPortfolio ? buildDemoSparkline() : undefined);
         }
       })
       .catch(() => {
         if (!cancelled) {
-          setSelfPortfolio(null);
-          setSelfProfile(null);
-          setSelfSparkline(undefined);
+          setSelfPortfolio(cloneDemoSelfPortfolio());
+          setSelfProfile(cloneDemoFullProfile());
+          setSelfSparkline(buildDemoSparkline());
         }
       })
       .finally(() => {
