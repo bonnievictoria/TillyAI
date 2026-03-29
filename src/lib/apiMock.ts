@@ -604,7 +604,7 @@ export async function mockApiRequest<T>(path: string, init?: RequestInit): Promi
     return { members: familyMembers.map((m) => ({ ...m })), count: familyMembers.length } as T;
   }
   if (path === "/family/members" && method === "POST") {
-    const p = body as AddFamilyMemberPayload;
+    const p = body as unknown as AddFamilyMemberPayload;
     const fm: FamilyMember = {
       id: rid("fam"),
       owner_id: mockUser.id,
