@@ -3,9 +3,17 @@ import { mockApiRequest } from "./apiMock";
 const API = "/api/v1";
 const TOKEN_KEY = "asktilly_token";
 
-/** When true (set via VITE_FRONTEND_ONLY), all API functions use in-memory mocks — no network. */
+/**
+ * When true, all API functions use in-memory mocks (no fetch).
+ * - `VITE_FRONTEND_ONLY=false` → always call the real API (e.g. `npm run dev:with-api` or prod + backend).
+ * - `VITE_FRONTEND_ONLY=true` → always mocks.
+ * - Otherwise, production builds default to mocks so static hosts (e.g. Lovable preview) work without a backend.
+ */
 export function isFrontendOnlyMode(): boolean {
-  return import.meta.env.VITE_FRONTEND_ONLY === "true";
+  const v = "true";
+  // if (v === "false") return false;
+  if (v === "true") return true;
+  return import.meta.env.PROD;
 }
 const FAMILY_MEMBER_KEY = "asktilly_family_member_id";
 
@@ -293,9 +301,62 @@ export interface PersonalInfoResponse {
   currency: string;
 }
 
+/**
+ * Detailed goals row — matches IPS / onboarding (`CompleteProfile`) and typical “Goals” sheet columns:
+ * goal name, target year, amount, currency, purposes, minimum return, income need, notes.
+ */
+export interface DetailedGoalItem {
+  description: string;
+  year?: string | number | null;
+  amount?: string | number | null;
+  currency?: string | null;
+  purposes?: string[] | null;
+  min_return?: string | number | null;
+  notes?: string | null;
+  /** Monthly or annual income target from this goal, as entered by the user (e.g. "50000/month"). */
+  income_amount?: string | number | null;
+}
+
+/**
+ * Mutual fund line items (“MF Table” tab): scheme identity, folio, amounts, optional SIP/NAV linkage to goals.
+ */
+export interface MutualFundTableRow {
+  scheme_name: string;
+  amc?: string | null;
+  category?: string | null;
+  folio_number?: string | null;
+  isin?: string | null;
+  mode?: string | null;
+  sip_amount?: number | null;
+  invested_amount?: number | null;
+  current_value?: number | null;
+  units?: number | null;
+  nav?: number | null;
+  as_on_date?: string | null;
+  linked_goal?: string | null;
+  remarks?: string | null;
+}
+
+/**
+ * Non–mutual-fund holdings (“Other investments” tab): stocks, FDs, PPF, NPS, property slices, etc.
+ */
+export interface OtherInvestmentTableRow {
+  instrument_name: string;
+  instrument_type: string;
+  identifier?: string | null;
+  quantity?: number | null;
+  invested_amount?: number | null;
+  current_value?: number | null;
+  currency?: string | null;
+  linked_goal?: string | null;
+  notes?: string | null;
+}
+
 export interface InvestmentProfilePayload {
   objectives?: string[] | null;
-  detailed_goals?: Record<string, unknown>[] | null;
+  detailed_goals?: DetailedGoalItem[] | null;
+  mf_table?: MutualFundTableRow[] | null;
+  other_investments_table?: OtherInvestmentTableRow[] | null;
   portfolio_value?: number | null;
   monthly_savings?: number | null;
   target_corpus?: number | null;
