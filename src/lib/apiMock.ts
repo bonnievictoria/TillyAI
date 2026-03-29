@@ -413,7 +413,7 @@ export async function mockApiRequest<T>(path: string, init?: RequestInit): Promi
     return { user_id: mockUser.id, access_token: "frontend-only-token" } as T;
   }
   if (path === "/auth/login" && method === "POST") {
-    const p = body as LoginPayload;
+    const p = body as unknown as LoginPayload;
     mockUser = {
       ...mockUser,
       country_code: p.country_code,
