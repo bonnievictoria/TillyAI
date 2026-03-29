@@ -399,7 +399,7 @@ export async function mockApiRequest<T>(path: string, init?: RequestInit): Promi
 
   // ── Auth ─────────────────────────────────────────────
   if (path === "/auth/signup" && method === "POST") {
-    const p = body as SignUpPayload;
+    const p = body as unknown as SignUpPayload;
     mockUser = {
       ...mockUser,
       id: rid("user"),
