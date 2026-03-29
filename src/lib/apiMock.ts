@@ -399,7 +399,7 @@ export async function mockApiRequest<T>(path: string, init?: RequestInit): Promi
 
   // ── Auth ─────────────────────────────────────────────
   if (path === "/auth/signup" && method === "POST") {
-    const p = body as SignUpPayload;
+    const p = body as unknown as SignUpPayload;
     mockUser = {
       ...mockUser,
       id: rid("user"),
@@ -413,7 +413,7 @@ export async function mockApiRequest<T>(path: string, init?: RequestInit): Promi
     return { user_id: mockUser.id, access_token: "frontend-only-token" } as T;
   }
   if (path === "/auth/login" && method === "POST") {
-    const p = body as LoginPayload;
+    const p = body as unknown as LoginPayload;
     mockUser = {
       ...mockUser,
       country_code: p.country_code,
@@ -604,7 +604,7 @@ export async function mockApiRequest<T>(path: string, init?: RequestInit): Promi
     return { members: familyMembers.map((m) => ({ ...m })), count: familyMembers.length } as T;
   }
   if (path === "/family/members" && method === "POST") {
-    const p = body as AddFamilyMemberPayload;
+    const p = body as unknown as AddFamilyMemberPayload;
     const fm: FamilyMember = {
       id: rid("fam"),
       owner_id: mockUser.id,
@@ -624,7 +624,7 @@ export async function mockApiRequest<T>(path: string, init?: RequestInit): Promi
     return { ...fm } as T;
   }
   if (path === "/family/members/onboard" && method === "POST") {
-    const p = body as OnboardFamilyMemberPayload;
+    const p = body as unknown as OnboardFamilyMemberPayload;
     const fm: FamilyMember = {
       id: rid("fam"),
       owner_id: mockUser.id,
