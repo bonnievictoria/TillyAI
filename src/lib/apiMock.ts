@@ -624,7 +624,7 @@ export async function mockApiRequest<T>(path: string, init?: RequestInit): Promi
     return { ...fm } as T;
   }
   if (path === "/family/members/onboard" && method === "POST") {
-    const p = body as OnboardFamilyMemberPayload;
+    const p = body as unknown as OnboardFamilyMemberPayload;
     const fm: FamilyMember = {
       id: rid("fam"),
       owner_id: mockUser.id,
