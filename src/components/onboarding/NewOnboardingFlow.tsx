@@ -11,6 +11,7 @@ import {
   Calendar,
   Target,
   Wallet,
+  ShieldCheck,
 } from "lucide-react";
 import {
   Accordion,
