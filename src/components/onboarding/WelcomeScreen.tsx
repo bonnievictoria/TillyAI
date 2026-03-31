@@ -132,7 +132,7 @@ const WelcomeScreen = ({ onNext }: WelcomeScreenProps) => {
 
           <button
             onClick={handleResend}
-            className="text-xs text-muted-foreground hover:text-foreground transition-colors text-center mb-auto"
+            className="text-[11px] text-muted-foreground hover:text-foreground transition-colors text-center mb-auto"
           >
             Didn't receive it? <span className="font-semibold underline">Resend code</span>
           </button>
