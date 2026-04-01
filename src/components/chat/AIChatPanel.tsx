@@ -33,6 +33,7 @@ interface Message {
 }
 
 type MicState = "idle" | "listening" | "processing";
+const CHAT_STATE_KEY = "asktilly.chat.panel.state.v1";
 
 const suggestedQuestions = [
   "Best performing asset?",
@@ -288,7 +289,16 @@ const AIChatPanel = ({ isOpen, onClose, embedded = false, chatFirst = false, com
   const [showFirstUseHint, setShowFirstUseHint] = useState(true);
   const [micError, setMicError] = useState(false);
   const [clientContext, setClientContext] = useState<Record<string, unknown> | null>(null);
-  const [chatStartTime] = useState(formatTimestamp);
+  const [chatStartTime, setChatStartTime] = useState(() => {
+    try {
+      const raw = sessionStorage.getItem(CHAT_STATE_KEY);
+      if (!raw) return formatTimestamp();
+      const parsed = JSON.parse(raw) as { chatStartTime?: string };
+      return parsed.chatStartTime || formatTimestamp();
+    } catch {
+      return formatTimestamp();
+    }
+  });
   const scrollRef = useRef<HTMLDivElement>(null);
   const recognitionRef = useRef<any>(null);
   const sessionIdRef = useRef<string | null>(null);
@@ -305,6 +315,90 @@ const AIChatPanel = ({ isOpen, onClose, embedded = false, chatFirst = false, com
   const [onboardingActive, setOnboardingActive] = useState(false);
   const [onboardingSection, setOnboardingSection] = useState(0);
   const [awaitingResponse, setAwaitingResponse] = useState(false);
+
+  const startNewChat = useCallback(() => {
+    setMessages([]);
+    setInput("");
+    setInterimTranscript("");
+    setIsTyping(false);
+    setMicState("idle");
+    setShowFirstUseHint(true);
+    setMicError(false);
+    setDismissedKudos(new Set());
+    setOnboardingActive(false);
+    setOnboardingSection(0);
+    setAwaitingResponse(false);
+    sessionIdRef.current = null;
+    setChatStartTime(formatTimestamp());
+    try {
+      sessionStorage.removeItem(CHAT_STATE_KEY);
+    } catch {
+      // Ignore storage errors.
+    }
+  }, []);
+
+  // Restore chat state when returning to Chat tab.
+  useEffect(() => {
+    try {
+      const raw = sessionStorage.getItem(CHAT_STATE_KEY);
+      if (!raw) return;
+      const parsed = JSON.parse(raw) as {
+        messages?: Message[];
+        sessionId?: string | null;
+        input?: string;
+        showFirstUseHint?: boolean;
+        dismissedKudos?: number[];
+        onboardingActive?: boolean;
+        onboardingSection?: number;
+        awaitingResponse?: boolean;
+        chatStartTime?: string;
+      };
+      if (Array.isArray(parsed.messages)) setMessages(parsed.messages);
+      if (typeof parsed.sessionId === "string") sessionIdRef.current = parsed.sessionId;
+      if (typeof parsed.input === "string") setInput(parsed.input);
+      if (typeof parsed.showFirstUseHint === "boolean") setShowFirstUseHint(parsed.showFirstUseHint);
+      if (Array.isArray(parsed.dismissedKudos)) setDismissedKudos(new Set(parsed.dismissedKudos));
+      if (typeof parsed.onboardingActive === "boolean") setOnboardingActive(parsed.onboardingActive);
+      if (typeof parsed.onboardingSection === "number") setOnboardingSection(parsed.onboardingSection);
+      if (typeof parsed.awaitingResponse === "boolean") setAwaitingResponse(parsed.awaitingResponse);
+      if (typeof parsed.chatStartTime === "string" && parsed.chatStartTime.trim()) {
+        setChatStartTime(parsed.chatStartTime);
+      }
+    } catch {
+      // Ignore malformed cached state.
+    }
+  }, []);
+
+  // Persist chat state so switching tabs doesn't clear conversation.
+  useEffect(() => {
+    try {
+      sessionStorage.setItem(
+        CHAT_STATE_KEY,
+        JSON.stringify({
+          messages,
+          sessionId: sessionIdRef.current,
+          input,
+          showFirstUseHint,
+          dismissedKudos: Array.from(dismissedKudos),
+          onboardingActive,
+          onboardingSection,
+          awaitingResponse,
+          chatStartTime,
+        }),
+      );
+    } catch {
+      // Ignore storage errors.
+    }
+  }, [
+    messages,
+    input,
+    showFirstUseHint,
+    dismissedKudos,
+    onboardingActive,
+    onboardingSection,
+    awaitingResponse,
+    chatStartTime,
+  ]);
 
   useEffect(() => {
     if (scrollRef.current) {
@@ -686,8 +780,15 @@ const AIChatPanel = ({ isOpen, onClose, embedded = false, chatFirst = false, com
               transition={{ duration: 0.25 }}
               className="flex min-h-0 flex-1 flex-col"
             >
-              <div className="px-4 pb-1 pt-3">
+              <div className="px-4 pb-1 pt-3 flex items-center justify-between gap-2">
                 <p className="text-[13px] font-medium text-muted-foreground/50">Ask Tilly</p>
+                <button
+                  type="button"
+                  onClick={startNewChat}
+                  className="rounded-full border border-border/60 bg-card px-3 py-1 text-[11px] font-medium text-muted-foreground transition-colors hover:bg-muted/60"
+                >
+                  New chat
+                </button>
               </div>
               <div ref={scrollRef} className="flex-1 space-y-2 overflow-y-auto px-4 py-2 pb-4">
                 {renderMessages()}

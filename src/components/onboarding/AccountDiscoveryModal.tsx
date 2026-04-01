@@ -1,10 +1,10 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
+import { toast } from "sonner";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
-import { X } from "lucide-react";
-import { toast } from "sonner";
+import { Loader2, X } from "lucide-react";
 import { discoverSimBankAccounts, syncSimBankAccounts, type SimBankDiscoveredAccount } from "@/lib/api";
 
 interface AccountDiscoveryModalProps {
@@ -12,63 +12,60 @@ interface AccountDiscoveryModalProps {
   onClose: () => void;
 }
 
+function accountKey(a: SimBankDiscoveredAccount): string {
+  return a.account_ref_no;
+}
+
 const AccountDiscoveryModal = ({ open, onClose }: AccountDiscoveryModalProps) => {
   const navigate = useNavigate();
-
   const [accounts, setAccounts] = useState<SimBankDiscoveredAccount[]>([]);
   const [selected, setSelected] = useState<Record<string, boolean>>({});
   const [discovering, setDiscovering] = useState(false);
   const [syncing, setSyncing] = useState(false);
 
-  const anySelected = useMemo(() => Object.values(selected).some(Boolean), [selected]);
-
-  const toggleAccount = (id: string) => {
-    setSelected((prev) => ({ ...prev, [id]: !prev[id] }));
-  };
-
-  const handleConsent = () => {
-    (async () => {
-      try {
-        setSyncing(true);
-        const accepted = Object.entries(selected)
-          .filter(([, v]) => v)
-          .map(([k]) => k);
-        if (accepted.length === 0) {
-          toast.error("Select at least one account to connect");
-          return;
-        }
-        await syncSimBankAccounts(accepted);
-        onClose();
-        navigate("/link-accounts");
-      } catch (err) {
-        toast.error(err instanceof Error ? err.message : "Failed to sync accounts");
-      } finally {
-        setSyncing(false);
-      }
-    })();
-  };
-
   useEffect(() => {
     if (!open) return;
-    let cancelled = false;
-    (async () => {
-      try {
-        setDiscovering(true);
-        const res = await discoverSimBankAccounts();
-        if (cancelled) return;
+    setDiscovering(true);
+    discoverSimBankAccounts()
+      .then((res) => {
         setAccounts(res.accounts);
-        setSelected(Object.fromEntries(res.accounts.map((a) => [a.account_ref_no, true])));
-      } catch (err) {
-        if (cancelled) return;
-        toast.error(err instanceof Error ? err.message : "Failed to discover accounts");
-      } finally {
-        if (!cancelled) setDiscovering(false);
-      }
-    })();
-    return () => {
-      cancelled = true;
-    };
+        setSelected(Object.fromEntries(res.accounts.map((a) => [accountKey(a), true])));
+      })
+      .catch(() => {
+        toast.error("Could not load accounts. Try again.");
+        setAccounts([]);
+      })
+      .finally(() => setDiscovering(false));
   }, [open]);
+
+  const toggleAccount = (key: string) => {
+    setSelected((prev) => ({ ...prev, [key]: !prev[key] }));
+  };
+
+  const handleConsent = async () => {
+    const accepted = accounts.filter((a) => selected[accountKey(a)]).map((a) => a.account_ref_no);
+    if (accepted.length === 0) {
+      toast.error("Select at least one account to connect.");
+      return;
+    }
+    setSyncing(true);
+    try {
+      await syncSimBankAccounts(accepted);
+      toast.success("Accounts linked.");
+      onClose();
+      navigate("/link-accounts");
+    } catch {
+      toast.error("Could not sync accounts. Try again.");
+    } finally {
+      setSyncing(false);
+    }
+  };
+
+  const labelForKind = (a: SimBankDiscoveredAccount) => {
+    if (a.kind === "mutual_fund") return "Mutual fund";
+    if (a.kind === "equity") return "Equity (Demat)";
+    return "Bank account";
+  };
 
   return (
     <AnimatePresence>
@@ -96,6 +93,7 @@ const AccountDiscoveryModal = ({ open, onClose }: AccountDiscoveryModalProps) =>
             transition={{ type: "spring", damping: 25, stiffness: 350 }}
           >
             <button
+              type="button"
               onClick={onClose}
               className="absolute right-4 top-4 rounded-sm text-muted-foreground transition-opacity hover:text-foreground"
             >
@@ -111,58 +109,58 @@ const AccountDiscoveryModal = ({ open, onClose }: AccountDiscoveryModalProps) =>
 
             <div className="flex flex-col gap-2" style={{ marginTop: 8 }}>
               {discovering && (
-                <div className="text-xs text-muted-foreground" style={{ padding: "12px 14px" }}>
-                  Fetching account details…
+                <div className="flex items-center justify-center gap-2 py-8 text-muted-foreground">
+                  <Loader2 className="h-5 w-5 animate-spin" />
+                  <span className="text-sm">Loading accounts…</span>
                 </div>
               )}
-
               {!discovering &&
-                accounts.map((account) => (
-                  <label
-                    key={account.account_ref_no}
-                    className="flex cursor-pointer items-center justify-between rounded-lg border bg-background transition-colors hover:bg-accent/40"
-                    style={{ padding: "12px 14px" }}
-                  >
-                    <div className="flex flex-col">
-                      <span className="font-medium text-foreground" style={{ fontSize: 13 }}>
-                        {account.kind === "deposit"
-                          ? "Bank account"
-                          : account.kind === "equity"
-                            ? "Equity account"
-                            : "Mutual fund account"}
-                      </span>
-                      <span className="text-muted-foreground" style={{ fontSize: 11 }}>
-                        {account.kind === "deposit" ? "Ending" : account.kind === "equity" ? "Demat" : "Folio"} in {account.masked_identifier ?? "—"}
-                      </span>
-                      <span className="text-[11px] text-foreground/90 font-semibold" style={{ marginTop: 2 }}>
-                        {account.kind === "deposit" ? "Balance" : "Current value"}: ₹
-                        {account.current_value.toLocaleString("en-IN", { maximumFractionDigits: 2 })}
-                      </span>
-                    </div>
-
-                    <Checkbox
-                      id={`discovery-${account.account_ref_no}`}
-                      checked={!!selected[account.account_ref_no]}
-                      onCheckedChange={() => toggleAccount(account.account_ref_no)}
-                    />
-                  </label>
-                ))}
-
+                accounts.map((account) => {
+                  const key = accountKey(account);
+                  const masked = account.masked_identifier ?? "—";
+                  return (
+                    <label
+                      key={key}
+                      className="flex cursor-pointer items-center justify-between rounded-lg border bg-background transition-colors hover:bg-accent/40"
+                      style={{ padding: "12px 14px" }}
+                      htmlFor={`discovery-${key}`}
+                    >
+                      <div className="flex flex-col min-w-0 pr-2">
+                        <span className="font-medium text-foreground" style={{ fontSize: 13 }}>
+                          {account.provider_name}
+                        </span>
+                        <span className="text-muted-foreground" style={{ fontSize: 11 }}>
+                          {labelForKind(account)} · {masked}
+                        </span>
+                      </div>
+                      <Checkbox
+                        id={`discovery-${key}`}
+                        checked={!!selected[key]}
+                        onCheckedChange={() => toggleAccount(key)}
+                      />
+                    </label>
+                  );
+                })}
               {!discovering && accounts.length === 0 && (
-                <div className="text-xs text-muted-foreground" style={{ padding: "12px 14px" }}>
-                  No simulator accounts found for this mobile number.
-                </div>
+                <p className="text-xs text-muted-foreground py-4 text-center">No accounts found for this number.</p>
               )}
             </div>
 
             <Button
               className="w-full"
               size="lg"
+              disabled={syncing || discovering || accounts.length === 0}
               onClick={handleConsent}
               style={{ marginTop: 16 }}
-              disabled={syncing || discovering || accounts.length === 0 || !anySelected}
             >
-              {syncing ? "Connecting…" : "Give Consent & Connect"}
+              {syncing ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                  Connecting…
+                </>
+              ) : (
+                "Give Consent & Connect"
+              )}
             </Button>
 
             <p

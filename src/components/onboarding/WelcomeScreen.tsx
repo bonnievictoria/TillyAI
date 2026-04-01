@@ -74,8 +74,6 @@ const WelcomeScreen = ({ onNext }: WelcomeScreenProps) => {
       }
     }
     await refresh();
-    // Start onboarding fresh for every OTP login in this flow.
-    // Otherwise stale session flags can jump users directly to dashboard.
     sessionStorage.removeItem("completedTellUs");
     sessionStorage.removeItem("completedLinkAccounts");
     sessionStorage.setItem("onboardingComplete", "false");
@@ -105,13 +103,13 @@ const WelcomeScreen = ({ onNext }: WelcomeScreenProps) => {
             <ArrowLeft className="h-4 w-4" /> Back
           </button>
 
-          <h1 className="font-display text-2xl font-semibold tracking-tight text-foreground mb-2">
+          <h1 className="text-xl font-semibold text-foreground mb-2">
             Verify your number
           </h1>
-          <p className="text-sm text-muted-foreground mb-1">
+          <p className="text-xs text-muted-foreground mb-1">
             We sent a 6-digit code to
           </p>
-          <p className="text-sm font-semibold text-foreground mb-8">
+          <p className="text-xs font-semibold text-foreground mb-8">
             {countryCode.code} {phone}
           </p>
 
@@ -137,7 +135,7 @@ const WelcomeScreen = ({ onNext }: WelcomeScreenProps) => {
 
           <button
             onClick={handleResend}
-            className="text-xs text-muted-foreground hover:text-foreground transition-colors text-center mb-auto"
+            className="text-[11px] text-muted-foreground hover:text-foreground transition-colors text-center mb-auto"
           >
             Didn't receive it? <span className="font-semibold underline">Resend code</span>
           </button>
