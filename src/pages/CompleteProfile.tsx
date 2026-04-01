@@ -619,9 +619,15 @@ const CompleteProfile = () => {
             emergency_fund: toNum(emergencyFund),
             emergency_fund_months: emergencyTimeframe || null,
           });
-          if (primaryWealthSource) {
+          {
+            const sources = [...primaryWealthSource];
+            if (sources.includes("Other") && wealthSourceOtherText.trim()) {
+              sources[sources.indexOf("Other")] = wealthSourceOtherText.trim();
+            }
+            const occVal = occupationType === "Other" ? occupationOtherText.trim() || "Other" : occupationType;
             await updatePersonalInfo({
-              wealth_sources: [primaryWealthSource],
+              wealth_sources: sources.length ? sources : null,
+              ...(occVal ? { occupation: occVal } : {}),
             });
           }
           break;
