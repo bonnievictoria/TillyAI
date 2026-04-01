@@ -199,6 +199,42 @@ export async function completeOnboarding() {
   });
 }
 
+// ── SimBanks (account aggregator simulator) ─────────────────────────
+export interface SimBankDiscoveredAccount {
+  account_ref_no: string;
+  provider_name: string;
+  fi_type: string;
+  account_type: string;
+  kind: "deposit" | "mutual_fund" | "equity";
+  masked_identifier: string | null;
+  currency: string | null;
+  current_value: number;
+  cost_value: number | null;
+  holdings_count: number | null;
+}
+
+export interface DiscoverSimBankAccountsResponse {
+  accounts: SimBankDiscoveredAccount[];
+}
+
+export async function discoverSimBankAccounts(): Promise<DiscoverSimBankAccountsResponse> {
+  return request<DiscoverSimBankAccountsResponse>("/simbanks/discover");
+}
+
+export interface SyncSimBankAccountsResponse {
+  portfolio_total_value: number;
+  portfolio_total_invested: number;
+  portfolio_total_gain_percentage: number | null;
+  linked_account_ids: string[];
+}
+
+export async function syncSimBankAccounts(acceptedAccountRefNos: string[]): Promise<SyncSimBankAccountsResponse> {
+  return request<SyncSimBankAccountsResponse>("/simbanks/sync", {
+    method: "POST",
+    body: JSON.stringify({ accepted_account_ref_nos: acceptedAccountRefNos }),
+  });
+}
+
 export function logout() {
   clearToken();
 }
@@ -541,6 +577,63 @@ export async function getMyPortfolio(): Promise<PortfolioDetail> {
   return request<PortfolioDetail>("/portfolio/");
 }
 
+export interface PortfolioAllocationInput {
+  asset_class: string;
+  allocation_percentage: number;
+  amount: number;
+}
+
+export interface PortfolioAllocationUpdatePayload {
+  total_investment?: number;
+  allocations: PortfolioAllocationInput[];
+}
+
+export async function getPortfolioAllocations(): Promise<PortfolioDetail["allocations"]> {
+  return request<PortfolioDetail["allocations"]>("/portfolio/allocations");
+}
+
+export async function updatePortfolioAllocations(
+  payload: PortfolioAllocationUpdatePayload
+): Promise<PortfolioDetail["allocations"]> {
+  return request<PortfolioDetail["allocations"]>("/portfolio/allocations", {
+    method: "PUT",
+    body: JSON.stringify(payload),
+  });
+}
+
+export interface PortfolioHoldingInput {
+  instrument_name: string;
+  instrument_type: string;
+  ticker_symbol?: string | null;
+  quantity?: number | null;
+  average_cost?: number | null;
+  current_price?: number | null;
+  current_value: number;
+  allocation_percentage?: number | null;
+  exchange?: string | null;
+  expense_ratio?: number | null;
+  return_1y?: number | null;
+  return_3y?: number | null;
+  return_5y?: number | null;
+}
+
+export interface PortfolioHoldingBulkPayload {
+  holdings: PortfolioHoldingInput[];
+}
+
+export async function getPortfolioHoldings(): Promise<PortfolioDetail["holdings"]> {
+  return request<PortfolioDetail["holdings"]>("/portfolio/holdings");
+}
+
+export async function updatePortfolioHoldings(
+  payload: PortfolioHoldingBulkPayload
+): Promise<PortfolioDetail["holdings"]> {
+  return request<PortfolioDetail["holdings"]>("/portfolio/holdings", {
+    method: "PUT",
+    body: JSON.stringify(payload),
+  });
+}
+
 export interface PortfolioHistoryPoint {
   id: string;
   recorded_date: string;
@@ -549,6 +642,24 @@ export interface PortfolioHistoryPoint {
 
 export async function getPortfolioHistory(limit = 90): Promise<PortfolioHistoryPoint[]> {
   return request<PortfolioHistoryPoint[]>(`/portfolio/history?limit=${limit}`);
+}
+
+export interface PortfolioHistoryInput {
+  recorded_date: string;
+  total_value: number;
+}
+
+export interface PortfolioHistoryBulkPayload {
+  history: PortfolioHistoryInput[];
+}
+
+export async function updatePortfolioHistory(
+  payload: PortfolioHistoryBulkPayload
+): Promise<PortfolioHistoryPoint[]> {
+  return request<PortfolioHistoryPoint[]>("/portfolio/history", {
+    method: "PUT",
+    body: JSON.stringify(payload),
+  });
 }
 
 // ── Goals API ───────────────────────────────────────────

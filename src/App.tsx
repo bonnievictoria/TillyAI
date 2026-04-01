@@ -24,6 +24,7 @@ import AboutYou from "./pages/AboutYou";
 import Portfolio from "./pages/Portfolio";
 import PortfolioPopup from "./pages/PortfolioPopup";
 import VoiceOnboarding from "./pages/VoiceOnboarding";
+import OnboardingLoading from "./pages/OnboardingLoading";
 import FamilyMembers from "./pages/FamilyMembers";
 
 const queryClient = new QueryClient();
@@ -43,6 +44,7 @@ const App = () => (
             <Route path="/voice-onboarding" element={<VoiceOnboarding />} />
             <Route path="/otp" element={<OTP />} />
             <Route path="/link-accounts" element={<LinkAccounts />} />
+            <Route path="/onboarding-loading" element={<OnboardingLoading />} />
             <Route path="/about-you" element={<AboutYou />} />
             <Route path="/profile" element={<Profile />} />
             <Route path="/chat" element={<Chat />} />
