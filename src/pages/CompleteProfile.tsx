@@ -401,7 +401,10 @@ const CompleteProfile = () => {
   const [values, setValues] = useState("");
 
   // Section 1 — Your financial picture
-  const [primaryWealthSource, setPrimaryWealthSource] = useState("");
+  const [occupationType, setOccupationType] = useState("");
+  const [occupationOtherText, setOccupationOtherText] = useState("");
+  const [primaryWealthSource, setPrimaryWealthSource] = useState<string[]>([]);
+  const [wealthSourceOtherText, setWealthSourceOtherText] = useState("");
   const [investableAssets, setInvestableAssets] = useState("");
   const [liabilities, setLiabilities] = useState("");
   const [otherAssets, setOtherAssets] = useState<OtherAsset[]>([]);
