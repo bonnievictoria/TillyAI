@@ -803,13 +803,43 @@ const CompleteProfile = () => {
       case 1:
         return (
           <div className="space-y-3">
+            {/* Occupation */}
+            <div>
+              <FieldLabel>Occupation</FieldLabel>
+              <div className="flex flex-wrap gap-1.5">
+                {OCCUPATION_OPTIONS.map((o) => (
+                  <Chip key={o} label={o} active={occupationType === o} onClick={() => setOccupationType(occupationType === o ? "" : o)} />
+                ))}
+              </div>
+              {occupationType === "Other" && (
+                <div className="mt-2">
+                  <TextInput value={occupationOtherText} onChange={setOccupationOtherText} placeholder="Enter your occupation" />
+                </div>
+              )}
+            </div>
+
+            {/* Primary Wealth Source — multi-select */}
             <div>
               <FieldLabel>Primary wealth source</FieldLabel>
               <div className="flex flex-wrap gap-1.5">
                 {PRIMARY_WEALTH_SOURCES.map((s) => (
-                  <Chip key={s} label={s} active={primaryWealthSource === s} onClick={() => setPrimaryWealthSource(s)} />
+                  <Chip
+                    key={s}
+                    label={s}
+                    active={primaryWealthSource.includes(s)}
+                    onClick={() =>
+                      setPrimaryWealthSource((prev) =>
+                        prev.includes(s) ? prev.filter((x) => x !== s) : [...prev, s]
+                      )
+                    }
+                  />
                 ))}
               </div>
+              {primaryWealthSource.includes("Other") && (
+                <div className="mt-2">
+                  <TextInput value={wealthSourceOtherText} onChange={setWealthSourceOtherText} placeholder="Specify other wealth source" />
+                </div>
+              )}
             </div>
             <div><FieldLabel>Financial and liquid assets</FieldLabel><TextInput value={investableAssets} onChange={setInvestableAssets} prefix="₹" placeholder="e.g. 42,00,000" /></div>
             <div><FieldLabel>Total liabilities / debts</FieldLabel><TextInput value={liabilities} onChange={setLiabilities} prefix="₹" placeholder="e.g. 5,00,000" /></div>
