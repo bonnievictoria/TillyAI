@@ -74,6 +74,11 @@ const WelcomeScreen = ({ onNext }: WelcomeScreenProps) => {
       }
     }
     await refresh();
+    // Start onboarding fresh for every OTP login in this flow.
+    // Otherwise stale session flags can jump users directly to dashboard.
+    sessionStorage.removeItem("completedTellUs");
+    sessionStorage.removeItem("completedLinkAccounts");
+    sessionStorage.setItem("onboardingComplete", "false");
     setLoading(false);
     setShowModal(true);
   };

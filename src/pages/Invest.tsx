@@ -1,9 +1,335 @@
 import { useNavigate } from "react-router-dom";
 import { ArrowRight } from "lucide-react";
 import BottomNav from "@/components/BottomNav";
+import AIChatSheet from "@/components/dashboard/AIChatSheet";
+import { getMyPortfolio, updatePortfolioAllocations, type PortfolioDetail } from "@/lib/api";
 
+/* ── ETF Data (original) ── */
+interface ETF {
+  name: string;
+  shortName: string;
+  description: string;
+  allocation: number;
+  amount: number;
+  category: string;
+  color: string;
+  exchange: string;
+  houseRec: boolean;
+  customerPref?: boolean;
+  returns1Y: string;
+  returns2Y: string;
+  returns3Y: string;
+  expenseRatio: string;
+  exitLoad: string;
+  minInvestment: string;
+}
+
+const TOTAL = 8300000;
+
+/* Category colors — private bank palette */
+const CAT_COLORS: Record<string, string> = {
+  "India Equity": "#1B3A6B",
+  "US Equity": "#4A7FA5",
+  "Bonds": "#8BA7BC",
+  "Sectoral": "#C4B99A",
+  "Gold": "#D4AF70",
+};
+
+const defaultETFs: ETF[] = [
+  { name: "Nifty 50 ETF (Nippon)", shortName: "Nifty 50", description: "India large-cap, tracks Nifty 50", allocation: 30, amount: 2490000, category: "India Equity", color: CAT_COLORS["India Equity"], exchange: "NSE", houseRec: true, returns1Y: "+14.8%", returns2Y: "+12.6%", returns3Y: "+13.2%", expenseRatio: "0.05%", exitLoad: "Nil", minInvestment: "1 unit (~₹240)" },
+  { name: "Nifty Next 50 ETF (ICICI)", shortName: "Next 50", description: "India mid-large, next 50 companies", allocation: 15, amount: 1245000, category: "India Equity", color: CAT_COLORS["India Equity"], exchange: "NSE", houseRec: true, returns1Y: "+18.2%", returns2Y: "+14.1%", returns3Y: "+15.7%", expenseRatio: "0.08%", exitLoad: "Nil", minInvestment: "1 unit (~₹58)" },
+  { name: "Nifty Midcap 150 ETF (Motilal)", shortName: "Midcap 150", description: "India mid-cap growth exposure", allocation: 10, amount: 830000, category: "India Equity", color: CAT_COLORS["India Equity"], exchange: "NSE", houseRec: true, returns1Y: "+22.4%", returns2Y: "+16.8%", returns3Y: "+18.1%", expenseRatio: "0.12%", exitLoad: "Nil", minInvestment: "1 unit (~₹16)" },
+  { name: "S&P 500 ETF (Mirae)", shortName: "S&P 500", description: "US large-cap equities, customer preference", allocation: 5, amount: 415000, category: "US Equity", color: CAT_COLORS["US Equity"], exchange: "NSE", houseRec: false, customerPref: true, returns1Y: "+26.3%", returns2Y: "+18.4%", returns3Y: "+20.1%", expenseRatio: "0.18%", exitLoad: "Nil", minInvestment: "₹500" },
+  { name: "Bharat Bond ETF (2032)", shortName: "Bharat Bond", description: "AAA-rated PSU bonds, low risk", allocation: 20, amount: 1660000, category: "Bonds", color: CAT_COLORS["Bonds"], exchange: "NSE", houseRec: true, returns1Y: "+7.2%", returns2Y: "+6.8%", returns3Y: "+7.5%", expenseRatio: "0.0005%", exitLoad: "Nil", minInvestment: "1 unit (~₹1,250)" },
+  { name: "Nifty PSU Bank ETF (SBI)", shortName: "PSU Bank", description: "Indian public sector banks", allocation: 8, amount: 664000, category: "Sectoral", color: CAT_COLORS["Sectoral"], exchange: "BSE", houseRec: true, returns1Y: "+16.1%", returns2Y: "+28.4%", returns3Y: "+24.6%", expenseRatio: "0.20%", exitLoad: "Nil", minInvestment: "1 unit (~₹64)" },
+  { name: "Gold ETF (HDFC)", shortName: "Gold", description: "Physical gold, inflation hedge", allocation: 7, amount: 581000, category: "Gold", color: CAT_COLORS["Gold"], exchange: "NSE", houseRec: true, returns1Y: "+12.8%", returns2Y: "+10.2%", returns3Y: "+11.4%", expenseRatio: "0.15%", exitLoad: "Nil", minInvestment: "1 unit (~₹58)" },
+  { name: "Nifty IT ETF (Kotak)", shortName: "IT ETF", description: "Indian IT sector exposure", allocation: 5, amount: 415000, category: "Sectoral", color: CAT_COLORS["Sectoral"], exchange: "NSE", houseRec: true, returns1Y: "+19.6%", returns2Y: "+8.4%", returns3Y: "+12.3%", expenseRatio: "0.20%", exitLoad: "Nil", minInvestment: "1 unit (~₹38)" },
+];
+
+/* ── Helpers ── */
+const TILLY_RATIONALE: Record<string, string> = {
+  "Nifty 50 ETF (Nippon)": "A core holding for any long-term Indian investor. Low cost, highly liquid, and tracks the 50 largest companies in India. Ideal as the foundation of your portfolio given your long-term horizon.",
+  "Nifty Next 50 ETF (ICICI)": "Bridges large and mid-cap exposure. Historically outperforms Nifty 50 over 7+ year periods with moderate additional volatility. Suits your growth objective.",
+  "Nifty Midcap 150 ETF (Motilal)": "Higher growth potential with increased short-term volatility. Recommended at 10% to add upside without overconcentrating in mid-cap risk.",
+  "S&P 500 ETF (Mirae)": "Added at 5% based on your preference for US exposure. Provides geographic diversification and access to global technology leaders outside India.",
+  "Bharat Bond ETF (2032)": "AAA-rated PSU bonds providing stability and predictable returns. Anchors the portfolio against equity volatility. The 2032 maturity aligns with a medium-to-long investment window.",
+  "Nifty PSU Bank ETF (SBI)": "Tactical exposure to Indian public sector banks, which trade at a discount to private peers. Included for value upside as the rate cycle turns.",
+  "Gold ETF (HDFC)": "Gold acts as a hedge against inflation and currency depreciation. A 7% allocation is within the classical 5–10% range advised for balanced portfolios.",
+  "Nifty IT ETF (Kotak)": "India's IT sector offers export-linked dollar revenues. Included for diversification against domestic macro risk and long-term structural growth.",
+};
+
+const formatINR = (n: number) => {
+  if (n >= 10000000) return `₹${(n / 10000000).toFixed(2)} Cr`;
+  if (n >= 100000) return `₹${(n / 100000).toFixed(2)}L`;
+  return `₹${n.toLocaleString("en-IN")}`;
+};
+
+const formatINRNoSymbol = (n: number) => {
+  if (n >= 10000000) return (n / 10000000).toFixed(2) + " Cr";
+  if (n >= 100000) return (n / 100000).toFixed(2) + "L";
+  return n.toLocaleString("en-IN");
+};
+
+/* ── Donut chart (SVG) — compact 140px ── */
+const DonutChart = ({ data, centerLabel }: { data: { label: string; value: number; color: string }[]; centerLabel: string }) => {
+  const total = data.reduce((s, d) => s + d.value, 0);
+  const size = 140;
+  const stroke = 22;
+  const radius = (size - stroke) / 2;
+  const circumference = 2 * Math.PI * radius;
+  let cumulative = 0;
+
+  return (
+    <div className="relative flex items-center justify-center shrink-0" style={{ width: size, height: size }}>
+      <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} className="-rotate-90">
+        {total > 0 &&
+          data.map((seg) => {
+            const pct = seg.value / total;
+            const dashLen = pct * circumference;
+            const dashOff = cumulative * circumference;
+            cumulative += pct;
+            return (
+              <circle
+                key={seg.label}
+                cx={size / 2}
+                cy={size / 2}
+                r={radius}
+                fill="none"
+                stroke={seg.color}
+                strokeWidth={stroke}
+                strokeDasharray={`${dashLen} ${circumference - dashLen}`}
+                strokeDashoffset={-dashOff}
+                strokeLinecap="butt"
+              />
+            );
+          })}
+      </svg>
+      <div className="absolute inset-0 flex flex-col items-center justify-center">
+        <p className="text-base font-bold text-foreground">{centerLabel}</p>
+        <p className="text-[9px] text-muted-foreground">Total</p>
+      </div>
+    </div>
+  );
+};
+
+/* ── Blue ramp helpers (for allocation section) ── */
+const PALE_BLUE = "#E8F0FE";
+const MID_BLUE = "#A8C4E8";
+const NAVY = "#1A3A6B";
+const LIGHT_BADGE = "#C5D8F5";
+
+function lerpColor(a: string, b: string, t: number): string {
+  const parse = (hex: string) => [
+    parseInt(hex.slice(1, 3), 16),
+    parseInt(hex.slice(3, 5), 16),
+    parseInt(hex.slice(5, 7), 16),
+  ];
+  const ca = parse(a);
+  const cb = parse(b);
+  const r = Math.round(ca[0] + (cb[0] - ca[0]) * t);
+  const g = Math.round(ca[1] + (cb[1] - ca[1]) * t);
+  const bl = Math.round(ca[2] + (cb[2] - ca[2]) * t);
+  return `#${[r, g, bl].map((v) => v.toString(16).padStart(2, "0")).join("")}`;
+}
+
+function sliderFillColor(pct: number): string {
+  const t = Math.min(pct / 30, 1);
+  return lerpColor(MID_BLUE, NAVY, t);
+}
+
+/* ── Portfolio Summary Generator ── */
+function generateSummary(allocations: number[]): string {
+  const equity = allocations[0] + allocations[1] + allocations[2];
+  const intl = allocations[3];
+  const debt = allocations[4];
+  const sectoral = allocations[5] + allocations[7];
+  const gold = allocations[6];
+
+  let profile = "balanced";
+  if (equity + intl > 65) profile = "aggressive";
+  else if (equity + intl < 40) profile = "conservative";
+
+  const parts: string[] = [];
+  parts.push(`Your portfolio leans **${profile}** with **${equity + intl}% in equities** (including ${intl}% international via S&P 500).`);
+  if (equity > 40) {
+    parts.push(`Domestic equity is concentrated at **${equity}%**, led by large-cap Nifty 50 at **${allocations[0]}%**.`);
+  } else {
+    parts.push(`Domestic equity sits at **${equity}%**, providing measured market exposure.`);
+  }
+  parts.push(`Debt anchors stability at **${debt}%** via Bharat Bond.`);
+  if (gold > 0 || sectoral > 0) {
+    const extras: string[] = [];
+    if (gold > 0) extras.push(`gold (${gold}%)`);
+    if (sectoral > 0) extras.push(`sectoral bets (${sectoral}%)`);
+    parts.push(`Diversifiers include ${extras.join(" and ")}.`);
+  }
+  return parts.join(" ");
+}
+
+function renderBoldText(text: string) {
+  const parts = text.split(/(\*\*[^*]+\*\*)/g);
+  return parts.map((part, i) => {
+    if (part.startsWith("**") && part.endsWith("**")) {
+      return <span key={i} className="font-bold" style={{ color: NAVY }}>{part.slice(2, -2)}</span>;
+    }
+    return <span key={i}>{part}</span>;
+  });
+}
+
+/* ── Delta Badge ── */
+function DeltaBadge({ current, rec }: { current: number; rec: number }) {
+  const delta = current - rec;
+  const absDelta = Math.abs(delta);
+  const sign = delta > 0 ? "+" : delta < 0 ? "−" : "";
+  const label = `${sign}${absDelta}%`;
+
+  let bg: string;
+  let color: string;
+
+  if (absDelta <= 1) {
+    bg = PALE_BLUE; color = NAVY;
+  } else if (delta > 0) {
+    bg = NAVY; color = "#FFFFFF";
+  } else {
+    bg = LIGHT_BADGE; color = NAVY;
+  }
+
+  return (
+    <span
+      className="inline-flex items-center justify-center rounded-full px-2 py-0.5"
+      style={{
+        backgroundColor: bg, color,
+        fontSize: "11px",
+        fontFamily: "ui-monospace, SFMono-Regular, Menlo, monospace",
+        fontWeight: 600, minWidth: "40px",
+      }}
+    >
+      {label}
+    </span>
+  );
+}
+
+/* ── Asset definitions for allocation section ── */
+interface AllocAsset {
+  name: string;
+  shortName: string;
+  houseRec: number;
+}
+
+const ALLOC_ASSETS: AllocAsset[] = [
+  { name: "Nifty 50", shortName: "Nifty 50", houseRec: 30 },
+  { name: "Next 50", shortName: "Next 50", houseRec: 15 },
+  { name: "Midcap 150", shortName: "Midcap 150", houseRec: 10 },
+  { name: "S&P 500", shortName: "S&P 500", houseRec: 5 },
+  { name: "Bharat Bond", shortName: "Bharat Bond", houseRec: 20 },
+  { name: "PSU Bank", shortName: "PSU Bank", houseRec: 8 },
+  { name: "Gold", shortName: "Gold", houseRec: 7 },
+  { name: "IT ETF", shortName: "IT ETF", houseRec: 5 },
+];
+
+const houseDefaults = ALLOC_ASSETS.map((a) => a.houseRec);
+const normalizeAssetKey = (v: string) => v.trim().toLowerCase().replace(/[^a-z0-9]+/g, "");
+
+const DB_ALLOC_COLORS = ["#1B3A6B", "#4A7FA5", "#8BA7BC", "#C4B99A", "#D4AF70", "#10b981", "#f59e0b", "#6366f1", "#ec4899"];
+
+function portfolioToDonutData(p: PortfolioDetail): { label: string; value: number; color: string }[] {
+  const raw = p.allocations.map((a, i) => ({
+    label: a.asset_class,
+    value: a.allocation_percentage,
+    color: DB_ALLOC_COLORS[i % DB_ALLOC_COLORS.length],
+  }));
+  const sum = raw.reduce((s, x) => s + x.value, 0);
+  if (sum <= 0) return raw;
+  if (Math.abs(sum - 100) < 0.5) return raw;
+  return raw.map((x) => ({ ...x, value: (x.value / sum) * 100 }));
+}
+
+/* ── Page ── */
 const Invest = () => {
-  const navigate = useNavigate();
+  const houseAllocations = defaultETFs.map((e) => e.allocation);
+  const [allocations, setAllocations] = useState<number[]>([...houseDefaults]);
+  const [totalInvestment, setTotalInvestment] = useState<number>(TOTAL);
+  const [portfolioDb, setPortfolioDb] = useState<PortfolioDetail | null>(null);
+  const [selectedETF, setSelectedETF] = useState<number | null>(null);
+  const [chatOpen, setChatOpen] = useState(false);
+  const [showTillyPill, setShowTillyPill] = useState(true);
+  const [isSaving, setIsSaving] = useState(false);
+  const [saveMessage, setSaveMessage] = useState<string | null>(null);
+
+  useEffect(() => {
+    getMyPortfolio()
+      .then((p) => {
+        setPortfolioDb(p);
+        if (p.total_value > 0) setTotalInvestment(Math.round(p.total_value));
+        if (p.allocations.length > 0) {
+          const byAsset = new Map(
+            p.allocations.map((a) => [normalizeAssetKey(a.asset_class), Number(a.allocation_percentage)])
+          );
+          const mapped = ALLOC_ASSETS.map((asset, idx) => byAsset.get(normalizeAssetKey(asset.shortName)) ?? byAsset.get(normalizeAssetKey(asset.name)) ?? houseDefaults[idx]);
+          setAllocations(mapped);
+        }
+      })
+      .catch(() => setPortfolioDb(null));
+  }, []);
+
+  useEffect(() => {
+    const timer = setTimeout(() => setShowTillyPill(false), 5000);
+    return () => clearTimeout(timer);
+  }, []);
+
+  const totalAlloc = allocations.reduce((s, a) => s + a, 0);
+  const isValid = totalAlloc === 100;
+  const summary = useMemo(() => generateSummary(allocations), [allocations]);
+
+  const updateAllocation = useCallback((idx: number, val: number) => {
+    setAllocations((prev) => {
+      const next = [...prev];
+      next[idx] = Math.max(0, Math.min(50, val));
+      return next;
+    });
+  }, []);
+
+  const updateFromRupee = useCallback(
+    (idx: number, rupeeVal: number) => {
+      if (totalInvestment <= 0) return;
+      const pct = Math.round((rupeeVal / totalInvestment) * 100);
+      updateAllocation(idx, pct);
+    },
+    [totalInvestment, updateAllocation]
+  );
+
+  const resetToHouse = () => setAllocations([...houseDefaults]);
+
+  // Build donut data by grouping categories (or from DB allocations when available)
+  const categoryMap = new Map<string, { value: number; color: string }>();
+  defaultETFs.forEach((etf, i) => {
+    const existing = categoryMap.get(etf.category);
+    if (existing) {
+      existing.value += allocations[i];
+    } else {
+      categoryMap.set(etf.category, { value: allocations[i], color: etf.color });
+    }
+  });
+  const donutFromSliders = Array.from(categoryMap.entries()).map(([label, d]) => ({
+    label, value: d.value, color: d.color,
+  }));
+  const donutData =
+    portfolioDb && portfolioDb.allocations.length > 0 ? portfolioToDonutData(portfolioDb) : donutFromSliders;
+
+  const donutCenterLabel =
+    portfolioDb && portfolioDb.total_value > 0
+      ? portfolioDb.total_value >= 10000000
+        ? `₹${(portfolioDb.total_value / 10000000).toFixed(1)}Cr`
+        : portfolioDb.total_value >= 100000
+          ? `₹${(portfolioDb.total_value / 100000).toFixed(1)}L`
+          : `₹${Math.round(portfolioDb.total_value).toLocaleString("en-IN")}`
+      : totalInvestment >= 10000000
+        ? `₹${(totalInvestment / 10000000).toFixed(1)}Cr`
+        : totalInvestment >= 100000
+          ? `₹${(totalInvestment / 100000).toFixed(1)}L`
+          : `₹${Math.round(totalInvestment).toLocaleString("en-IN")}`;
+
+  const activeETF = selectedETF !== null ? defaultETFs[selectedETF] : null;
 
   return (
     <div className="mobile-container bg-background min-h-screen pb-20">
@@ -11,6 +337,7 @@ const Invest = () => {
         <h1 className="text-xl font-bold text-foreground">Invest</h1>
       </div>
 
+<<<<<<< HEAD
       <div className="flex-1 flex items-center justify-center px-5 pt-32">
         <div className="w-full rounded-2xl bg-card border border-border p-8 text-center shadow-sm">
           <p className="text-sm text-muted-foreground mb-6">
@@ -20,6 +347,262 @@ const Invest = () => {
             onClick={() => navigate("/execute")}
             className="inline-flex items-center justify-center gap-2 rounded-full text-sm font-semibold text-primary-foreground px-6 py-3 transition-colors hover:opacity-90"
             style={{ backgroundColor: "hsl(var(--wealth-navy))" }}
+=======
+      <div className="pb-36">
+        {/* Donut + Legend */}
+        <div className="px-5 py-6">
+          <div className="flex items-start gap-5">
+            <DonutChart data={donutData} centerLabel={donutCenterLabel} />
+            <div className="flex-1 pt-2">
+              <div className="grid grid-cols-1 gap-2">
+                {donutData.map((d) => (
+                  <div key={d.label} className="flex items-center gap-2.5">
+                    <div className="h-[10px] w-[10px] rounded-[2px] shrink-0" style={{ backgroundColor: d.color }} />
+                    <span className="text-xs text-foreground flex-1 truncate">{d.label}</span>
+                    <span className="text-xs font-bold text-foreground">{d.value}%</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* ETF Cards */}
+        <div className="px-5 mb-6">
+          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-widest mb-3">Recommended ETF Allocation</p>
+          <div className="space-y-2.5">
+            {defaultETFs.map((etf, i) => (
+              <motion.button
+                key={etf.name}
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: i * 0.04 }}
+                onClick={() => setSelectedETF(i)}
+                className="w-full rounded-2xl bg-card border border-border p-4 text-left transition-all hover:shadow-sm active:scale-[0.99]"
+              >
+                <div className="flex items-start gap-3">
+                  <div className="mt-0.5 h-9 w-1.5 rounded-full shrink-0" style={{ backgroundColor: etf.color }} />
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-start justify-between">
+                      <div className="min-w-0 flex-1">
+                        <p className="text-sm font-bold text-foreground leading-tight">{etf.name}</p>
+                        <p className="text-[11px] text-muted-foreground mt-0.5">{etf.description}</p>
+                      </div>
+                      <div className="text-right shrink-0 ml-3">
+                        <p className="text-sm font-bold text-foreground">{allocations[i]}%</p>
+                        <p className="text-[11px] text-muted-foreground">{formatINR(totalInvestment * allocations[i] / 100)}</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-1.5 mt-2 flex-wrap">
+                      <span className="text-[9px] font-medium px-2 py-0.5 rounded-full bg-secondary text-muted-foreground">{etf.category}</span>
+                      <span className="text-[9px] font-medium px-2 py-0.5 rounded-full bg-secondary text-muted-foreground">{etf.exchange}</span>
+                      {etf.houseRec && (
+                        <span className="text-[9px] font-semibold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400 flex items-center gap-0.5">
+                          <Check className="h-2.5 w-2.5" /> House rec.
+                        </span>
+                      )}
+                      {etf.customerPref && (
+                        <span className="text-[9px] font-semibold px-2 py-0.5 rounded-full bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400">
+                          Customer preference
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </motion.button>
+            ))}
+          </div>
+        </div>
+
+        {/* ═══ NEW ALLOCATION SECTION (kept as-is) ═══ */}
+
+        {/* Section header */}
+        <div className="px-5 mb-1">
+          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-widest mb-1">Adjust your allocation</p>
+          <p className="text-[11px] text-muted-foreground mb-4">Drag sliders or edit values · House recommendation shown as tick</p>
+        </div>
+
+        {/* Portfolio Summary Card — sticky */}
+        <div className="sticky top-0 z-20 px-5 pt-1 pb-3" style={{ backgroundColor: "hsl(var(--background))" }}>
+          <div className="p-4 rounded-xl" style={{ backgroundColor: "#F5F5F5" }}>
+            <p className="text-xs leading-relaxed text-foreground/80" style={{ fontSize: "12px", lineHeight: "1.6" }}>
+              {renderBoldText(summary)}
+            </p>
+          </div>
+        </div>
+
+        {/* Total Investment Input */}
+        <div className="px-5 mb-4">
+          <div className="flex items-center justify-between">
+            <label className="text-muted-foreground" style={{ fontSize: "11px" }}>Total investment (₹)</label>
+            <input
+              type="text"
+              inputMode="numeric"
+              value={totalInvestment.toLocaleString("en-IN")}
+              onChange={(e) => {
+                const raw = e.target.value.replace(/[^0-9]/g, "");
+                setTotalInvestment(Number(raw) || 0);
+              }}
+              className="border border-border rounded-lg bg-card px-3 py-2 text-right text-foreground"
+              style={{ width: "160px", fontFamily: "ui-monospace, SFMono-Regular, Menlo, monospace", fontSize: "14px" }}
+            />
+          </div>
+        </div>
+
+        {/* Asset Allocation Cards */}
+        <div className="px-5 space-y-2.5">
+          {ALLOC_ASSETS.map((asset, i) => {
+            const pct = allocations[i];
+            const rupee = Math.round((totalInvestment * pct) / 100);
+            const fillColor = sliderFillColor(pct);
+            const fillPct = (pct / 50) * 100;
+
+            return (
+              <div
+                key={asset.shortName}
+                className="bg-card rounded-xl"
+                style={{ border: "0.5px solid hsl(var(--border))", padding: "14px 16px" }}
+              >
+                {/* Top row */}
+                <div className="flex items-center justify-between gap-2 mb-3">
+                  <span className="text-foreground font-medium flex-shrink-0" style={{ fontSize: "14px" }}>{asset.name}</span>
+                  <div className="flex items-center gap-2 flex-shrink-0">
+                    <div className="flex items-center gap-1">
+                      <input
+                        type="text" inputMode="numeric" value={pct}
+                        onChange={(e) => { const v = parseInt(e.target.value.replace(/[^0-9]/g, ""), 10); updateAllocation(i, isNaN(v) ? 0 : v); }}
+                        className="border border-border rounded-md bg-card text-right text-foreground px-1.5 py-1"
+                        style={{ width: "48px", fontFamily: "ui-monospace, SFMono-Regular, Menlo, monospace", fontSize: "13px" }}
+                      />
+                      <span className="text-muted-foreground" style={{ fontSize: "11px" }}>%</span>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <input
+                        type="text" inputMode="numeric" value={formatINRNoSymbol(rupee)}
+                        onChange={(e) => { const raw = e.target.value.replace(/[^0-9]/g, ""); updateFromRupee(i, Number(raw) || 0); }}
+                        className="border border-border rounded-md bg-card text-right text-foreground px-1.5 py-1"
+                        style={{ width: "80px", fontFamily: "ui-monospace, SFMono-Regular, Menlo, monospace", fontSize: "13px" }}
+                      />
+                      <span className="text-muted-foreground" style={{ fontSize: "11px" }}>₹</span>
+                    </div>
+                    <DeltaBadge current={pct} rec={asset.houseRec} />
+                  </div>
+                </div>
+
+                {/* Slider row */}
+                <div className="relative h-6 flex items-center">
+                  <div className="absolute inset-x-0 h-2 rounded-full" style={{ backgroundColor: PALE_BLUE }} />
+                  <div className="absolute left-0 h-2 rounded-full transition-all" style={{ width: `${fillPct}%`, backgroundColor: fillColor }} />
+                  <div
+                    className="absolute h-4 w-0.5 rounded-full z-10"
+                    style={{ left: `${(asset.houseRec / 50) * 100}%`, transform: "translateX(-50%)", backgroundColor: "#9CA3AF" }}
+                    title={`Rec: ${asset.houseRec}%`}
+                  />
+                  <input
+                    type="range" min={0} max={50} value={pct}
+                    onChange={(e) => updateAllocation(i, Number(e.target.value))}
+                    className="alloc-slider absolute inset-x-0 h-6 w-full appearance-none bg-transparent cursor-pointer z-20
+                      [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:h-5 [&::-webkit-slider-thumb]:w-5 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:border-2 [&::-webkit-slider-thumb]:bg-card [&::-webkit-slider-thumb]:shadow-sm
+                      [&::-moz-range-thumb]:h-5 [&::-moz-range-thumb]:w-5 [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:border-2 [&::-moz-range-thumb]:bg-card"
+                    style={{ "--slider-fill": fillColor } as React.CSSProperties}
+                  />
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Footer bar — sticky bottom */}
+      <div
+        className="fixed bottom-[calc(3.5rem+env(safe-area-inset-bottom,8px))] left-0 right-0 z-30 border-t border-border"
+        style={{ backgroundColor: "#FFFFFF" }}
+      >
+        <div className="max-w-md mx-auto px-4 py-3 flex items-center justify-between gap-2">
+          <div className="flex-1 min-w-0">
+            <span className="text-xs text-foreground">
+              Allocated:{" "}
+              <span className="font-bold" style={{ fontFamily: "ui-monospace, SFMono-Regular, Menlo, monospace", color: isValid ? NAVY : undefined }}>
+                {totalAlloc}%
+              </span>
+            </span>
+            <span className="ml-1.5" style={{ fontSize: "11px" }}>
+              {isValid ? (
+                <span style={{ color: NAVY }} className="font-medium">✓ fully allocated</span>
+              ) : totalAlloc > 100 ? (
+                <span className="text-muted-foreground">{totalAlloc - 100}pt% over</span>
+              ) : (
+                <span className="text-muted-foreground">{100 - totalAlloc}% remaining</span>
+              )}
+            </span>
+          </div>
+          <div className="flex items-center gap-2 flex-shrink-0">
+            <button onClick={resetToHouse} className="text-xs font-medium hover:underline flex items-center gap-1" style={{ color: NAVY, fontSize: "11px" }}>
+              <RotateCcw className="h-3 w-3" /> Reset
+            </button>
+            <button
+              disabled={!isValid}
+              onClick={async () => {
+                if (!isValid || isSaving) return;
+                setIsSaving(true);
+                setSaveMessage(null);
+                try {
+                  const payload = {
+                    total_investment: totalInvestment,
+                    allocations: ALLOC_ASSETS.map((asset, i) => ({
+                      asset_class: asset.shortName,
+                      allocation_percentage: allocations[i],
+                      amount: Math.round((totalInvestment * allocations[i]) / 100),
+                    })),
+                  };
+                  const savedAllocations = await updatePortfolioAllocations(payload);
+                  setPortfolioDb((prev) =>
+                    prev
+                      ? { ...prev, total_invested: totalInvestment, total_value: totalInvestment, allocations: savedAllocations }
+                      : null
+                  );
+                  setSaveMessage("Portfolio allocations saved.");
+                } catch {
+                  setSaveMessage("Could not save allocations. Please try again.");
+                } finally {
+                  setIsSaving(false);
+                }
+              }}
+              className="rounded-full text-sm font-semibold flex items-center gap-1.5 disabled:opacity-50 disabled:cursor-not-allowed"
+              style={{ backgroundColor: NAVY, color: "#FFFFFF", height: "36px", padding: "0 16px" }}
+            >
+              {isSaving ? "Saving..." : "Confirm & invest"} <ArrowRight className="h-3.5 w-3.5" />
+            </button>
+          </div>
+        </div>
+        {!isValid && (
+          <div className="max-w-md mx-auto px-4 pb-2">
+            <span className="flex items-center gap-1 text-destructive" style={{ fontSize: "11px" }}>
+              <AlertTriangle className="h-3 w-3" /> Total must equal 100% to proceed
+            </span>
+          </div>
+        )}
+        {saveMessage && (
+          <div className="max-w-md mx-auto px-4 pb-2">
+            <span
+              className={`text-[11px] ${saveMessage.includes("saved") ? "text-emerald-700 dark:text-emerald-400" : "text-destructive"}`}
+            >
+              {saveMessage}
+            </span>
+          </div>
+        )}
+      </div>
+
+      {/* ═══ ORIGINAL BOTTOM SHEET (unchanged) ═══ */}
+      <AnimatePresence>
+        {activeETF && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-end justify-center bg-foreground/30 backdrop-blur-sm"
+            onClick={() => setSelectedETF(null)}
+>>>>>>> 77021669312e2a9d2cfd0b8d7b86724705824d07
           >
             Review & Execute
             <ArrowRight className="h-4 w-4" />
