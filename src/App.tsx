@@ -17,6 +17,7 @@ import MeetingNotesIndex from "./pages/MeetingNotesIndex";
 import Rebalancing from "./pages/Rebalancing";
 import GoalPlanner from "./pages/GoalPlanner";
 import Invest from "./pages/Invest";
+import Execute from "./pages/Execute";
 import Discovery from "./pages/Discovery";
 import OTP from "./pages/OTP";
 import LinkAccounts from "./pages/LinkAccounts";
@@ -48,6 +49,7 @@ const App = () => (
             <Route path="/chat" element={<Chat />} />
             <Route path="/notifications" element={<Notifications />} />
             <Route path="/invest" element={<Invest />} />
+            <Route path="/execute" element={<Execute />} />
             <Route path="/discovery" element={<Discovery />} />
             <Route path="/profile/complete" element={<CompleteProfile />} />
             <Route path="/profile/ips" element={<InvestmentPolicyStatement />} />
