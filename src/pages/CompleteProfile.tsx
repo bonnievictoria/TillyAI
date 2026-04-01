@@ -89,6 +89,7 @@ const GOAL_PURPOSES = [
 const CURRENCIES = ["INR", "USD", "GBP"];
 
 const PRIMARY_WEALTH_SOURCES = ["Salary", "Business", "Inheritance", "Investments", "Other"];
+const OCCUPATION_OPTIONS = ["Salaried", "Retired", "Homemaker", "Other"];
 
 const RISK_LEVELS = [...RISK_CATEGORIES];
 
@@ -400,7 +401,10 @@ const CompleteProfile = () => {
   const [values, setValues] = useState("");
 
   // Section 1 — Your financial picture
-  const [primaryWealthSource, setPrimaryWealthSource] = useState("");
+  const [occupationType, setOccupationType] = useState("");
+  const [occupationOtherText, setOccupationOtherText] = useState("");
+  const [primaryWealthSource, setPrimaryWealthSource] = useState<string[]>([]);
+  const [wealthSourceOtherText, setWealthSourceOtherText] = useState("");
   const [investableAssets, setInvestableAssets] = useState("");
   const [liabilities, setLiabilities] = useState("");
   const [otherAssets, setOtherAssets] = useState<OtherAsset[]>([]);
@@ -484,7 +488,7 @@ const CompleteProfile = () => {
         if (p.investment_profile) {
           const ip = p.investment_profile;
           if (p.personal_info?.wealth_sources?.length) {
-            setPrimaryWealthSource(p.personal_info.wealth_sources[0]);
+            setPrimaryWealthSource(p.personal_info.wealth_sources);
           }
           setInvestableAssets(parseNum(ip.investable_assets?.toString()));
           setLiabilities(parseNum(ip.total_liabilities?.toString()));
@@ -615,9 +619,15 @@ const CompleteProfile = () => {
             emergency_fund: toNum(emergencyFund),
             emergency_fund_months: emergencyTimeframe || null,
           });
-          if (primaryWealthSource) {
+          {
+            const sources = [...primaryWealthSource];
+            if (sources.includes("Other") && wealthSourceOtherText.trim()) {
+              sources[sources.indexOf("Other")] = wealthSourceOtherText.trim();
+            }
+            const occVal = occupationType === "Other" ? occupationOtherText.trim() || "Other" : occupationType;
             await updatePersonalInfo({
-              wealth_sources: [primaryWealthSource],
+              wealth_sources: sources.length ? sources : null,
+              ...(occVal ? { occupation: occVal } : {}),
             });
           }
           break;
@@ -793,13 +803,43 @@ const CompleteProfile = () => {
       case 1:
         return (
           <div className="space-y-3">
+            {/* Occupation */}
+            <div>
+              <FieldLabel>Occupation</FieldLabel>
+              <div className="flex flex-wrap gap-1.5">
+                {OCCUPATION_OPTIONS.map((o) => (
+                  <Chip key={o} label={o} active={occupationType === o} onClick={() => setOccupationType(occupationType === o ? "" : o)} />
+                ))}
+              </div>
+              {occupationType === "Other" && (
+                <div className="mt-2">
+                  <TextInput value={occupationOtherText} onChange={setOccupationOtherText} placeholder="Enter your occupation" />
+                </div>
+              )}
+            </div>
+
+            {/* Primary Wealth Source — multi-select */}
             <div>
               <FieldLabel>Primary wealth source</FieldLabel>
               <div className="flex flex-wrap gap-1.5">
                 {PRIMARY_WEALTH_SOURCES.map((s) => (
-                  <Chip key={s} label={s} active={primaryWealthSource === s} onClick={() => setPrimaryWealthSource(s)} />
+                  <Chip
+                    key={s}
+                    label={s}
+                    active={primaryWealthSource.includes(s)}
+                    onClick={() =>
+                      setPrimaryWealthSource((prev) =>
+                        prev.includes(s) ? prev.filter((x) => x !== s) : [...prev, s]
+                      )
+                    }
+                  />
                 ))}
               </div>
+              {primaryWealthSource.includes("Other") && (
+                <div className="mt-2">
+                  <TextInput value={wealthSourceOtherText} onChange={setWealthSourceOtherText} placeholder="Specify other wealth source" />
+                </div>
+              )}
             </div>
             <div><FieldLabel>Financial and liquid assets</FieldLabel><TextInput value={investableAssets} onChange={setInvestableAssets} prefix="₹" placeholder="e.g. 42,00,000" /></div>
             <div><FieldLabel>Total liabilities / debts</FieldLabel><TextInput value={liabilities} onChange={setLiabilities} prefix="₹" placeholder="e.g. 5,00,000" /></div>
