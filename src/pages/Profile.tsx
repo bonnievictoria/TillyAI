@@ -2,8 +2,7 @@ import { useEffect, useState, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   User, Pencil, Check, FileText, ChevronRight, ChevronDown,
-  MessageSquareText, Calculator, BarChart3, Users, Shield,
-  Target, Briefcase, DollarSign, Clock, AlertCircle, LogOut,
+  MessageSquareText, Calculator, BarChart3, Users, Briefcase, AlertCircle, LogOut,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
@@ -14,24 +13,12 @@ import {
   updateMe,
   getFullProfile,
   updatePersonalInfo,
-  updateInvestmentProfile,
-  updateRiskProfile,
-  updateTaxProfile,
-  updateReviewPreference,
-  RISK_CATEGORIES,
   BackendOfflineError,
   type FullProfileResponse,
   type UserUpdatePayload,
 } from "@/lib/api";
 
 /* ── tiny helpers ── */
-const fmt = (n: number | null | undefined) => {
-  if (n == null || n === 0) return null;
-  return `₹${n.toLocaleString("en-IN")}`;
-};
-
-const pct = (n: number | null | undefined) =>
-  n != null ? `${n}%` : null;
 
 const EmptyHint = ({ label }: { label: string }) => (
   <span className="text-[10px] italic text-muted-foreground/60">
@@ -169,44 +156,6 @@ const Profile = () => {
     address: "",
   });
 
-  /* editable investment profile */
-  const [editingInvestment, setEditingInvestment] = useState(false);
-  const [investDraft, setInvestDraft] = useState({
-    portfolio_value: "",
-    monthly_savings: "",
-    target_corpus: "",
-    target_timeline: "",
-    annual_income: "",
-    retirement_age: "",
-    objectives: [] as string[],
-  });
-
-  /* editable risk */
-  const [editingRisk, setEditingRisk] = useState(false);
-  const [riskDraft, setRiskDraft] = useState({
-    risk_level: 2,
-    risk_capacity: "",
-    investment_experience: "",
-    investment_horizon: "",
-    drop_reaction: "",
-    max_drawdown: "",
-  });
-
-  /* editable tax */
-  const [editingTax, setEditingTax] = useState(false);
-  const [taxDraft, setTaxDraft] = useState({
-    income_tax_rate: "",
-    capital_gains_tax_rate: "",
-    notes: "",
-  });
-
-  /* editable review */
-  const [editingReview, setEditingReview] = useState(false);
-  const [reviewDraft, setReviewDraft] = useState({
-    frequency: "Quarterly",
-    update_process: "",
-  });
-
   /* ── load data ── */
   useEffect(() => {
     if (user) {
@@ -237,47 +186,6 @@ const Profile = () => {
           });
         }
 
-        if (p.investment_profile) {
-          const ip = p.investment_profile;
-          setInvestDraft({
-            portfolio_value: ip.portfolio_value?.toString() ?? "",
-            monthly_savings: ip.monthly_savings?.toString() ?? "",
-            target_corpus: ip.target_corpus?.toString() ?? "",
-            target_timeline: ip.target_timeline ?? "",
-            annual_income: ip.annual_income?.toString() ?? "",
-            retirement_age: ip.retirement_age?.toString() ?? "",
-            objectives: ip.objectives ?? [],
-          });
-        }
-
-        if (p.risk_profile) {
-          const rp = p.risk_profile;
-          setRiskDraft({
-            risk_level: rp.risk_level ?? 2,
-            risk_capacity: rp.risk_capacity ?? "",
-            investment_experience: rp.investment_experience ?? "",
-            investment_horizon: rp.investment_horizon ?? "",
-            drop_reaction: rp.drop_reaction ?? "",
-            max_drawdown: rp.max_drawdown?.toString() ?? "",
-          });
-        }
-
-        if (p.tax_profile) {
-          const tp = p.tax_profile;
-          setTaxDraft({
-            income_tax_rate: tp.income_tax_rate?.toString() ?? "",
-            capital_gains_tax_rate: tp.capital_gains_tax_rate?.toString() ?? "",
-            notes: tp.notes ?? "",
-          });
-        }
-
-        if (p.review_preference) {
-          const rp = p.review_preference;
-          setReviewDraft({
-            frequency: rp.frequency ?? "Quarterly",
-            update_process: rp.update_process ?? "",
-          });
-        }
       } catch {
         // first-time user
       } finally {
@@ -324,80 +232,6 @@ const Profile = () => {
     }
   }, [personalDraft]);
 
-  const saveInvestment = useCallback(async () => {
-    try {
-      const toNum = (s: string) => {
-        const n = Number(s.replace(/[₹,\s]/g, ""));
-        return Number.isNaN(n) || n === 0 ? null : n;
-      };
-      const res = await updateInvestmentProfile({
-        objectives: investDraft.objectives.length ? investDraft.objectives : null,
-        portfolio_value: toNum(investDraft.portfolio_value),
-        monthly_savings: toNum(investDraft.monthly_savings),
-        target_corpus: toNum(investDraft.target_corpus),
-        target_timeline: investDraft.target_timeline || null,
-        annual_income: toNum(investDraft.annual_income),
-        retirement_age: investDraft.retirement_age ? Number(investDraft.retirement_age) : null,
-      });
-      setProfile((prev) => prev ? { ...prev, investment_profile: res } : prev);
-      setEditingInvestment(false);
-      toast.success("Investment profile updated");
-    } catch (err) {
-      if (err instanceof BackendOfflineError) return;
-      toast.error(err instanceof Error ? err.message : "Failed to save");
-    }
-  }, [investDraft]);
-
-  const saveRisk = useCallback(async () => {
-    try {
-      const res = await updateRiskProfile({
-        risk_level: riskDraft.risk_level,
-        risk_capacity: riskDraft.risk_capacity || null,
-        investment_experience: riskDraft.investment_experience || null,
-        investment_horizon: riskDraft.investment_horizon || null,
-        drop_reaction: riskDraft.drop_reaction || null,
-        max_drawdown: riskDraft.max_drawdown ? Number(riskDraft.max_drawdown) : null,
-      });
-      setProfile((prev) => prev ? { ...prev, risk_profile: res } : prev);
-      setEditingRisk(false);
-      toast.success("Risk profile updated");
-    } catch (err) {
-      if (err instanceof BackendOfflineError) return;
-      toast.error(err instanceof Error ? err.message : "Failed to save");
-    }
-  }, [riskDraft]);
-
-  const saveTax = useCallback(async () => {
-    try {
-      const res = await updateTaxProfile({
-        income_tax_rate: taxDraft.income_tax_rate ? Number(taxDraft.income_tax_rate) : null,
-        capital_gains_tax_rate: taxDraft.capital_gains_tax_rate ? Number(taxDraft.capital_gains_tax_rate) : null,
-        notes: taxDraft.notes || null,
-      });
-      setProfile((prev) => prev ? { ...prev, tax_profile: res } : prev);
-      setEditingTax(false);
-      toast.success("Tax profile updated");
-    } catch (err) {
-      if (err instanceof BackendOfflineError) return;
-      toast.error(err instanceof Error ? err.message : "Failed to save");
-    }
-  }, [taxDraft]);
-
-  const saveReview = useCallback(async () => {
-    try {
-      const res = await updateReviewPreference({
-        frequency: reviewDraft.frequency || null,
-        update_process: reviewDraft.update_process || null,
-      });
-      setProfile((prev) => prev ? { ...prev, review_preference: res } : prev);
-      setEditingReview(false);
-      toast.success("Review preferences updated");
-    } catch (err) {
-      if (err instanceof BackendOfflineError) return;
-      toast.error(err instanceof Error ? err.message : "Failed to save");
-    }
-  }, [reviewDraft]);
-
   /* ── completeness ── */
   const personalCompleteness = (() => {
     const pi = profile?.personal_info;
@@ -406,36 +240,7 @@ const Profile = () => {
     return Math.round((fields.filter(Boolean).length / fields.length) * 100);
   })();
 
-  const investCompleteness = (() => {
-    const ip = profile?.investment_profile;
-    if (!ip) return 0;
-    const fields = [ip.objectives?.length ? "y" : null, ip.portfolio_value, ip.monthly_savings, ip.annual_income, ip.target_corpus, ip.target_timeline];
-    return Math.round((fields.filter((f) => f != null && f !== 0).length / fields.length) * 100);
-  })();
-
-  const riskCompleteness = (() => {
-    const rp = profile?.risk_profile;
-    if (!rp) return 0;
-    const fields = [rp.risk_level != null ? "y" : null, rp.risk_capacity, rp.investment_experience, rp.investment_horizon, rp.drop_reaction];
-    return Math.round((fields.filter(Boolean).length / fields.length) * 100);
-  })();
-
-  const taxCompleteness = (() => {
-    const tp = profile?.tax_profile;
-    if (!tp) return 0;
-    const fields = [tp.income_tax_rate, tp.capital_gains_tax_rate];
-    return Math.round((fields.filter((f) => f != null).length / fields.length) * 100);
-  })();
-
-  const reviewCompleteness = (() => {
-    const rp = profile?.review_preference;
-    if (!rp) return 0;
-    return rp.frequency ? 100 : 0;
-  })();
-
-  const overallCompleteness = Math.round(
-    (personalCompleteness + investCompleteness + riskCompleteness + taxCompleteness + reviewCompleteness) / 5
-  );
+  const overallCompleteness = personalCompleteness;
 
   const toggleSection = (key: string) =>
     setOpenSection((prev) => (prev === key ? null : key));
@@ -446,10 +251,6 @@ const Profile = () => {
   const displayEmail = user?.email ?? "";
   const displayPhone = user ? `${user.country_code} ${user.mobile}` : "";
   const pi = profile?.personal_info;
-  const ip = profile?.investment_profile;
-  const rp = profile?.risk_profile;
-  const tp = profile?.tax_profile;
-  const rv = profile?.review_preference;
 
   if (loading) {
     return (
@@ -601,198 +402,6 @@ const Profile = () => {
               <FieldRow label="Wealth Sources" value={pi?.wealth_sources?.join(", ")} />
               <FieldRow label="Values" value={pi?.personal_values?.join(", ")} />
               <FieldRow label="Address" value={pi?.address} />
-            </div>
-          )}
-        </SectionCard>
-      </div>
-
-      {/* Investment Profile */}
-      <div className="px-5 mb-2">
-        <SectionCard
-          title="Investment Profile"
-          icon={Target}
-          completeness={investCompleteness}
-          isOpen={openSection === "invest"}
-          onToggle={() => toggleSection("invest")}
-        >
-          <div className="flex justify-end mb-1.5">
-            <EditSaveBtn editing={editingInvestment} onEdit={() => setEditingInvestment(true)} onSave={saveInvestment} />
-          </div>
-          {editingInvestment ? (
-            <div className="space-y-2">
-              <div>
-                <p className="text-[9px] uppercase tracking-wider text-muted-foreground mb-0.5">Objectives</p>
-                <div className="flex flex-wrap gap-1.5">
-                  {["Wealth Growth", "Retirement Planning", "Child's Education", "Home Purchase", "Emergency Fund", "Tax Efficiency", "Income Generation"].map((o) => (
-                    <ProfileChip
-                      key={o}
-                      label={o}
-                      active={investDraft.objectives.includes(o)}
-                      onClick={() =>
-                        setInvestDraft((d) => ({
-                          ...d,
-                          objectives: d.objectives.includes(o) ? d.objectives.filter((x) => x !== o) : [...d.objectives, o],
-                        }))
-                      }
-                    />
-                  ))}
-                </div>
-              </div>
-              <div className="grid grid-cols-2 gap-2">
-                <div><p className="text-[9px] uppercase tracking-wider text-muted-foreground mb-0.5">Portfolio Value</p><ProfileInput value={investDraft.portfolio_value} onChange={(v) => setInvestDraft((d) => ({ ...d, portfolio_value: v }))} prefix="₹" /></div>
-                <div><p className="text-[9px] uppercase tracking-wider text-muted-foreground mb-0.5">Monthly Savings</p><ProfileInput value={investDraft.monthly_savings} onChange={(v) => setInvestDraft((d) => ({ ...d, monthly_savings: v }))} prefix="₹" /></div>
-                <div><p className="text-[9px] uppercase tracking-wider text-muted-foreground mb-0.5">Target Corpus</p><ProfileInput value={investDraft.target_corpus} onChange={(v) => setInvestDraft((d) => ({ ...d, target_corpus: v }))} prefix="₹" /></div>
-                <div><p className="text-[9px] uppercase tracking-wider text-muted-foreground mb-0.5">Timeline</p><ProfileInput value={investDraft.target_timeline} onChange={(v) => setInvestDraft((d) => ({ ...d, target_timeline: v }))} placeholder="e.g. 10 yrs" /></div>
-                <div><p className="text-[9px] uppercase tracking-wider text-muted-foreground mb-0.5">Annual Income</p><ProfileInput value={investDraft.annual_income} onChange={(v) => setInvestDraft((d) => ({ ...d, annual_income: v }))} prefix="₹" /></div>
-                <div><p className="text-[9px] uppercase tracking-wider text-muted-foreground mb-0.5">Retirement Age</p><ProfileInput value={investDraft.retirement_age} onChange={(v) => setInvestDraft((d) => ({ ...d, retirement_age: v }))} placeholder="e.g. 60" /></div>
-              </div>
-            </div>
-          ) : (
-            <div className="space-y-1.5">
-              <FieldRow label="Objectives" value={ip?.objectives?.join(", ")} />
-              <div className="grid grid-cols-2 gap-x-4 gap-y-1.5">
-                <FieldRow label="Portfolio Value" value={fmt(ip?.portfolio_value)} />
-                <FieldRow label="Monthly Savings" value={fmt(ip?.monthly_savings)} />
-                <FieldRow label="Target Corpus" value={fmt(ip?.target_corpus)} />
-                <FieldRow label="Timeline" value={ip?.target_timeline} />
-                <FieldRow label="Annual Income" value={fmt(ip?.annual_income)} />
-                <FieldRow label="Retirement Age" value={ip?.retirement_age?.toString()} />
-              </div>
-            </div>
-          )}
-        </SectionCard>
-      </div>
-
-      {/* Risk Profile */}
-      <div className="px-5 mb-2">
-        <SectionCard
-          title="Risk Profile"
-          icon={Shield}
-          completeness={riskCompleteness}
-          isOpen={openSection === "risk"}
-          onToggle={() => toggleSection("risk")}
-        >
-          <div className="flex justify-end mb-1.5">
-            <EditSaveBtn editing={editingRisk} onEdit={() => setEditingRisk(true)} onSave={saveRisk} />
-          </div>
-          {editingRisk ? (
-            <div className="space-y-2">
-              <div>
-                <p className="text-[9px] uppercase tracking-wider text-muted-foreground mb-0.5">Risk Tolerance</p>
-                <div className="flex flex-wrap gap-1.5">
-                  {RISK_CATEGORIES.map((c, i) => (
-                    <ProfileChip key={c} label={c} active={riskDraft.risk_level === i} onClick={() => setRiskDraft((d) => ({ ...d, risk_level: i }))} />
-                  ))}
-                </div>
-              </div>
-              <div>
-                <p className="text-[9px] uppercase tracking-wider text-muted-foreground mb-0.5">Risk Capacity</p>
-                <div className="flex flex-wrap gap-1.5">
-                  {["Low", "Medium", "High"].map((c) => (
-                    <ProfileChip key={c} label={c} active={riskDraft.risk_capacity === c} onClick={() => setRiskDraft((d) => ({ ...d, risk_capacity: c }))} />
-                  ))}
-                </div>
-              </div>
-              <div>
-                <p className="text-[9px] uppercase tracking-wider text-muted-foreground mb-0.5">Experience</p>
-                <div className="flex flex-wrap gap-1.5">
-                  {["Beginner", "Intermediate", "Advanced", "Expert"].map((e) => (
-                    <ProfileChip key={e} label={e} active={riskDraft.investment_experience === e} onClick={() => setRiskDraft((d) => ({ ...d, investment_experience: e }))} />
-                  ))}
-                </div>
-              </div>
-              <div>
-                <p className="text-[9px] uppercase tracking-wider text-muted-foreground mb-0.5">Investment Horizon</p>
-                <div className="flex flex-wrap gap-1.5">
-                  {["0–5 years", "5–10 years", "10–15 years", "15–20 years", "20+ years"].map((h) => (
-                    <ProfileChip key={h} label={h} active={riskDraft.investment_horizon === h} onClick={() => setRiskDraft((d) => ({ ...d, investment_horizon: h }))} />
-                  ))}
-                </div>
-              </div>
-              <div>
-                <p className="text-[9px] uppercase tracking-wider text-muted-foreground mb-0.5">Reaction to 20% Drop</p>
-                <div className="flex flex-wrap gap-1.5">
-                  {["Sell everything", "Reduce exposure", "Stay invested", "Buy more"].map((r) => (
-                    <ProfileChip key={r} label={r} active={riskDraft.drop_reaction === r} onClick={() => setRiskDraft((d) => ({ ...d, drop_reaction: r }))} />
-                  ))}
-                </div>
-              </div>
-              <div>
-                <p className="text-[9px] uppercase tracking-wider text-muted-foreground mb-0.5">Max Drawdown (%)</p>
-                <ProfileInput value={riskDraft.max_drawdown} onChange={(v) => setRiskDraft((d) => ({ ...d, max_drawdown: v }))} placeholder="e.g. 25" />
-              </div>
-            </div>
-          ) : (
-            <div className="space-y-1.5">
-              <FieldRow label="Risk Tolerance" value={rp?.risk_level != null ? RISK_CATEGORIES[rp.risk_level] : null} />
-              <FieldRow label="Risk Category" value={rp?.risk_category} />
-              <FieldRow label="Risk Capacity" value={rp?.risk_capacity} />
-              <FieldRow label="Experience" value={rp?.investment_experience} />
-              <FieldRow label="Horizon" value={rp?.investment_horizon} />
-              <FieldRow label="Drop Reaction" value={rp?.drop_reaction} />
-              <FieldRow label="Max Drawdown" value={pct(rp?.max_drawdown)} />
-            </div>
-          )}
-        </SectionCard>
-      </div>
-
-      {/* Tax Profile */}
-      <div className="px-5 mb-2">
-        <SectionCard
-          title="Tax Profile"
-          icon={DollarSign}
-          completeness={taxCompleteness}
-          isOpen={openSection === "tax"}
-          onToggle={() => toggleSection("tax")}
-        >
-          <div className="flex justify-end mb-1.5">
-            <EditSaveBtn editing={editingTax} onEdit={() => setEditingTax(true)} onSave={saveTax} />
-          </div>
-          {editingTax ? (
-            <div className="space-y-2">
-              <div><p className="text-[9px] uppercase tracking-wider text-muted-foreground mb-0.5">Income Tax Rate (%)</p><ProfileInput value={taxDraft.income_tax_rate} onChange={(v) => setTaxDraft((d) => ({ ...d, income_tax_rate: v }))} placeholder="e.g. 30" /></div>
-              <div><p className="text-[9px] uppercase tracking-wider text-muted-foreground mb-0.5">Capital Gains Tax Rate (%)</p><ProfileInput value={taxDraft.capital_gains_tax_rate} onChange={(v) => setTaxDraft((d) => ({ ...d, capital_gains_tax_rate: v }))} placeholder="e.g. 15" /></div>
-              <div><p className="text-[9px] uppercase tracking-wider text-muted-foreground mb-0.5">Notes</p><ProfileInput value={taxDraft.notes} onChange={(v) => setTaxDraft((d) => ({ ...d, notes: v }))} placeholder="e.g. NRI status" /></div>
-            </div>
-          ) : (
-            <div className="space-y-1.5">
-              <FieldRow label="Income Tax Rate" value={pct(tp?.income_tax_rate)} />
-              <FieldRow label="Capital Gains Tax" value={pct(tp?.capital_gains_tax_rate)} />
-              <FieldRow label="Notes" value={tp?.notes} />
-            </div>
-          )}
-        </SectionCard>
-      </div>
-
-      {/* Review Preferences */}
-      <div className="px-5 mb-2">
-        <SectionCard
-          title="Review Preferences"
-          icon={Clock}
-          completeness={reviewCompleteness}
-          isOpen={openSection === "review"}
-          onToggle={() => toggleSection("review")}
-        >
-          <div className="flex justify-end mb-1.5">
-            <EditSaveBtn editing={editingReview} onEdit={() => setEditingReview(true)} onSave={saveReview} />
-          </div>
-          {editingReview ? (
-            <div className="space-y-2">
-              <div>
-                <p className="text-[9px] uppercase tracking-wider text-muted-foreground mb-0.5">Review Frequency</p>
-                <div className="flex flex-wrap gap-1.5">
-                  {["Monthly", "Quarterly", "Semi-annual"].map((f) => (
-                    <ProfileChip key={f} label={f} active={reviewDraft.frequency === f} onClick={() => setReviewDraft((d) => ({ ...d, frequency: f }))} />
-                  ))}
-                </div>
-              </div>
-              <div><p className="text-[9px] uppercase tracking-wider text-muted-foreground mb-0.5">Update Process</p><ProfileInput value={reviewDraft.update_process} onChange={(v) => setReviewDraft((d) => ({ ...d, update_process: v }))} placeholder="How would you like updates?" /></div>
-            </div>
-          ) : (
-            <div className="space-y-1.5">
-              <FieldRow label="Frequency" value={rv?.frequency} />
-              <FieldRow label="Update Process" value={rv?.update_process} />
-              {rv?.triggers?.length ? <FieldRow label="Triggers" value={rv.triggers.join(", ")} /> : null}
             </div>
           )}
         </SectionCard>

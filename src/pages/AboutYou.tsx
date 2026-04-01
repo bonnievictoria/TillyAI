@@ -3,7 +3,7 @@ import { useState, useRef, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { ArrowRight, Calendar, Check, Plus, Target, Wallet, X } from "lucide-react";
-import { saveOnboardingProfile } from "@/lib/api";
+import { completeOnboarding, saveOnboardingProfile } from "@/lib/api";
 import {
   Accordion,
   AccordionContent,
@@ -513,9 +513,14 @@ const AboutYouPage = () => {
   const navigate = useNavigate();
   return (
     <TellUsAboutYou
-      onComplete={() => {
+      onComplete={async () => {
+        try {
+          await completeOnboarding();
+        } catch {
+          // continue navigation even if backend marking fails
+        }
         sessionStorage.setItem("onboardingComplete", "true");
-        navigate("/chat");
+        navigate("/onboarding-loading");
       }}
       onBack={() => navigate("/link-accounts")}
     />

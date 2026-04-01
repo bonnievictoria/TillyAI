@@ -24,6 +24,13 @@ interface OtherAsset {
   value: string;
 }
 
+interface Property {
+  value: string;
+  mortgage: string;
+  monthlyRepayment: string;
+  yearPurchased: string;
+}
+
 interface GoalDetail {
   amount: string;
   currency: string;
@@ -57,7 +64,6 @@ const SECTION_TITLES = [
   "What are you trying to achieve?",
   "How much risk can you handle?",
   "Rules & limits",
-  "Time horizon",
   "Tax situation",
   "Staying involved",
 ];
@@ -383,7 +389,7 @@ const toNum = (s: string): number | null => {
 const CompleteProfile = () => {
   const navigate = useNavigate();
   const [openSection, setOpenSection] = useState(0);
-  const [statuses, setStatuses] = useState<SectionStatus[]>(Array(8).fill("not_started"));
+  const [statuses, setStatuses] = useState<SectionStatus[]>(Array(7).fill("not_started"));
   const [profileLoaded, setProfileLoaded] = useState(false);
 
   // Section 0 — Who are you?
@@ -399,10 +405,7 @@ const CompleteProfile = () => {
   const [liabilities, setLiabilities] = useState("");
   const [otherAssets, setOtherAssets] = useState<OtherAsset[]>([]);
   const [ownsHome, setOwnsHome] = useState(false);
-  const [propertyValue, setPropertyValue] = useState("");
-  const [mortgage, setMortgage] = useState("");
-  const [monthlyRepayment, setMonthlyRepayment] = useState("");
-  const [yearPurchased, setYearPurchased] = useState("");
+  const [properties, setProperties] = useState<Property[]>([{ value: "", mortgage: "", monthlyRepayment: "", yearPurchased: "" }]);
   const [plannedExpenses, setPlannedExpenses] = useState("");
   const [expectingLargeIncome, setExpectingLargeIncome] = useState(false);
   const [largeIncomeAmount, setLargeIncomeAmount] = useState("");
@@ -442,17 +445,15 @@ const CompleteProfile = () => {
   const [derivativesNotes, setDerivativesNotes] = useState("");
   const [diversificationNotes, setDiversificationNotes] = useState("");
 
-  // Section 5 — Time horizon
-  const [multiPhase, setMultiPhase] = useState(false);
-  const [phaseDescription, setPhaseDescription] = useState("");
-  const [totalHorizon, setTotalHorizon] = useState("");
-
-  // Section 6 — Tax
+  // Section 5 — Tax
   const [incomeTaxRate, setIncomeTaxRate] = useState("");
   const [cgtRate, setCgtRate] = useState("");
   const [taxNotes, setTaxNotes] = useState("");
 
-  // Section 7 — Review
+  // Investment horizon notes (in risk section)
+  const [horizonNotes, setHorizonNotes] = useState("");
+
+  // Section 6 — Review
   const [reviewFreq, setReviewFreq] = useState("Quarterly");
   const [reviewTriggers, setReviewTriggers] = useState<string[]>([]);
   const [updateProcess, setUpdateProcess] = useState("");
@@ -464,7 +465,7 @@ const CompleteProfile = () => {
       try {
         const p = await getFullProfile();
         if (cancelled) return;
-        const newStatuses: SectionStatus[] = Array(8).fill("not_started");
+        const newStatuses: SectionStatus[] = Array(7).fill("not_started");
 
         // Section 0 — personal info
         if (p.personal_info) {
@@ -487,8 +488,10 @@ const CompleteProfile = () => {
           }
           setInvestableAssets(parseNum(ip.investable_assets?.toString()));
           setLiabilities(parseNum(ip.total_liabilities?.toString()));
-          setPropertyValue(parseNum(ip.property_value?.toString()));
-          setMortgage(parseNum(ip.mortgage_amount?.toString()));
+          if (ip.property_value) {
+            setOwnsHome(true);
+            setProperties([{ value: parseNum(ip.property_value?.toString()), mortgage: parseNum(ip.mortgage_amount?.toString()), monthlyRepayment: "", yearPurchased: "" }]);
+          }
           setPlannedExpenses(parseNum(ip.planned_major_expenses?.toString()));
           setEmergencyFund(parseNum(ip.emergency_fund?.toString()));
           if (ip.emergency_fund_months) setEmergencyTimeframe(ip.emergency_fund_months);
@@ -498,11 +501,6 @@ const CompleteProfile = () => {
           if (ip.objectives?.length) setSelectedObjectives(ip.objectives);
           if (ip.objectives?.length) newStatuses[2] = "confirmed";
 
-          // Section 5 — time horizon
-          if (ip.is_multi_phase_horizon != null) setMultiPhase(ip.is_multi_phase_horizon);
-          if (ip.phase_description) setPhaseDescription(ip.phase_description);
-          if (ip.total_horizon) setTotalHorizon(ip.total_horizon);
-          if (ip.total_horizon) newStatuses[5] = "confirmed";
         }
 
         // Section 3 — risk
@@ -538,22 +536,22 @@ const CompleteProfile = () => {
           if (ic.permitted_assets?.length) newStatuses[4] = "confirmed";
         }
 
-        // Section 6 — tax
+        // Section 5 — tax
         if (p.tax_profile) {
           const tp = p.tax_profile;
           if (tp.income_tax_rate != null) setIncomeTaxRate(String(tp.income_tax_rate));
           if (tp.capital_gains_tax_rate != null) setCgtRate(String(tp.capital_gains_tax_rate));
           if (tp.notes) setTaxNotes(tp.notes);
-          if (tp.income_tax_rate != null) newStatuses[6] = "confirmed";
+          if (tp.income_tax_rate != null) newStatuses[5] = "confirmed";
         }
 
-        // Section 7 — review
+        // Section 6 — review
         if (p.review_preference) {
           const rp = p.review_preference;
           if (rp.frequency) setReviewFreq(rp.frequency);
           if (rp.triggers) setReviewTriggers(rp.triggers);
           if (rp.update_process) setUpdateProcess(rp.update_process);
-          if (rp.frequency) newStatuses[7] = "confirmed";
+          if (rp.frequency) newStatuses[6] = "confirmed";
         }
 
         setStatuses(newStatuses);
@@ -569,8 +567,8 @@ const CompleteProfile = () => {
   }, []);
 
   const confirmedCount = statuses.filter((s) => s === "confirmed").length;
-  const progressPercent = Math.round((confirmedCount / 8) * 100);
-  const allConfirmed = confirmedCount === 8;
+  const progressPercent = Math.round((confirmedCount / 7) * 100);
+  const allConfirmed = confirmedCount === 7;
 
   const totalMaxAllocation = useMemo(() => {
     return permittedAssets.reduce((sum, a) => sum + (allocations[a]?.max || 0), 0);
@@ -611,8 +609,8 @@ const CompleteProfile = () => {
           await updateInvestmentProfile({
             investable_assets: toNum(investableAssets),
             total_liabilities: toNum(liabilities),
-            property_value: toNum(propertyValue),
-            mortgage_amount: toNum(mortgage),
+            property_value: ownsHome ? toNum(properties[0]?.value) : null,
+            mortgage_amount: ownsHome ? toNum(properties[0]?.mortgage) : null,
             planned_major_expenses: toNum(plannedExpenses),
             emergency_fund: toNum(emergencyFund),
             emergency_fund_months: emergencyTimeframe || null,
@@ -666,20 +664,13 @@ const CompleteProfile = () => {
           });
           break;
         case 5:
-          await updateInvestmentProfile({
-            is_multi_phase_horizon: multiPhase,
-            phase_description: phaseDescription || null,
-            total_horizon: totalHorizon || null,
-          });
-          break;
-        case 6:
           await updateTaxProfile({
             income_tax_rate: incomeTaxRate ? Number(incomeTaxRate) : null,
             capital_gains_tax_rate: cgtRate ? Number(cgtRate) : null,
             notes: taxNotes || null,
           });
           break;
-        case 7:
+        case 6:
           await updateReviewPreference({
             frequency: reviewFreq || null,
             triggers: reviewTriggers.length ? reviewTriggers : null,
@@ -698,15 +689,14 @@ const CompleteProfile = () => {
       next[idx] = "confirmed";
       return next;
     });
-    if (idx < 7) setOpenSection(idx + 1);
+    if (idx < 6) setOpenSection(idx + 1);
     toast.success(`Section ${idx + 1} confirmed ✓`);
   }, [
     occupation, primaryResidence, earningMembers, dependents, values,
-    primaryWealthSource, investableAssets, liabilities, propertyValue, mortgage, monthlyRepayment, yearPurchased, plannedExpenses, emergencyFund, emergencyTimeframe, otherAssets, ownsHome, expectingLargeIncome, largeIncomeAmount, largeIncomeCurrency, largeIncomeYear,
+    primaryWealthSource, investableAssets, liabilities, properties, plannedExpenses, emergencyFund, emergencyTimeframe, otherAssets, ownsHome, expectingLargeIncome, largeIncomeAmount, largeIncomeCurrency, largeIncomeYear,
     selectedObjectives, goalDetails,
-    riskLevelIdx, riskCapacity, investmentExperience, investmentHorizon, riskQ1, riskQ2, riskQ3, maxDrawdown, comfortAssets,
+    riskLevelIdx, riskCapacity, investmentExperience, investmentHorizon, horizonNotes, riskQ1, riskQ2, riskQ3, maxDrawdown, comfortAssets,
     permittedAssets, allocations, prohibited, leverage, derivatives, diversificationNotes,
-    multiPhase, phaseDescription, totalHorizon,
     incomeTaxRate, cgtRate, taxNotes,
     reviewFreq, reviewTriggers, updateProcess,
   ]);
@@ -832,11 +822,29 @@ const CompleteProfile = () => {
               <FieldLabel>Do you own a home?</FieldLabel>
               <Toggle value={ownsHome} onChange={setOwnsHome} labelA="No" labelB="Yes" />
               {ownsHome && (
-                <div className="mt-3 space-y-2 pl-1 border-l-2 border-accent/20 ml-1">
-                  <div><label className="text-[10px] text-muted-foreground">Property value</label><TextInput value={propertyValue} onChange={setPropertyValue} prefix="₹" placeholder="e.g. 1.20 Cr" /></div>
-                  <div><label className="text-[10px] text-muted-foreground">Total outstanding mortgage</label><TextInput value={mortgage} onChange={setMortgage} prefix="₹" placeholder="e.g. 45,00,000" /></div>
-                  <div><label className="text-[10px] text-muted-foreground">Current monthly repayment</label><TextInput value={monthlyRepayment} onChange={setMonthlyRepayment} prefix="₹" placeholder="e.g. 35,000" /></div>
-                  <div><label className="text-[10px] text-muted-foreground">Year purchased</label><TextInput value={yearPurchased} onChange={setYearPurchased} placeholder="e.g. 2018" /></div>
+                <div className="mt-3 space-y-3">
+                  {properties.map((prop, idx) => {
+                    const updateProp = (field: keyof Property, val: string) => {
+                      setProperties(prev => prev.map((p, i) => i === idx ? { ...p, [field]: val } : p));
+                    };
+                    return (
+                      <div key={idx} className="relative space-y-2 pl-1 border-l-2 border-accent/20 ml-1 rounded-lg bg-card p-3">
+                        {properties.length > 1 && (
+                          <button onClick={() => setProperties(prev => prev.filter((_, i) => i !== idx))} className="absolute top-2 right-2 h-5 w-5 flex items-center justify-center rounded-full bg-muted hover:bg-destructive/20 transition-colors">
+                            <X className="h-3 w-3 text-muted-foreground" />
+                          </button>
+                        )}
+                        {properties.length > 1 && <p className="text-[10px] font-semibold text-muted-foreground mb-1">Property {idx + 1}</p>}
+                        <div><label className="text-[10px] text-muted-foreground">Property value</label><TextInput value={prop.value} onChange={(v) => updateProp("value", v)} prefix="₹" placeholder="e.g. 1.20 Cr" /></div>
+                        <div><label className="text-[10px] text-muted-foreground">Total outstanding mortgage</label><TextInput value={prop.mortgage} onChange={(v) => updateProp("mortgage", v)} prefix="₹" placeholder="e.g. 45,00,000" /></div>
+                        <div><label className="text-[10px] text-muted-foreground">Current monthly repayment</label><TextInput value={prop.monthlyRepayment} onChange={(v) => updateProp("monthlyRepayment", v)} prefix="₹" placeholder="e.g. 35,000" /></div>
+                        <div><label className="text-[10px] text-muted-foreground">Year purchased</label><TextInput value={prop.yearPurchased} onChange={(v) => updateProp("yearPurchased", v)} placeholder="e.g. 2018" /></div>
+                      </div>
+                    );
+                  })}
+                  <button onClick={() => setProperties(prev => [...prev, { value: "", mortgage: "", monthlyRepayment: "", yearPurchased: "" }])} className="flex items-center gap-1 text-xs font-medium text-accent hover:text-accent/80 transition-colors mt-1">
+                    <Plus className="h-3 w-3" /> Add another property
+                  </button>
                 </div>
               )}
             </div>
@@ -932,21 +940,6 @@ const CompleteProfile = () => {
       case 3:
         return (
           <div className="space-y-4">
-            <PrefilledBanner />
-            <div>
-              <FieldLabel>Risk tolerance</FieldLabel>
-              <RiskDial level={riskLevelIdx} onChangeLevel={setRiskLevelIdx} />
-            </div>
-
-            <div>
-              <FieldLabel>Risk capacity (ability to absorb losses)</FieldLabel>
-              <div className="flex flex-wrap gap-1.5">
-                {["Low", "Medium", "High"].map((c) => (
-                  <Chip key={c} label={c} active={riskCapacity === c} onClick={() => setRiskCapacity(c)} />
-                ))}
-              </div>
-            </div>
-
             <div>
               <FieldLabel>Investment experience</FieldLabel>
               <div className="flex flex-wrap gap-1.5">
@@ -963,6 +956,17 @@ const CompleteProfile = () => {
                   <Chip key={h} label={h} active={investmentHorizon === h} onClick={() => setInvestmentHorizon(h)} />
                 ))}
               </div>
+            </div>
+
+            <div>
+              <FieldLabel>Any specifics you'd like to share about your investment horizon?</FieldLabel>
+              <textarea
+                value={horizonNotes}
+                onChange={(e) => setHorizonNotes(e.target.value)}
+                placeholder="e.g. I plan to retire in 10 years but may need some funds in 3 years for a home purchase..."
+                rows={3}
+                className="w-full rounded-lg border border-border bg-card px-3 py-2 text-sm text-foreground outline-none focus:border-accent transition-colors placeholder:text-[12px] resize-none"
+              />
             </div>
 
             {/* New Q1 */}
@@ -1068,21 +1072,8 @@ const CompleteProfile = () => {
           </div>
         );
 
-      /* ── Section 5: Time horizon ── */
+      /* ── Section 5: Tax situation ── */
       case 5:
-        return (
-          <div className="space-y-4">
-            <div>
-              <FieldLabel>Single or multi-phase</FieldLabel>
-              <Toggle value={multiPhase} onChange={setMultiPhase} labelA="One continuous period" labelB="Multiple phases" />
-            </div>
-            {multiPhase && <div><FieldLabel>Phase description</FieldLabel><TextInput value={phaseDescription} onChange={setPhaseDescription} placeholder="Describe your investment phases" /></div>}
-            <div><FieldLabel>Total horizon (years)</FieldLabel><TextInput value={totalHorizon} onChange={setTotalHorizon} placeholder="e.g. 15" /></div>
-          </div>
-        );
-
-      /* ── Section 6: Tax situation ── */
-      case 6:
         return (
           <div className="space-y-3">
             <div><FieldLabel>Income tax rate</FieldLabel><TextInput value={incomeTaxRate} onChange={setIncomeTaxRate} placeholder="e.g. 30" /></div>
@@ -1091,8 +1082,8 @@ const CompleteProfile = () => {
           </div>
         );
 
-      /* ── Section 7: Staying involved ── */
-      case 7:
+      /* ── Section 6: Staying involved ── */
+      case 6:
         return (
           <div className="space-y-4">
             <div>
@@ -1139,8 +1130,8 @@ const CompleteProfile = () => {
       {/* Progress */}
       <div className="px-5 pt-3 pb-2">
         <div className="flex items-center justify-between mb-1">
-          <span className="text-[11px] text-muted-foreground font-medium">Section {Math.min(openSection + 1, 8)} of 8</span>
-          <span className="text-[11px] text-muted-foreground">{confirmedCount}/8 confirmed</span>
+          <span className="text-[11px] text-muted-foreground font-medium">Section {Math.min(openSection + 1, 7)} of 7</span>
+          <span className="text-[11px] text-muted-foreground">{confirmedCount}/7 confirmed</span>
         </div>
         <div className="h-1.5 w-full rounded-full bg-muted overflow-hidden">
           <motion.div className="h-full rounded-full bg-accent" initial={{ width: 0 }} animate={{ width: `${progressPercent}%` }} transition={{ duration: 0.5 }} />

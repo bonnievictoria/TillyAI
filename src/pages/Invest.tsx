@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { ArrowRight, Check, RotateCcw, AlertTriangle, Mic } from "lucide-react";
 import BottomNav from "@/components/BottomNav";
 import AIChatSheet from "@/components/dashboard/AIChatSheet";
-import { getMyPortfolio, type PortfolioDetail } from "@/lib/api";
+import { getMyPortfolio, updatePortfolioAllocations, type PortfolioDetail } from "@/lib/api";
 
 /* ── ETF Data (original) ── */
 interface ETF {
@@ -229,6 +229,7 @@ const ALLOC_ASSETS: AllocAsset[] = [
 ];
 
 const houseDefaults = ALLOC_ASSETS.map((a) => a.houseRec);
+const normalizeAssetKey = (v: string) => v.trim().toLowerCase().replace(/[^a-z0-9]+/g, "");
 
 const DB_ALLOC_COLORS = ["#1B3A6B", "#4A7FA5", "#8BA7BC", "#C4B99A", "#D4AF70", "#10b981", "#f59e0b", "#6366f1", "#ec4899"];
 
@@ -253,12 +254,21 @@ const Invest = () => {
   const [selectedETF, setSelectedETF] = useState<number | null>(null);
   const [chatOpen, setChatOpen] = useState(false);
   const [showTillyPill, setShowTillyPill] = useState(true);
+  const [isSaving, setIsSaving] = useState(false);
+  const [saveMessage, setSaveMessage] = useState<string | null>(null);
 
   useEffect(() => {
     getMyPortfolio()
       .then((p) => {
         setPortfolioDb(p);
         if (p.total_value > 0) setTotalInvestment(Math.round(p.total_value));
+        if (p.allocations.length > 0) {
+          const byAsset = new Map(
+            p.allocations.map((a) => [normalizeAssetKey(a.asset_class), Number(a.allocation_percentage)])
+          );
+          const mapped = ALLOC_ASSETS.map((asset, idx) => byAsset.get(normalizeAssetKey(asset.shortName)) ?? byAsset.get(normalizeAssetKey(asset.name)) ?? houseDefaults[idx]);
+          setAllocations(mapped);
+        }
       })
       .catch(() => setPortfolioDb(null));
   }, []);
@@ -535,11 +545,36 @@ const Invest = () => {
             </button>
             <button
               disabled={!isValid}
-              onClick={() => { if (!isValid) return; }}
+              onClick={async () => {
+                if (!isValid || isSaving) return;
+                setIsSaving(true);
+                setSaveMessage(null);
+                try {
+                  const payload = {
+                    total_investment: totalInvestment,
+                    allocations: ALLOC_ASSETS.map((asset, i) => ({
+                      asset_class: asset.shortName,
+                      allocation_percentage: allocations[i],
+                      amount: Math.round((totalInvestment * allocations[i]) / 100),
+                    })),
+                  };
+                  const savedAllocations = await updatePortfolioAllocations(payload);
+                  setPortfolioDb((prev) =>
+                    prev
+                      ? { ...prev, total_invested: totalInvestment, total_value: totalInvestment, allocations: savedAllocations }
+                      : null
+                  );
+                  setSaveMessage("Portfolio allocations saved.");
+                } catch {
+                  setSaveMessage("Could not save allocations. Please try again.");
+                } finally {
+                  setIsSaving(false);
+                }
+              }}
               className="rounded-full text-sm font-semibold flex items-center gap-1.5 disabled:opacity-50 disabled:cursor-not-allowed"
               style={{ backgroundColor: NAVY, color: "#FFFFFF", height: "36px", padding: "0 16px" }}
             >
-              Confirm & invest <ArrowRight className="h-3.5 w-3.5" />
+              {isSaving ? "Saving..." : "Confirm & invest"} <ArrowRight className="h-3.5 w-3.5" />
             </button>
           </div>
         </div>
@@ -547,6 +582,15 @@ const Invest = () => {
           <div className="max-w-md mx-auto px-4 pb-2">
             <span className="flex items-center gap-1 text-destructive" style={{ fontSize: "11px" }}>
               <AlertTriangle className="h-3 w-3" /> Total must equal 100% to proceed
+            </span>
+          </div>
+        )}
+        {saveMessage && (
+          <div className="max-w-md mx-auto px-4 pb-2">
+            <span
+              className={`text-[11px] ${saveMessage.includes("saved") ? "text-emerald-700 dark:text-emerald-400" : "text-destructive"}`}
+            >
+              {saveMessage}
             </span>
           </div>
         )}
