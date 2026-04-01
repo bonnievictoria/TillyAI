@@ -89,6 +89,7 @@ const GOAL_PURPOSES = [
 const CURRENCIES = ["INR", "USD", "GBP"];
 
 const PRIMARY_WEALTH_SOURCES = ["Salary", "Business", "Inheritance", "Investments", "Other"];
+const OCCUPATION_OPTIONS = ["Salaried", "Retired", "Homemaker", "Other"];
 
 const RISK_LEVELS = [...RISK_CATEGORIES];
 
