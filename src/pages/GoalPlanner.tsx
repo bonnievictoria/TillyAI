@@ -366,53 +366,6 @@ const GoalPlanner = () => {
                   </div>
                 </div>
 
-                {/* Contribution Breakdown Accordion */}
-                <button
-                  onClick={() => setExpandedGoal(prev => prev === goal.id ? null : goal.id)}
-                  className="flex items-center justify-between w-full min-h-[44px] rounded-xl border border-border bg-card px-4 py-2.5 mb-2.5 transition-colors"
-                >
-                  <span className="text-[11px] text-muted-foreground">View contribution breakdown</span>
-                  <motion.div animate={{ rotate: expandedGoal === goal.id ? 180 : 0 }} transition={{ duration: 0.2 }}>
-                    <ChevronDown className="h-4 w-4 text-muted-foreground" />
-                  </motion.div>
-                </button>
-
-                <AnimatePresence>
-                  {expandedGoal === goal.id && (
-                    <motion.div
-                      initial={{ height: 0, opacity: 0 }}
-                      animate={{ height: "auto", opacity: 1 }}
-                      exit={{ height: 0, opacity: 0 }}
-                      transition={{ duration: 0.25, ease: "easeInOut" }}
-                      className="overflow-hidden"
-                    >
-                      <div className="rounded-xl bg-secondary/50 p-2.5 space-y-2 mb-2.5">
-                        {goal.contributions.map(c => (
-                          <div key={c.source} className="flex items-center gap-2">
-                            <span className="text-[11px] font-medium text-foreground w-24 shrink-0">{c.source}</span>
-                            <div className="flex-1 h-2 rounded-full bg-secondary overflow-hidden">
-                              <motion.div
-                                initial={{ width: 0 }}
-                                animate={{ width: `${c.pct}%` }}
-                                transition={{ duration: 0.5 }}
-                                className="h-full rounded-full bg-primary"
-                              />
-                            </div>
-                            <span className="text-[11px] font-semibold text-foreground w-14 text-right">{formatINR(c.amount)}</span>
-                          </div>
-                        ))}
-                      </div>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-
-                {/* View Holdings */}
-                <button
-                  onClick={() => setHoldingsGoal(goal)}
-                  className="w-full min-h-[48px] rounded-xl border border-border bg-card text-[11px] text-muted-foreground hover:text-foreground transition-colors"
-                >
-                  View Holdings
-                </button>
               </div>
             </div>
           ))}
