@@ -488,7 +488,7 @@ const CompleteProfile = () => {
         if (p.investment_profile) {
           const ip = p.investment_profile;
           if (p.personal_info?.wealth_sources?.length) {
-            setPrimaryWealthSource(p.personal_info.wealth_sources[0]);
+            setPrimaryWealthSource(p.personal_info.wealth_sources);
           }
           setInvestableAssets(parseNum(ip.investable_assets?.toString()));
           setLiabilities(parseNum(ip.total_liabilities?.toString()));
