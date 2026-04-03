@@ -4,12 +4,6 @@ import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { ArrowRight, Calendar, Check, Plus, Target, Wallet, X, ShieldCheck } from "lucide-react";
 import { saveOnboardingProfile } from "@/lib/api";
-import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from "@/components/ui/accordion";
 
 interface Props {
   onComplete: () => void;
