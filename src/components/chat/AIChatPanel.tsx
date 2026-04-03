@@ -423,6 +423,7 @@ const AIChatPanel = ({ isOpen, onClose, embedded = false, chatFirst = false, com
       const kudosId = kudosCounterRef.current;
       kudosCounterRef.current += 1;
 
+      setCompletedSections((prev) => [...new Set([...prev, onboardingSection])]);
       setMessages((prev) => [
         ...prev,
         { role: "ai", content: "", type: "summary", sectionName: sName, summaryNotes: notes },
