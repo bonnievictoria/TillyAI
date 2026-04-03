@@ -4,12 +4,6 @@ import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { ArrowRight, Calendar, Check, Plus, Target, Wallet, X, ShieldCheck } from "lucide-react";
 import { saveOnboardingProfile } from "@/lib/api";
-import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from "@/components/ui/accordion";
 
 interface Props {
   onComplete: () => void;
@@ -209,9 +203,15 @@ const DEFAULT_GOALS = [
 ];
 
 const HORIZON_OPTIONS = [
-  { label: "Short term", sub: "< 2 years" },
-  { label: "Medium term", sub: "2–5 years" },
-  { label: "Long term", sub: "5+ years" },
+  { label: "< 2 years", sub: "Short-term investments" },
+  { label: "2–10 years", sub: "Medium-term growth" },
+  { label: "10+ years", sub: "Long-term wealth building" },
+];
+
+const RISK_OPTIONS = [
+  { label: "Conservative", desc: "Prioritizes stability, capital preservation & security" },
+  { label: "Moderate", desc: "Balances growth and capital preservation" },
+  { label: "Aggressive", desc: "Seeks high returns, accepts volatility" },
 ];
 
 const TellUsAboutYou = ({ onComplete, onBack }: Props) => {
@@ -305,23 +305,18 @@ const TellUsAboutYou = ({ onComplete, onBack }: Props) => {
           </p>
         </div>
 
-        <Accordion type="single" collapsible className="space-y-3">
+        <div className="space-y-3">
           {/* Age / DOB */}
-          <AccordionItem
-            value="age"
-            className="border rounded-xl bg-card overflow-hidden border-border/60"
-          >
-            <AccordionTrigger className="px-4 py-3 hover:no-underline">
+          <div className="border rounded-xl bg-card overflow-hidden border-border/60">
+            <div className="px-4 py-3">
               <div className="flex items-center gap-3">
                 <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-secondary">
                   <Calendar className="h-[20px] w-[20px] text-muted-foreground" />
                 </div>
-                <div className="text-left">
-                  <p className="text-sm font-semibold text-foreground">Age</p>
-                </div>
+                <p className="text-sm font-semibold text-foreground">Age</p>
               </div>
-            </AccordionTrigger>
-            <AccordionContent className="px-4 pb-4">
+            </div>
+            <div className="px-4 pb-4">
               <div className="flex gap-1 rounded-xl overflow-hidden bg-secondary/20 p-2 max-w-[260px] mx-auto">
                 <DrumColumn items={DAYS} value={dobDay} onChange={setDobDay} />
                 <DrumColumn
@@ -337,25 +332,20 @@ const TellUsAboutYou = ({ onComplete, onBack }: Props) => {
                   renderLabel={(v) => String(v)}
                 />
               </div>
-            </AccordionContent>
-          </AccordionItem>
+            </div>
+          </div>
 
           {/* Financial Goals */}
-          <AccordionItem
-            value="goals"
-            className="border rounded-xl bg-card overflow-hidden border-border/60"
-          >
-            <AccordionTrigger className="px-4 py-3 hover:no-underline">
+          <div className="border rounded-xl bg-card overflow-hidden border-border/60">
+            <div className="px-4 py-3">
               <div className="flex items-center gap-3">
                 <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-secondary">
                   <Target className="h-[20px] w-[20px] text-muted-foreground" />
                 </div>
-                <div className="text-left">
-                  <p className="text-sm font-semibold text-foreground">Financial Goals</p>
-                </div>
+                <p className="text-sm font-semibold text-foreground">Financial Goals</p>
               </div>
-            </AccordionTrigger>
-            <AccordionContent className="px-4 pb-4 space-y-5">
+            </div>
+            <div className="px-4 pb-4 space-y-5">
               <div>
                 <p className="text-xs font-medium text-muted-foreground mb-2.5">
                   What are your key financial goals?
@@ -446,25 +436,20 @@ const TellUsAboutYou = ({ onComplete, onBack }: Props) => {
                   </p>
                 )}
               </div>
-            </AccordionContent>
-          </AccordionItem>
+            </div>
+          </div>
 
           {/* Income & Expenses */}
-          <AccordionItem
-            value="income"
-            className="border rounded-xl bg-card overflow-hidden border-border/60"
-          >
-            <AccordionTrigger className="px-4 py-3 hover:no-underline">
+          <div className="border rounded-xl bg-card overflow-hidden border-border/60">
+            <div className="px-4 py-3">
               <div className="flex items-center gap-3">
                 <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-secondary">
                   <Wallet className="h-[20px] w-[20px] text-muted-foreground" />
                 </div>
-                <div className="text-left">
-                  <p className="text-sm font-semibold text-foreground">Income & Expenses</p>
-                </div>
+                <p className="text-sm font-semibold text-foreground">Income & Expenses</p>
               </div>
-            </AccordionTrigger>
-            <AccordionContent className="px-4 pb-4 space-y-5">
+            </div>
+            <div className="px-4 pb-4 space-y-5">
               <DualRangeSlider
                 label="Annual Income Range (₹)"
                 range={incomeRange}
@@ -479,49 +464,54 @@ const TellUsAboutYou = ({ onComplete, onBack }: Props) => {
                 onChange={setExpenseRange}
                 subtext={`That's roughly ${expensePct}% of your income range`}
               />
-            </AccordionContent>
-          </AccordionItem>
+            </div>
+          </div>
 
-          {/* Segment 4: Risk Assessment */}
-          <AccordionItem
-            value="risk"
-            className="border rounded-xl bg-card overflow-hidden border-border/60"
-          >
-            <AccordionTrigger className="px-4 py-3 hover:no-underline">
+          {/* Risk Assessment */}
+          <div className="border rounded-xl bg-card overflow-hidden border-border/60">
+            <div className="px-4 py-3">
               <div className="flex items-center gap-3">
                 <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-secondary">
                   <ShieldCheck className="h-[20px] w-[20px] text-muted-foreground" />
                 </div>
-                <div className="text-left">
-                  <p className="text-sm font-semibold text-foreground">Risk Assessment</p>
-                </div>
+                <p className="text-sm font-semibold text-foreground">Risk Assessment</p>
               </div>
-            </AccordionTrigger>
-            <AccordionContent className="px-4 pb-4">
+            </div>
+            <div className="px-4 pb-4">
               <p className="text-xs font-medium text-muted-foreground mb-2.5">
                 What is your investment view?
               </p>
               <div className="flex flex-wrap gap-2">
-                {["Conservative", "Moderate", "Risk Taking"].map((option) => {
-                  const isSelected = investmentView === option;
+                {RISK_OPTIONS.map((option) => {
+                  const isSelected = investmentView === option.label;
                   return (
                     <button
-                      key={option}
-                      onClick={() => setInvestmentView(option)}
+                      key={option.label}
+                      onClick={() => setInvestmentView(option.label)}
                       className={`px-4 py-2.5 rounded-xl text-xs font-medium text-center transition-all ${
                         isSelected
                           ? "bg-primary text-primary-foreground"
                           : "bg-secondary text-secondary-foreground hover:bg-muted"
                       }`}
                     >
-                      {option}
+                      {option.label}
                     </button>
                   );
                 })}
               </div>
-            </AccordionContent>
-          </AccordionItem>
-        </Accordion>
+              {investmentView && (
+                <motion.p
+                  initial={{ opacity: 0, y: -4 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  key={investmentView}
+                  className="text-[11px] text-muted-foreground mt-2.5 italic"
+                >
+                  {RISK_OPTIONS.find((r) => r.label === investmentView)?.desc}
+                </motion.p>
+              )}
+            </div>
+          </div>
+        </div>
       </div>
 
       {/* Fixed bottom actions */}
