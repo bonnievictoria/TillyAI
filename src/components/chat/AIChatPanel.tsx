@@ -400,6 +400,8 @@ const AIChatPanel = ({ isOpen, onClose, embedded = false, chatFirst = false, com
   const stopOnboarding = useCallback(() => {
     setOnboardingActive(false);
     setAwaitingResponse(false);
+    setCompletedSections([]);
+    setExpandedReviewSection(null);
     setMessages((prev) => [
       ...prev,
       { role: "ai", content: "No problem — I've saved your progress. You can resume anytime by tapping **Voice onboarding** again." },
