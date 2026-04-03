@@ -705,32 +705,87 @@ const AIChatPanel = ({ isOpen, onClose, embedded = false, chatFirst = false, com
         <div className="mt-auto shrink-0">
           {/* Onboarding exit bar */}
           {onboardingActive && (
-            <div className="flex items-center justify-between px-4 py-2 border-t border-border/30 bg-muted/30">
-              <span className="text-[10px] font-medium text-muted-foreground">
-                Section {onboardingSection + 1} of 7 · {CHAT_ONBOARDING_SECTIONS[onboardingSection].name}
-              </span>
-              <motion.button
-                onClick={stopOnboarding}
-                className="flex items-center gap-1 rounded-full px-2.5 py-1 text-[10px] font-medium transition-all"
-                style={{
-                  background: "rgba(50, 110, 230, 0.18)",
-                  color: "#7ab8ff",
-                  border: "1px solid rgba(80, 150, 255, 0.5)",
-                  boxShadow: "0 0 12px -2px rgba(80, 150, 255, 0.3)",
-                }}
-                animate={{
-                  boxShadow: [
-                    "0 0 12px -2px rgba(80, 150, 255, 0.3)",
-                    "0 0 20px -2px rgba(80, 150, 255, 0.5)",
-                    "0 0 12px -2px rgba(80, 150, 255, 0.3)",
-                  ],
-                }}
-                transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
-                whileHover={{ scale: 1.02, backgroundColor: "rgba(50, 110, 230, 0.25)" }}
-              >
-                <Square className="h-2.5 w-2.5" />
-                Stop & return to chat
-              </motion.button>
+            <div className="border-t border-border/30 bg-muted/30">
+              <div className="flex items-center justify-between px-4 py-2">
+                <span className="text-[10px] font-medium text-muted-foreground">
+                  Section {onboardingSection + 1} of 7 · {CHAT_ONBOARDING_SECTIONS[onboardingSection].name}
+                </span>
+                <motion.button
+                  onClick={stopOnboarding}
+                  className="flex items-center gap-1 rounded-full px-2.5 py-1 text-[10px] font-medium transition-all"
+                  style={{
+                    background: "rgba(50, 110, 230, 0.18)",
+                    color: "#7ab8ff",
+                    border: "1px solid rgba(80, 150, 255, 0.5)",
+                    boxShadow: "0 0 12px -2px rgba(80, 150, 255, 0.3)",
+                  }}
+                  animate={{
+                    boxShadow: [
+                      "0 0 12px -2px rgba(80, 150, 255, 0.3)",
+                      "0 0 20px -2px rgba(80, 150, 255, 0.5)",
+                      "0 0 12px -2px rgba(80, 150, 255, 0.3)",
+                    ],
+                  }}
+                  transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+                  whileHover={{ scale: 1.02, backgroundColor: "rgba(50, 110, 230, 0.25)" }}
+                >
+                  <Square className="h-2.5 w-2.5" />
+                  Stop & return to chat
+                </motion.button>
+              </div>
+
+              {/* Bottom-anchored completed sections list */}
+              {completedSections.length > 0 && (
+                <div className="px-4 pb-2 max-h-[30vh] overflow-y-auto">
+                  <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-1.5">
+                    Completed
+                  </p>
+                  <div className="space-y-1">
+                    {completedSections.map((idx) => (
+                      <div key={idx} className="rounded-lg bg-muted/30">
+                        <button
+                          onClick={() => setExpandedReviewSection(expandedReviewSection === idx ? null : idx)}
+                          className="flex w-full items-center justify-between px-3 py-2 active:scale-[0.98] transition-transform"
+                        >
+                          <div className="flex items-center gap-2">
+                            <div className="flex h-4.5 w-4.5 items-center justify-center rounded-full bg-emerald-500/15">
+                              <Check className="h-2.5 w-2.5 text-emerald-500" />
+                            </div>
+                            <span className="text-[11px] font-medium text-foreground">{CHAT_ONBOARDING_SECTIONS[idx].name}</span>
+                          </div>
+                          <div className="flex items-center gap-1">
+                            <span className="text-[10px] text-muted-foreground">Review</span>
+                            {expandedReviewSection === idx ? (
+                              <ChevronUp className="h-3 w-3 text-muted-foreground" />
+                            ) : (
+                              <ChevronDown className="h-3 w-3 text-muted-foreground" />
+                            )}
+                          </div>
+                        </button>
+                        <AnimatePresence>
+                          {expandedReviewSection === idx && CHAT_ONBOARDING_NOTES[idx] && (
+                            <motion.div
+                              initial={{ height: 0, opacity: 0 }}
+                              animate={{ height: "auto", opacity: 1 }}
+                              exit={{ height: 0, opacity: 0 }}
+                              transition={{ duration: 0.25 }}
+                              className="overflow-hidden"
+                            >
+                              <div className="px-3 pb-2 pl-9">
+                                <ul className="space-y-0.5">
+                                  {CHAT_ONBOARDING_NOTES[idx].map((note, ni) => (
+                                    <li key={ni} className="text-[10px] text-muted-foreground leading-relaxed">• {note}</li>
+                                  ))}
+                                </ul>
+                              </div>
+                            </motion.div>
+                          )}
+                        </AnimatePresence>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
           )}
 

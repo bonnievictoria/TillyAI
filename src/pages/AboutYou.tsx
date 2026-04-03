@@ -209,9 +209,15 @@ const DEFAULT_GOALS = [
 ];
 
 const HORIZON_OPTIONS = [
-  { label: "Short term", sub: "< 2 years" },
-  { label: "Medium term", sub: "2–5 years" },
-  { label: "Long term", sub: "5+ years" },
+  { label: "< 2 years", sub: "Short-term investments" },
+  { label: "2–10 years", sub: "Medium-term growth" },
+  { label: "10+ years", sub: "Long-term wealth building" },
+];
+
+const RISK_OPTIONS = [
+  { label: "Conservative", desc: "Prioritizes stability, capital preservation & security" },
+  { label: "Moderate", desc: "Balances growth and capital preservation" },
+  { label: "Aggressive", desc: "Seeks high returns, accepts volatility" },
 ];
 
 const TellUsAboutYou = ({ onComplete, onBack }: Props) => {
