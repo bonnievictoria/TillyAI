@@ -1,5 +1,4 @@
-import { useSearchParams, useNavigate } from "react-router-dom";
-import { ArrowLeft } from "lucide-react";
+import { useSearchParams } from "react-router-dom";
 import AIChatPanel from "@/components/chat/AIChatPanel";
 import BottomNav from "@/components/BottomNav";
 
