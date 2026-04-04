@@ -180,7 +180,7 @@ const WelcomeScreen = ({ onNext }: WelcomeScreenProps) => {
         <div className="space-y-2.5 mb-auto">
           {[
             { icon: TrendingUp, label: "Track all investments", sub: "Mutual funds, stocks and more" },
-            { icon: Sparkles, label: "Your own AI wealth advisor", sub: "Personalized recommendations" },
+            { icon: Sparkles, label: "Tilly, your own AI wealth advisor", sub: "Personalized recommendations" },
             { icon: Shield, label: "Bank-grade security", sub: "256-bit encryption" },
           ].map((item, i) => (
             <motion.div

@@ -46,7 +46,7 @@ const Portfolio = () => {
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, y: 24, scale: 0.96 }}
               transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
-              className="fixed inset-x-0 bottom-0 z-50 flex justify-center px-5 pb-8"
+              className="fixed inset-0 z-50 flex items-center justify-center px-5"
             >
               <div className="relative w-full max-w-[340px] rounded-2xl bg-card border border-border/60 p-5 shadow-lg">
                 <button

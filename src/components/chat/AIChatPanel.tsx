@@ -720,7 +720,7 @@ const AIChatPanel = ({ isOpen, onClose, embedded = false, chatFirst = false, com
                   <span className="text-[10px] font-medium text-muted-foreground">
                     Section {onboardingSection + 1} of 7 · {CHAT_ONBOARDING_SECTIONS[onboardingSection].name}
                   </span>
-                  <span className="text-[9px] text-muted-foreground/70">
+                  <span className="text-[9px] text-muted-foreground/70 italic">
                     takes {CHAT_ONBOARDING_SECTIONS[onboardingSection].estimate}
                   </span>
                 </div>
