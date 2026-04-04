@@ -708,9 +708,14 @@ const AIChatPanel = ({ isOpen, onClose, embedded = false, chatFirst = false, com
           {onboardingActive && (
             <div className="border-t border-border/30 bg-muted/30">
               <div className="flex items-center justify-between px-4 py-2">
-                <span className="text-[10px] font-medium text-muted-foreground">
-                  Section {onboardingSection + 1} of 7 · {CHAT_ONBOARDING_SECTIONS[onboardingSection].name}
-                </span>
+                <div className="flex flex-col">
+                  <span className="text-[10px] font-medium text-muted-foreground">
+                    Section {onboardingSection + 1} of 7 · {CHAT_ONBOARDING_SECTIONS[onboardingSection].name}
+                  </span>
+                  <span className="text-[9px] text-muted-foreground/70">
+                    takes {CHAT_ONBOARDING_SECTIONS[onboardingSection].estimate}
+                  </span>
+                </div>
                 <motion.button
                   onClick={stopOnboarding}
                   className="flex items-center gap-1 rounded-full px-2.5 py-1 text-[10px] font-medium transition-all"
