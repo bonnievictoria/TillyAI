@@ -255,8 +255,8 @@ const Discovery = () => {
         </div>
       </div>
 
-      {/* Scrollable content — pb accounts for: Start Investing btn (~48px) + gap (12px) + bottom nav (~56px) + safe area + 16px buffer */}
-      <div className="pb-[160px]">
+      {/* Scrollable content */}
+      <div className="pb-24">
 
         {/* ── House View editorial card ── */}
         <div className="px-5 mb-5">
@@ -392,11 +392,8 @@ const Discovery = () => {
             ))}
           </div>
         </div>
-      </div>
-
-      {/* Quick Invest CTA */}
-      <div className="fixed bottom-[calc(3.5rem+env(safe-area-inset-bottom,8px)+12px)] left-0 right-0 z-30">
-        <div className="max-w-md mx-auto px-5">
+        {/* Start Investing — inline at end of scroll */}
+        <div className="px-5 mt-4 pb-6">
           <motion.button
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
@@ -420,50 +417,54 @@ const Discovery = () => {
               initial={{ y: "100%" }} animate={{ y: 0 }} exit={{ y: "100%" }}
               transition={{ type: "spring", damping: 30, stiffness: 300 }}
               onClick={e => e.stopPropagation()}
-              className="w-full max-w-md max-h-[80vh] rounded-t-2xl bg-card shadow-xl p-5 pb-10 overflow-y-auto"
+              className="w-full max-w-md max-h-[80vh] rounded-t-2xl bg-card shadow-xl flex flex-col"
             >
-              <div className="flex justify-center mb-4"><div className="h-1.5 w-10 rounded-full bg-border" /></div>
-              <div className="flex items-start justify-between mb-3">
-                <div className="flex-1 min-w-0">
-                  <h3 className="text-base font-bold text-foreground mb-0.5">{viewFund.name}</h3>
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs text-muted-foreground">{viewFund.category}</span>
-                    <span className={`text-[10px] font-medium px-1.5 py-0.5 rounded-full ${riskColor(viewFund.risk)}`}>
-                      {viewFund.risk} Risk
-                    </span>
+              <div className="flex-1 overflow-y-auto p-5 pb-0">
+                <div className="flex justify-center mb-4"><div className="h-1.5 w-10 rounded-full bg-border" /></div>
+                <div className="flex items-start justify-between mb-3">
+                  <div className="flex-1 min-w-0">
+                    <h3 className="text-base font-bold text-foreground mb-0.5">{viewFund.name}</h3>
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs text-muted-foreground">{viewFund.category}</span>
+                      <span className={`text-[10px] font-medium px-1.5 py-0.5 rounded-full ${riskColor(viewFund.risk)}`}>
+                        {viewFund.risk} Risk
+                      </span>
+                    </div>
                   </div>
+                  <button onClick={() => setViewFund(null)} className="p-1.5 rounded-full bg-secondary hover:bg-muted transition-colors">
+                    <X className="h-4 w-4 text-muted-foreground" />
+                  </button>
                 </div>
-                <button onClick={() => setViewFund(null)} className="p-1.5 rounded-full bg-secondary hover:bg-muted transition-colors">
-                  <X className="h-4 w-4 text-muted-foreground" />
+
+                <p className="text-sm text-muted-foreground mb-4">{viewFund.description}</p>
+
+                <div className="grid grid-cols-3 gap-2 mb-4">
+                  {[
+                    { label: "1Y Return", value: viewFund.returns },
+                    { label: "3Y Return", value: viewFund.returns3Y },
+                    { label: "5Y Return", value: viewFund.returns5Y },
+                  ].map((r) => (
+                    <div key={r.label} className="rounded-xl bg-secondary/60 p-3 text-center">
+                      <p className="text-[10px] text-muted-foreground mb-0.5">{r.label}</p>
+                      <p className="text-sm font-bold text-[hsl(var(--wealth-green))]">{r.value}</p>
+                    </div>
+                  ))}
+                </div>
+
+                <div className="flex items-center justify-between mb-4 px-1">
+                  <span className="text-xs text-muted-foreground">Min. Investment</span>
+                  <span className="text-sm font-semibold text-foreground">{viewFund.minInvestment}</span>
+                </div>
+              </div>
+
+              <div className="p-5 pt-3">
+                <button
+                  onClick={() => setViewFund(null)}
+                  className="w-full min-h-[48px] rounded-xl bg-primary text-primary-foreground text-sm font-bold hover:bg-primary/90 transition-colors flex items-center justify-center gap-2"
+                >
+                  Invest Now <ArrowRight className="h-4 w-4" />
                 </button>
               </div>
-
-              <p className="text-sm text-muted-foreground mb-4">{viewFund.description}</p>
-
-              <div className="grid grid-cols-3 gap-2 mb-4">
-                {[
-                  { label: "1Y Return", value: viewFund.returns },
-                  { label: "3Y Return", value: viewFund.returns3Y },
-                  { label: "5Y Return", value: viewFund.returns5Y },
-                ].map((r) => (
-                  <div key={r.label} className="rounded-xl bg-secondary/60 p-3 text-center">
-                    <p className="text-[10px] text-muted-foreground mb-0.5">{r.label}</p>
-                    <p className="text-sm font-bold text-[hsl(var(--wealth-green))]">{r.value}</p>
-                  </div>
-                ))}
-              </div>
-
-              <div className="flex items-center justify-between mb-5 px-1">
-                <span className="text-xs text-muted-foreground">Min. Investment</span>
-                <span className="text-sm font-semibold text-foreground">{viewFund.minInvestment}</span>
-              </div>
-
-              <button
-                onClick={() => setViewFund(null)}
-                className="w-full min-h-[48px] rounded-xl bg-primary text-primary-foreground text-sm font-bold hover:bg-primary/90 transition-colors flex items-center justify-center gap-2"
-              >
-                Invest Now <ArrowRight className="h-4 w-4" />
-              </button>
             </motion.div>
           </motion.div>
         )}
@@ -481,7 +482,7 @@ const Discovery = () => {
               initial={{ y: "100%" }} animate={{ y: 0 }} exit={{ y: "100%" }}
               transition={{ type: "spring", damping: 30, stiffness: 300 }}
               onClick={e => e.stopPropagation()}
-              className="w-full max-w-md max-h-[80vh] rounded-t-2xl bg-card shadow-xl p-5 pb-10 overflow-y-auto"
+              className="w-full max-w-md max-h-[80vh] rounded-t-2xl bg-card shadow-xl overflow-y-auto p-5 pb-10"
             >
               <div className="flex justify-center mb-4"><div className="h-1.5 w-10 rounded-full bg-border" /></div>
               <div className="flex items-start justify-between mb-4">
@@ -491,7 +492,7 @@ const Discovery = () => {
                 </button>
               </div>
 
-              <div className="space-y-2.5">
+              <div className="space-y-2.5 pb-4">
                 {(sectorFundsFromApi[viewSector] ?? sectorFunds[viewSector] ?? []).map((fund) => (
                   <div key={fund.name} className="rounded-xl bg-secondary/40 border border-border/40 p-3.5">
                     <div className="flex items-center justify-between mb-1">
