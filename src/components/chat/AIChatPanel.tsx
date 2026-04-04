@@ -584,7 +584,7 @@ const AIChatPanel = ({ isOpen, onClose, embedded = false, chatFirst = false, com
               {(() => {
                 const sectionIdx = CHAT_ONBOARDING_SECTIONS.findIndex(s => msg.content.includes(s.name));
                 return sectionIdx >= 0 ? (
-                  <span className="text-[9px] text-muted-foreground/70">
+                  <span className="text-[9px] text-muted-foreground/70 italic">
                     takes {CHAT_ONBOARDING_SECTIONS[sectionIdx].estimate}
                   </span>
                 ) : null;
@@ -720,7 +720,7 @@ const AIChatPanel = ({ isOpen, onClose, embedded = false, chatFirst = false, com
                   <span className="text-[10px] font-medium text-muted-foreground">
                     Section {onboardingSection + 1} of 7 · {CHAT_ONBOARDING_SECTIONS[onboardingSection].name}
                   </span>
-                  <span className="text-[9px] text-muted-foreground/70">
+                  <span className="text-[9px] text-muted-foreground/70 italic">
                     takes {CHAT_ONBOARDING_SECTIONS[onboardingSection].estimate}
                   </span>
                 </div>
@@ -744,7 +744,7 @@ const AIChatPanel = ({ isOpen, onClose, embedded = false, chatFirst = false, com
                   whileHover={{ scale: 1.02, backgroundColor: "rgba(50, 110, 230, 0.25)" }}
                 >
                   <Square className="h-2.5 w-2.5" />
-                  Stop & return to chat
+                  Stop
                 </motion.button>
               </div>
 
