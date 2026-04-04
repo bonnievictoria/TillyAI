@@ -255,8 +255,8 @@ const Discovery = () => {
         </div>
       </div>
 
-      {/* Scrollable content — pb accounts for: Start Investing btn (~48px) + gap (12px) + bottom nav (~56px) + safe area + 16px buffer */}
-      <div className="pb-[160px]">
+      {/* Scrollable content */}
+      <div className="pb-24">
 
         {/* ── House View editorial card ── */}
         <div className="px-5 mb-5">
