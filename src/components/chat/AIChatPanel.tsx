@@ -744,7 +744,7 @@ const AIChatPanel = ({ isOpen, onClose, embedded = false, chatFirst = false, com
                   whileHover={{ scale: 1.02, backgroundColor: "rgba(50, 110, 230, 0.25)" }}
                 >
                   <Square className="h-2.5 w-2.5" />
-                  Stop & return to chat
+                  Stop
                 </motion.button>
               </div>
 
