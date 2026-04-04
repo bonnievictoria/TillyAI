@@ -169,9 +169,13 @@ const WelcomeScreen = ({ onNext }: WelcomeScreenProps) => {
         transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
         className="flex-1 flex flex-col"
       >
-        <h1 className="font-display text-[2.75rem] leading-[1.05] tracking-tight text-foreground mb-2">
-          Wealth, <span className="italic text-wealth-navy-light">Unified.</span>
+        <h1 className="font-display text-[1.5rem] font-bold tracking-tight text-primary mb-1">
+          Prozpr
         </h1>
+
+        <h2 className="font-display text-[2.75rem] leading-[1.05] tracking-tight text-foreground mb-2">
+          Wealth, <span className="italic text-wealth-navy-light">Unified.</span>
+        </h2>
 
         <p className="text-muted-foreground text-sm leading-relaxed tracking-wide font-medium mb-8 max-w-[260px]">
           Own your future, step into smarter wealth.

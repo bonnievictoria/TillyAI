@@ -41,13 +41,13 @@ const suggestedQuestions = [
 
 /* ── Onboarding sections (matches /profile/complete) ── */
 const CHAT_ONBOARDING_SECTIONS = [
-  { name: "Who are you?", prompt: "Let's start with the basics — tell me about yourself. Where do you live, what's your family situation, and who depends on you financially?" },
-  { name: "Your financial picture", prompt: "Now let's talk about your finances. Walk me through your income, savings, assets, any property you own, and any large expenses coming up." },
-  { name: "What are you trying to achieve?", prompt: "What are your main investment goals? Think about what you're saving for, how much you need, and when you'll need the money." },
-  { name: "How much risk can you handle?", prompt: "Let's talk about risk. How much investing experience do you have, and how would you react if your portfolio dropped 20% in a month?" },
-  { name: "Rules & limits", prompt: "Are there any rules or constraints for your investments? For example, asset classes to avoid, ethical preferences, or minimum allocations you'd like." },
-  { name: "Tax situation", prompt: "Tell me about your tax situation — your tax residency, approximate bracket, and whether you use any tax-advantaged accounts." },
-  { name: "Staying involved", prompt: "Last one — how hands-on do you want to be? How often would you like portfolio reviews and what's your preferred way to stay updated?" },
+  { name: "Who are you?", prompt: "Let's start with the basics — tell me about yourself. Where do you live, what's your family situation, and who depends on you financially?", estimate: "~2 minutes" },
+  { name: "Your financial picture", prompt: "Now let's talk about your finances. Walk me through your income, savings, assets, any property you own, and any large expenses coming up.", estimate: "~3 minutes" },
+  { name: "What are you trying to achieve?", prompt: "What are your main investment goals? Think about what you're saving for, how much you need, and when you'll need the money.", estimate: "~2 minutes" },
+  { name: "How much risk can you handle?", prompt: "Let's talk about risk. How much investing experience do you have, and how would you react if your portfolio dropped 20% in a month?", estimate: "~2 minutes" },
+  { name: "Rules & limits", prompt: "Are there any rules or constraints for your investments? For example, asset classes to avoid, ethical preferences, or minimum allocations you'd like.", estimate: "~3 minutes" },
+  { name: "Tax situation", prompt: "Tell me about your tax situation — your tax residency, approximate bracket, and whether you use any tax-advantaged accounts.", estimate: "~2 minutes" },
+  { name: "Staying involved", prompt: "Last one — how hands-on do you want to be? How often would you like portfolio reviews and what's your preferred way to stay updated?", estimate: "~1 minute" },
 ];
 
 const CHAT_ONBOARDING_NOTES: Record<number, string[]> = {
@@ -576,11 +576,19 @@ const AIChatPanel = ({ isOpen, onClose, embedded = false, chatFirst = false, com
           transition={{ duration: 0.2 }}
         >
           {msg.type === "section-start" ? (
-            /* ── Section label pill ── */
-            <div className="flex justify-center my-1">
+            /* ── Section label pill with time estimate ── */
+            <div className="flex flex-col items-center my-1 gap-0.5">
               <span className="rounded-full bg-primary/10 px-3 py-1 text-[10px] font-semibold text-primary tracking-wide">
                 {msg.content}
               </span>
+              {(() => {
+                const sectionIdx = CHAT_ONBOARDING_SECTIONS.findIndex(s => msg.content.includes(s.name));
+                return sectionIdx >= 0 ? (
+                  <span className="text-[9px] text-muted-foreground/70">
+                    takes {CHAT_ONBOARDING_SECTIONS[sectionIdx].estimate}
+                  </span>
+                ) : null;
+              })()}
             </div>
           ) : msg.type === "summary" && msg.summaryNotes ? (
             /* ── Collapsible summary card ── */
@@ -708,9 +716,14 @@ const AIChatPanel = ({ isOpen, onClose, embedded = false, chatFirst = false, com
           {onboardingActive && (
             <div className="border-t border-border/30 bg-muted/30">
               <div className="flex items-center justify-between px-4 py-2">
-                <span className="text-[10px] font-medium text-muted-foreground">
-                  Section {onboardingSection + 1} of 7 · {CHAT_ONBOARDING_SECTIONS[onboardingSection].name}
-                </span>
+                <div className="flex flex-col">
+                  <span className="text-[10px] font-medium text-muted-foreground">
+                    Section {onboardingSection + 1} of 7 · {CHAT_ONBOARDING_SECTIONS[onboardingSection].name}
+                  </span>
+                  <span className="text-[9px] text-muted-foreground/70">
+                    takes {CHAT_ONBOARDING_SECTIONS[onboardingSection].estimate}
+                  </span>
+                </div>
                 <motion.button
                   onClick={stopOnboarding}
                   className="flex items-center gap-1 rounded-full px-2.5 py-1 text-[10px] font-medium transition-all"
