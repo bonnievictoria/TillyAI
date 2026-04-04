@@ -1,4 +1,4 @@
-import { Home, TrendingUp, MessageSquare, Target, Bell } from "lucide-react";
+import { Home, Compass, MessageSquare, Target, Bell } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { motion } from "framer-motion";
 
