@@ -622,7 +622,7 @@ const Execute = () => {
       </AnimatePresence>
 
       {/* FAB + Tilly pill */}
-      {!chatOpen && (
+      {(
         <div className="fixed bottom-[156px] right-5 z-40 flex flex-col items-center">
           <AnimatePresence>
             {showTillyPill && (
@@ -646,7 +646,7 @@ const Execute = () => {
           <motion.button
             initial={{ scale: 0 }}
             animate={{ scale: 1 }}
-            onClick={() => setChatOpen(true)}
+            onClick={() => navigate("/chat?from=execute")}
             className="flex h-14 w-14 items-center justify-center rounded-full wealth-gradient text-primary-foreground"
             style={{ boxShadow: "0 4px 24px -4px hsl(var(--wealth-navy) / 0.5)" }}
           >
@@ -654,8 +654,6 @@ const Execute = () => {
           </motion.button>
         </div>
       )}
-
-      <AIChatSheet isOpen={chatOpen} onClose={() => setChatOpen(false)} />
       <BottomNav />
     </div>
   );
