@@ -233,7 +233,7 @@ const Discovery = () => {
   const sectors = sectorRows ?? FALLBACK_SECTORS;
 
   return (
-    <div className="mobile-container bg-background min-h-screen pb-20">
+    <div className="mobile-container bg-background min-h-screen">
       <div className="px-5 pt-12 pb-3 flex items-center gap-3">
         <button onClick={() => navigate("/")} className="p-1.5 rounded-full bg-secondary hover:bg-muted transition-colors">
           <ArrowLeft className="h-4 w-4 text-foreground" />
