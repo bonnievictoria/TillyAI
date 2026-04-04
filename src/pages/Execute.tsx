@@ -246,12 +246,12 @@ function portfolioToDonutData(p: PortfolioDetail): { label: string; value: numbe
 
 /* ── Page ── */
 const Execute = () => {
+  const navigate = useNavigate();
   const houseAllocations = defaultETFs.map((e) => e.allocation);
   const [allocations, setAllocations] = useState<number[]>([...houseDefaults]);
   const [totalInvestment, setTotalInvestment] = useState<number>(TOTAL);
   const [portfolioDb, setPortfolioDb] = useState<PortfolioDetail | null>(null);
   const [selectedETF, setSelectedETF] = useState<number | null>(null);
-  const [chatOpen, setChatOpen] = useState(false);
   const [showTillyPill, setShowTillyPill] = useState(true);
 
   useEffect(() => {
