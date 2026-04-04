@@ -576,11 +576,19 @@ const AIChatPanel = ({ isOpen, onClose, embedded = false, chatFirst = false, com
           transition={{ duration: 0.2 }}
         >
           {msg.type === "section-start" ? (
-            /* ── Section label pill ── */
-            <div className="flex justify-center my-1">
+            /* ── Section label pill with time estimate ── */
+            <div className="flex flex-col items-center my-1 gap-0.5">
               <span className="rounded-full bg-primary/10 px-3 py-1 text-[10px] font-semibold text-primary tracking-wide">
                 {msg.content}
               </span>
+              {(() => {
+                const sectionIdx = CHAT_ONBOARDING_SECTIONS.findIndex(s => msg.content.includes(s.name));
+                return sectionIdx >= 0 ? (
+                  <span className="text-[9px] text-muted-foreground/70">
+                    takes {CHAT_ONBOARDING_SECTIONS[sectionIdx].estimate}
+                  </span>
+                ) : null;
+              })()}
             </div>
           ) : msg.type === "summary" && msg.summaryNotes ? (
             /* ── Collapsible summary card ── */
