@@ -640,19 +640,14 @@ const AIChatPanel = ({ isOpen, onClose, embedded = false, chatFirst = false, com
               {showBackToInvest && i === 0 && msg.role === "ai" && (
                 <button
                   onClick={() => navigate("/execute")}
-                  className="ml-7 mt-2 self-start flex items-center gap-3 rounded-xl px-4 py-3 transition-opacity hover:opacity-90"
-                  style={{ backgroundColor: "hsl(220, 40%, 20%)" }}
+                  className="ml-7 mt-2 self-start flex items-center gap-3 rounded-xl border px-3.5 py-2.5 transition-colors hover:bg-muted/40"
+                  style={{ borderColor: "hsl(220, 30%, 75%)", backgroundColor: "hsl(220, 30%, 97%)" }}
                 >
                   <div className="flex flex-col">
-                    <span className="text-[10px] font-medium" style={{ color: "hsl(40, 50%, 70%)" }}>Ready to invest?</span>
-                    <span className="text-[13px] font-semibold" style={{ color: "hsl(40, 55%, 80%)" }}>View your plan</span>
+                    <span className="text-[9px] font-medium text-muted-foreground">Ready to invest?</span>
+                    <span className="text-[12px] font-semibold" style={{ color: "hsl(220, 40%, 25%)" }}>View your plan</span>
                   </div>
-                  <div
-                    className="flex h-7 w-7 items-center justify-center rounded-full"
-                    style={{ backgroundColor: "hsla(40, 55%, 65%, 0.2)" }}
-                  >
-                    <ArrowRight className="h-3.5 w-3.5" style={{ color: "hsl(40, 55%, 75%)" }} />
-                  </div>
+                  <ChevronRight className="h-3.5 w-3.5" style={{ color: "hsl(220, 30%, 55%)" }} />
                 </button>
               )}
             </div>
