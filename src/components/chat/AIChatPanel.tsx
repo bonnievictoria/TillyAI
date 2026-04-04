@@ -731,9 +731,6 @@ const AIChatPanel = ({ isOpen, onClose, embedded = false, chatFirst = false, com
               transition={{ duration: 0.25 }}
               className="flex min-h-0 flex-1 flex-col"
             >
-              <div className="px-4 pb-1 pt-3">
-                <p className="text-[13px] font-medium text-muted-foreground/50">Ask Tilly</p>
-              </div>
               <div ref={scrollRef} className="flex-1 space-y-2 overflow-y-auto px-4 py-2 pb-4">
                 {renderMessages()}
               </div>

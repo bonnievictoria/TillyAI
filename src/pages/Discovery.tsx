@@ -260,15 +260,28 @@ const Discovery = () => {
 
         {/* ── Recommended investment plan card ── */}
         <div className="px-5 mb-5">
-          <button
+          <motion.button
             onClick={() => navigate("/execute")}
             className="w-full rounded-2xl px-5 py-4 text-left transition-opacity hover:opacity-90"
             style={{ backgroundColor: "hsl(220, 40%, 20%)" }}
+            initial={{ boxShadow: "0 0 0 0 hsla(40, 55%, 65%, 0)" }}
+            animate={{
+              boxShadow: [
+                "0 0 0 0 hsla(40, 55%, 65%, 0)",
+                "0 0 18px 4px hsla(40, 55%, 65%, 0.45)",
+                "0 0 0 0 hsla(40, 55%, 65%, 0)",
+                "0 0 18px 4px hsla(40, 55%, 65%, 0.45)",
+                "0 0 0 0 hsla(40, 55%, 65%, 0)",
+                "0 0 14px 3px hsla(40, 55%, 65%, 0.3)",
+                "0 0 0 0 hsla(40, 55%, 65%, 0)",
+              ],
+            }}
+            transition={{ duration: 2.4, ease: "easeInOut" }}
           >
             <p className="text-[10px] font-semibold uppercase tracking-widest mb-1" style={{ color: "hsl(40, 50%, 70%)" }}>Your plan</p>
             <h3 className="text-base font-bold" style={{ color: "hsl(40, 55%, 80%)" }}>Recommended investment plan</h3>
             <p className="text-xs mt-1" style={{ color: "hsla(40, 40%, 85%, 0.7)" }}>View your personalised portfolio →</p>
-          </button>
+          </motion.button>
         </div>
 
         {/* ── House View editorial card ── */}
