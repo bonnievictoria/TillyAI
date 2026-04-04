@@ -337,6 +337,53 @@ const TellUsAboutYou = ({ onComplete, onBack }: Props) => {
             </div>
           </div>
 
+          {/* Occupation */}
+          <div className="border rounded-xl bg-card overflow-hidden border-border/60">
+            <div className="px-4 py-3">
+              <div className="flex items-center gap-3">
+                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-secondary">
+                  <Briefcase className="h-[20px] w-[20px] text-muted-foreground" />
+                </div>
+                <p className="text-sm font-semibold text-foreground">Occupation</p>
+              </div>
+            </div>
+            <div className="px-4 pb-4">
+              <div className="flex flex-wrap gap-2">
+                {["Salaried full time", "Salaried part time", "Commission-based", "Gig worker", "Retired", "Other"].map((opt) => {
+                  const isSelected = occupation === opt;
+                  return (
+                    <button
+                      key={opt}
+                      onClick={() => { setOccupation(opt); if (opt !== "Other") setOccupationOther(""); }}
+                      className={`px-4 py-2.5 rounded-xl text-xs font-medium text-center transition-all ${
+                        isSelected
+                          ? "bg-primary text-primary-foreground"
+                          : "bg-secondary text-secondary-foreground hover:bg-muted"
+                      }`}
+                    >
+                      {opt}
+                    </button>
+                  );
+                })}
+              </div>
+              {occupation === "Other" && (
+                <motion.div
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: "auto" }}
+                  className="mt-3 overflow-hidden"
+                >
+                  <input
+                    autoFocus
+                    value={occupationOther}
+                    onChange={(e) => setOccupationOther(e.target.value)}
+                    placeholder="Enter your occupation"
+                    className="w-full rounded-xl border border-border bg-background px-3 py-2.5 text-xs text-foreground outline-none placeholder:text-muted-foreground/50 focus:ring-1 focus:ring-primary"
+                  />
+                </motion.div>
+              )}
+            </div>
+          </div>
+
           {/* Financial Goals */}
           <div className="border rounded-xl bg-card overflow-hidden border-border/60">
             <div className="px-4 py-3">
