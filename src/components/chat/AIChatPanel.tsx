@@ -21,6 +21,7 @@ interface AIChatPanelProps {
   chatFirst?: boolean;
   completionMessage?: string;
   onCompletionShown?: () => void;
+  initialAiMessage?: string;
 }
 
 interface Message {
