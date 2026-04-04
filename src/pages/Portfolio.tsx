@@ -43,13 +43,6 @@ const Portfolio = () => {
               className="fixed inset-0 z-50 flex items-center justify-center px-5"
             >
               <div className="relative w-full max-w-[340px] rounded-2xl bg-card border border-border/60 p-5 shadow-lg">
-                <button
-                  onClick={dismiss}
-                  className="absolute right-3 top-3 rounded-full p-1 text-muted-foreground transition-colors hover:text-foreground"
-                >
-                  <X className="h-4 w-4" />
-                </button>
-
                 <div className="flex flex-col items-center text-center pt-1">
                   <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-full bg-primary/10">
                     <span className="text-lg">✦</span>
