@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { X } from "lucide-react";
+
 import PortfolioDashboard from "@/components/dashboard/PortfolioDashboard";
 
 const STORAGE_KEY = "portfolio_first_visit_shown";
