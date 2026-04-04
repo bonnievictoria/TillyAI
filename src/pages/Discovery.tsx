@@ -481,7 +481,7 @@ const Discovery = () => {
               initial={{ y: "100%" }} animate={{ y: 0 }} exit={{ y: "100%" }}
               transition={{ type: "spring", damping: 30, stiffness: 300 }}
               onClick={e => e.stopPropagation()}
-              className="w-full max-w-md max-h-[80vh] rounded-t-2xl bg-card shadow-xl p-5 pb-8 overflow-y-auto"
+              className="w-full max-w-md max-h-[80vh] rounded-t-2xl bg-card shadow-xl p-5 pb-10 overflow-y-auto"
             >
               <div className="flex justify-center mb-4"><div className="h-1.5 w-10 rounded-full bg-border" /></div>
               <div className="flex items-start justify-between mb-4">
