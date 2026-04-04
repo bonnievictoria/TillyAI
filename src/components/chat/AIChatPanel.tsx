@@ -307,6 +307,7 @@ const AIChatPanel = ({ isOpen, onClose, embedded = false, chatFirst = false, com
   const [awaitingResponse, setAwaitingResponse] = useState(false);
   const [completedSections, setCompletedSections] = useState<number[]>([]);
   const [expandedReviewSection, setExpandedReviewSection] = useState<number | null>(null);
+  const [reviewChipOpen, setReviewChipOpen] = useState(false);
 
   useEffect(() => {
     if (scrollRef.current) {
