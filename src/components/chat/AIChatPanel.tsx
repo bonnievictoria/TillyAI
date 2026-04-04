@@ -280,7 +280,7 @@ const KudosBubble = ({ text, onDismiss }: { text: string; onDismiss: () => void 
   );
 };
 
-const AIChatPanel = ({ isOpen, onClose, embedded = false, chatFirst = false, completionMessage, onCompletionShown, initialAiMessage }: AIChatPanelProps) => {
+const AIChatPanel = ({ isOpen, onClose, embedded = false, chatFirst = false, completionMessage, onCompletionShown, initialAiMessage, showBackToInvest = false }: AIChatPanelProps) => {
   const navigate = useNavigate();
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
