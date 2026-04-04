@@ -307,6 +307,7 @@ const AIChatPanel = ({ isOpen, onClose, embedded = false, chatFirst = false, com
   const [awaitingResponse, setAwaitingResponse] = useState(false);
   const [completedSections, setCompletedSections] = useState<number[]>([]);
   const [expandedReviewSection, setExpandedReviewSection] = useState<number | null>(null);
+  const [reviewChipOpen, setReviewChipOpen] = useState(false);
 
   useEffect(() => {
     if (scrollRef.current) {
@@ -734,58 +735,91 @@ const AIChatPanel = ({ isOpen, onClose, embedded = false, chatFirst = false, com
                 </motion.button>
               </div>
 
-              {/* Bottom-anchored completed sections list */}
-              {completedSections.length > 0 && (
-                <div className="px-4 pb-2 max-h-[30vh] overflow-y-auto">
-                  <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-1.5">
-                    Completed
-                  </p>
-                  <div className="space-y-1">
-                    {completedSections.map((idx) => (
-                      <div key={idx} className="rounded-lg bg-muted/30">
-                        <button
-                          onClick={() => setExpandedReviewSection(expandedReviewSection === idx ? null : idx)}
-                          className="flex w-full items-center justify-between px-3 py-2 active:scale-[0.98] transition-transform"
-                        >
-                          <div className="flex items-center gap-2">
-                            <div className="flex h-4.5 w-4.5 items-center justify-center rounded-full bg-emerald-500/15">
-                              <Check className="h-2.5 w-2.5 text-emerald-500" />
-                            </div>
-                            <span className="text-[11px] font-medium text-foreground">{CHAT_ONBOARDING_SECTIONS[idx].name}</span>
-                          </div>
-                          <div className="flex items-center gap-1">
-                            <span className="text-[10px] text-muted-foreground">Review</span>
-                            {expandedReviewSection === idx ? (
-                              <ChevronUp className="h-3 w-3 text-muted-foreground" />
-                            ) : (
-                              <ChevronDown className="h-3 w-3 text-muted-foreground" />
-                            )}
-                          </div>
-                        </button>
-                        <AnimatePresence>
-                          {expandedReviewSection === idx && CHAT_ONBOARDING_NOTES[idx] && (
-                            <motion.div
-                              initial={{ height: 0, opacity: 0 }}
-                              animate={{ height: "auto", opacity: 1 }}
-                              exit={{ height: 0, opacity: 0 }}
-                              transition={{ duration: 0.25 }}
-                              className="overflow-hidden"
-                            >
-                              <div className="px-3 pb-2 pl-9">
-                                <ul className="space-y-0.5">
-                                  {CHAT_ONBOARDING_NOTES[idx].map((note, ni) => (
-                                    <li key={ni} className="text-[10px] text-muted-foreground leading-relaxed">• {note}</li>
-                                  ))}
-                                </ul>
-                              </div>
-                            </motion.div>
-                          )}
-                        </AnimatePresence>
-                      </div>
-                    ))}
+            </div>
+          )}
+
+          {/* Compact completed chip between messages and input */}
+          {onboardingActive && completedSections.length > 0 && (
+            <div className="px-4 pt-2 pb-1">
+              <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden">
+                {/* Chip row */}
+                <button
+                  onClick={() => setReviewChipOpen((p) => !p)}
+                  className="flex w-full items-center justify-between px-3 py-1.5 active:scale-[0.99] transition-transform"
+                >
+                  <div className="flex items-center gap-1.5">
+                    <div className="flex h-4 w-4 items-center justify-center rounded-full bg-emerald-500/15">
+                      <Check className="h-2.5 w-2.5 text-emerald-500" />
+                    </div>
+                    <span className="text-[11px] font-medium text-foreground">
+                      {completedSections.length} of 7 done
+                    </span>
                   </div>
-                </div>
-              )}
+                  <div className="flex items-center gap-0.5">
+                    <span className="text-[10px] text-primary font-medium">review</span>
+                    {reviewChipOpen ? (
+                      <ChevronUp className="h-3 w-3 text-primary" />
+                    ) : (
+                      <ChevronDown className="h-3 w-3 text-primary" />
+                    )}
+                  </div>
+                </button>
+
+                {/* Expandable review list */}
+                <AnimatePresence>
+                  {reviewChipOpen && (
+                    <motion.div
+                      initial={{ height: 0, opacity: 0 }}
+                      animate={{ height: "auto", opacity: 1 }}
+                      exit={{ height: 0, opacity: 0 }}
+                      transition={{ duration: 0.25 }}
+                      className="overflow-hidden"
+                    >
+                      <div className="border-t border-border/30 px-3 py-2 max-h-[25vh] overflow-y-auto space-y-1">
+                        {completedSections.map((idx) => (
+                          <div key={idx} className="rounded-lg bg-muted/30">
+                            <button
+                              onClick={(e) => { e.stopPropagation(); setExpandedReviewSection(expandedReviewSection === idx ? null : idx); }}
+                              className="flex w-full items-center justify-between px-2.5 py-1.5 active:scale-[0.98] transition-transform"
+                            >
+                              <div className="flex items-center gap-1.5">
+                                <div className="flex h-3.5 w-3.5 items-center justify-center rounded-full bg-emerald-500/15">
+                                  <Check className="h-2 w-2 text-emerald-500" />
+                                </div>
+                                <span className="text-[10px] font-medium text-foreground">{CHAT_ONBOARDING_SECTIONS[idx].name}</span>
+                              </div>
+                              {expandedReviewSection === idx ? (
+                                <ChevronUp className="h-2.5 w-2.5 text-muted-foreground" />
+                              ) : (
+                                <ChevronDown className="h-2.5 w-2.5 text-muted-foreground" />
+                              )}
+                            </button>
+                            <AnimatePresence>
+                              {expandedReviewSection === idx && CHAT_ONBOARDING_NOTES[idx] && (
+                                <motion.div
+                                  initial={{ height: 0, opacity: 0 }}
+                                  animate={{ height: "auto", opacity: 1 }}
+                                  exit={{ height: 0, opacity: 0 }}
+                                  transition={{ duration: 0.2 }}
+                                  className="overflow-hidden"
+                                >
+                                  <div className="px-2.5 pb-1.5 pl-7">
+                                    <ul className="space-y-0.5">
+                                      {CHAT_ONBOARDING_NOTES[idx].map((note, ni) => (
+                                        <li key={ni} className="text-[10px] text-muted-foreground leading-relaxed">• {note}</li>
+                                      ))}
+                                    </ul>
+                                  </div>
+                                </motion.div>
+                              )}
+                            </AnimatePresence>
+                          </div>
+                        ))}
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
             </div>
           )}
 
