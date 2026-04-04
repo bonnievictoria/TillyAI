@@ -2,7 +2,7 @@ import type React from "react";
 import { useState, useRef, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { ArrowRight, Calendar, Check, Plus, Target, Wallet, X, ShieldCheck } from "lucide-react";
+import { ArrowRight, Briefcase, Calendar, Check, Plus, Target, Wallet, X, ShieldCheck } from "lucide-react";
 import { saveOnboardingProfile } from "@/lib/api";
 
 interface Props {
@@ -226,6 +226,8 @@ const TellUsAboutYou = ({ onComplete, onBack }: Props) => {
   const [incomeRange, setIncomeRange] = useState<[number, number]>([30000000, 70000000]);
   const [expenseRange, setExpenseRange] = useState<[number, number]>([20000000, 50000000]);
   const [investmentView, setInvestmentView] = useState("");
+  const [occupation, setOccupation] = useState("");
+  const [occupationOther, setOccupationOther] = useState("");
 
   const toggleGoal = (g: string) =>
     setSelectedGoals((prev) => (prev.includes(g) ? prev.filter((x) => x !== g) : [...prev, g]));
@@ -332,6 +334,53 @@ const TellUsAboutYou = ({ onComplete, onBack }: Props) => {
                   renderLabel={(v) => String(v)}
                 />
               </div>
+            </div>
+          </div>
+
+          {/* Occupation */}
+          <div className="border rounded-xl bg-card overflow-hidden border-border/60">
+            <div className="px-4 py-3">
+              <div className="flex items-center gap-3">
+                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-secondary">
+                  <Briefcase className="h-[20px] w-[20px] text-muted-foreground" />
+                </div>
+                <p className="text-sm font-semibold text-foreground">Occupation</p>
+              </div>
+            </div>
+            <div className="px-4 pb-4">
+              <div className="flex flex-wrap gap-2">
+                {["Salaried full time", "Salaried part time", "Commission-based", "Gig worker", "Retired", "Other"].map((opt) => {
+                  const isSelected = occupation === opt;
+                  return (
+                    <button
+                      key={opt}
+                      onClick={() => { setOccupation(opt); if (opt !== "Other") setOccupationOther(""); }}
+                      className={`px-4 py-2.5 rounded-xl text-xs font-medium text-center transition-all ${
+                        isSelected
+                          ? "bg-primary text-primary-foreground"
+                          : "bg-secondary text-secondary-foreground hover:bg-muted"
+                      }`}
+                    >
+                      {opt}
+                    </button>
+                  );
+                })}
+              </div>
+              {occupation === "Other" && (
+                <motion.div
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: "auto" }}
+                  className="mt-3 overflow-hidden"
+                >
+                  <input
+                    autoFocus
+                    value={occupationOther}
+                    onChange={(e) => setOccupationOther(e.target.value)}
+                    placeholder="Enter your occupation"
+                    className="w-full rounded-xl border border-border bg-background px-3 py-2.5 text-xs text-foreground outline-none placeholder:text-muted-foreground/50 focus:ring-1 focus:ring-primary"
+                  />
+                </motion.div>
+              )}
             </div>
           </div>
 
