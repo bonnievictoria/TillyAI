@@ -8,13 +8,7 @@ const STORAGE_KEY = "portfolio_first_visit_shown";
 
 const Portfolio = () => {
   const navigate = useNavigate();
-  const [showPopup, setShowPopup] = useState(false);
-
-  useEffect(() => {
-    if (!localStorage.getItem(STORAGE_KEY)) {
-      setShowPopup(true);
-    }
-  }, []);
+  const [showPopup, setShowPopup] = useState(true);
 
   const dismiss = () => {
     localStorage.setItem(STORAGE_KEY, "true");
