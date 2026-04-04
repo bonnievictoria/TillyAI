@@ -63,12 +63,6 @@ const Portfolio = () => {
                   >
                     Take a look
                   </button>
-                  <button
-                    onClick={dismiss}
-                    className="mt-2 text-[12px] text-muted-foreground hover:text-foreground transition-colors"
-                  >
-                    Maybe later
-                  </button>
                 </div>
               </div>
             </motion.div>
