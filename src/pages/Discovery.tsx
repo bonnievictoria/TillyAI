@@ -258,6 +258,19 @@ const Discovery = () => {
       {/* Scrollable content */}
       <div className="pb-24">
 
+        {/* ── Recommended investment plan card ── */}
+        <div className="px-5 mb-5">
+          <button
+            onClick={() => navigate("/execute")}
+            className="w-full rounded-2xl px-4 py-4 text-left transition-colors hover:opacity-90"
+            style={{ backgroundColor: "hsl(145, 50%, 26%)" }}
+          >
+            <p className="text-[10px] font-semibold uppercase tracking-widest text-white/60 mb-1">Your plan</p>
+            <h3 className="text-base font-bold text-white">Recommended investment plan</h3>
+            <p className="text-xs text-white/70 mt-1">View your personalised portfolio →</p>
+          </button>
+        </div>
+
         {/* ── House View editorial card ── */}
         <div className="px-5 mb-5">
           <div className="rounded-2xl overflow-hidden border border-border/40">

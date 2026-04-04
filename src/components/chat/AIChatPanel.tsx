@@ -22,6 +22,7 @@ interface AIChatPanelProps {
   completionMessage?: string;
   onCompletionShown?: () => void;
   initialAiMessage?: string;
+  showBackToInvest?: boolean;
 }
 
 interface Message {
@@ -279,7 +280,7 @@ const KudosBubble = ({ text, onDismiss }: { text: string; onDismiss: () => void 
   );
 };
 
-const AIChatPanel = ({ isOpen, onClose, embedded = false, chatFirst = false, completionMessage, onCompletionShown, initialAiMessage }: AIChatPanelProps) => {
+const AIChatPanel = ({ isOpen, onClose, embedded = false, chatFirst = false, completionMessage, onCompletionShown, initialAiMessage, showBackToInvest = false }: AIChatPanelProps) => {
   const navigate = useNavigate();
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
@@ -619,21 +620,32 @@ const AIChatPanel = ({ isOpen, onClose, embedded = false, chatFirst = false, com
               </div>
             </div>
           ) : (
-            <div className={`flex gap-2 items-start ${msg.content.length > 600 ? "max-w-[95%]" : "max-w-[88%]"}`}>
-              <TillyAvatar />
-              <div
-                className={`rounded-2xl rounded-tl-sm px-3 py-2 text-[12px] leading-relaxed text-foreground/90 ${
-                  msg.content.length > 600
-                    ? "max-h-[60vh] overflow-y-auto border border-border/40 shadow-sm"
-                    : ""
-                }`}
-                style={{
-                  backgroundColor: "hsl(var(--tilly-bubble))",
-                  borderLeft: "2px solid hsla(38, 45%, 54%, 0.3)",
-                }}
-              >
-                <MarkdownMessage text={msg.content} />
+            <div className="flex flex-col gap-2">
+              <div className={`flex gap-2 items-start ${msg.content.length > 600 ? "max-w-[95%]" : "max-w-[88%]"}`}>
+                <TillyAvatar />
+                <div
+                  className={`rounded-2xl rounded-tl-sm px-3 py-2 text-[12px] leading-relaxed text-foreground/90 ${
+                    msg.content.length > 600
+                      ? "max-h-[60vh] overflow-y-auto border border-border/40 shadow-sm"
+                      : ""
+                  }`}
+                  style={{
+                    backgroundColor: "hsl(var(--tilly-bubble))",
+                    borderLeft: "2px solid hsla(38, 45%, 54%, 0.3)",
+                  }}
+                >
+                  <MarkdownMessage text={msg.content} />
+                </div>
               </div>
+              {showBackToInvest && i === 0 && msg.role === "ai" && (
+                <button
+                  onClick={() => navigate("/execute")}
+                  className="ml-7 mt-1 self-start rounded-lg px-4 py-2 text-xs font-semibold text-white transition-colors hover:opacity-90"
+                  style={{ backgroundColor: "hsl(145, 50%, 26%)" }}
+                >
+                  Bring me back to Invest
+                </button>
+              )}
             </div>
           )}
         </motion.div>
