@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { motion, AnimatePresence } from "framer-motion";
-import { X, Send, Mic, MicOff, AlertCircle, Loader2, Sparkles, Check, Square, ChevronDown, ChevronUp, Pencil } from "lucide-react";
+import { X, Send, Mic, MicOff, AlertCircle, Loader2, Sparkles, Check, Square, ChevronDown, ChevronUp, Pencil, ArrowRight } from "lucide-react";
 import { useState, useRef, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import {
@@ -640,10 +640,19 @@ const AIChatPanel = ({ isOpen, onClose, embedded = false, chatFirst = false, com
               {showBackToInvest && i === 0 && msg.role === "ai" && (
                 <button
                   onClick={() => navigate("/execute")}
-                  className="ml-7 mt-1 self-start rounded-lg px-4 py-2 text-xs font-semibold text-white transition-colors hover:opacity-90"
-                  style={{ backgroundColor: "hsl(145, 50%, 26%)" }}
+                  className="ml-7 mt-2 self-start flex items-center gap-3 rounded-xl px-4 py-3 transition-opacity hover:opacity-90"
+                  style={{ backgroundColor: "hsl(220, 40%, 20%)" }}
                 >
-                  Bring me back to Invest
+                  <div className="flex flex-col">
+                    <span className="text-[10px] font-medium" style={{ color: "hsl(40, 50%, 70%)" }}>Ready to invest?</span>
+                    <span className="text-[13px] font-semibold" style={{ color: "hsl(40, 55%, 80%)" }}>View your plan</span>
+                  </div>
+                  <div
+                    className="flex h-7 w-7 items-center justify-center rounded-full"
+                    style={{ backgroundColor: "hsla(40, 55%, 65%, 0.2)" }}
+                  >
+                    <ArrowRight className="h-3.5 w-3.5" style={{ color: "hsl(40, 55%, 75%)" }} />
+                  </div>
                 </button>
               )}
             </div>
