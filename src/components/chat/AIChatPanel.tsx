@@ -22,6 +22,7 @@ interface AIChatPanelProps {
   completionMessage?: string;
   onCompletionShown?: () => void;
   initialAiMessage?: string;
+  showBackToInvest?: boolean;
 }
 
 interface Message {

@@ -7,7 +7,6 @@ const PORTFOLIO_MESSAGE =
 
 const Chat = () => {
   const [searchParams] = useSearchParams();
-  const navigate = useNavigate();
   const fromExecute = searchParams.get("from") === "execute";
 
   return (
