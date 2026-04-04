@@ -584,7 +584,7 @@ const AIChatPanel = ({ isOpen, onClose, embedded = false, chatFirst = false, com
               {(() => {
                 const sectionIdx = CHAT_ONBOARDING_SECTIONS.findIndex(s => msg.content.includes(s.name));
                 return sectionIdx >= 0 ? (
-                  <span className="text-[9px] text-muted-foreground/70">
+                  <span className="text-[9px] text-muted-foreground/70 italic">
                     takes {CHAT_ONBOARDING_SECTIONS[sectionIdx].estimate}
                   </span>
                 ) : null;
