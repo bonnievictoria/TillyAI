@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { motion, AnimatePresence } from "framer-motion";
-import { X, Send, Mic, MicOff, AlertCircle, Loader2, Sparkles, Check, Square, ChevronDown, ChevronUp, Pencil } from "lucide-react";
+import { X, Send, Mic, MicOff, AlertCircle, Loader2, Sparkles, Check, Square, ChevronDown, ChevronUp, Pencil, ArrowRight } from "lucide-react";
 import { useState, useRef, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import {
