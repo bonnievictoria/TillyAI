@@ -21,6 +21,7 @@ interface AIChatPanelProps {
   chatFirst?: boolean;
   completionMessage?: string;
   onCompletionShown?: () => void;
+  initialAiMessage?: string;
 }
 
 interface Message {
@@ -278,7 +279,7 @@ const KudosBubble = ({ text, onDismiss }: { text: string; onDismiss: () => void 
   );
 };
 
-const AIChatPanel = ({ isOpen, onClose, embedded = false, chatFirst = false, completionMessage, onCompletionShown }: AIChatPanelProps) => {
+const AIChatPanel = ({ isOpen, onClose, embedded = false, chatFirst = false, completionMessage, onCompletionShown, initialAiMessage }: AIChatPanelProps) => {
   const navigate = useNavigate();
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
@@ -322,6 +323,15 @@ const AIChatPanel = ({ isOpen, onClose, embedded = false, chatFirst = false, com
       onCompletionShown?.();
     }
   }, [completionMessage, onCompletionShown]);
+
+  // Inject initial AI message (e.g. from /execute portfolio context)
+  const initialMessageSentRef = useRef(false);
+  useEffect(() => {
+    if (initialAiMessage && !initialMessageSentRef.current) {
+      initialMessageSentRef.current = true;
+      setMessages((prev) => [...prev, { role: "ai", content: initialAiMessage }]);
+    }
+  }, [initialAiMessage]);
 
   useEffect(() => {
     let mounted = true;
