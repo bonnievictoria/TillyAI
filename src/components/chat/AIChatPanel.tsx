@@ -324,6 +324,15 @@ const AIChatPanel = ({ isOpen, onClose, embedded = false, chatFirst = false, com
     }
   }, [completionMessage, onCompletionShown]);
 
+  // Inject initial AI message (e.g. from /execute portfolio context)
+  const initialMessageSentRef = useRef(false);
+  useEffect(() => {
+    if (initialAiMessage && !initialMessageSentRef.current) {
+      initialMessageSentRef.current = true;
+      setMessages((prev) => [...prev, { role: "ai", content: initialAiMessage }]);
+    }
+  }, [initialAiMessage]);
+
   useEffect(() => {
     let mounted = true;
     const loadContext = async () => {

@@ -1,8 +1,8 @@
 import { useState, useCallback, useEffect, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { useNavigate } from "react-router-dom";
 import { ArrowRight, Check, RotateCcw, AlertTriangle, Mic } from "lucide-react";
 import BottomNav from "@/components/BottomNav";
-import AIChatSheet from "@/components/dashboard/AIChatSheet";
 import { getMyPortfolio, type PortfolioDetail } from "@/lib/api";
 
 /* ── ETF Data (original) ── */
