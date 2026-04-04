@@ -233,7 +233,7 @@ const Discovery = () => {
   const sectors = sectorRows ?? FALLBACK_SECTORS;
 
   return (
-    <div className="mobile-container bg-background min-h-screen pb-20">
+    <div className="mobile-container bg-background min-h-screen">
       <div className="px-5 pt-12 pb-3 flex items-center gap-3">
         <button onClick={() => navigate("/")} className="p-1.5 rounded-full bg-secondary hover:bg-muted transition-colors">
           <ArrowLeft className="h-4 w-4 text-foreground" />
@@ -255,8 +255,8 @@ const Discovery = () => {
         </div>
       </div>
 
-      {/* Scrollable content */}
-      <div className="pb-40">
+      {/* Scrollable content — pb accounts for: Start Investing btn (~48px) + gap (12px) + bottom nav (~56px) + safe area + 16px buffer */}
+      <div className="pb-[160px]">
 
         {/* ── House View editorial card ── */}
         <div className="px-5 mb-5">
@@ -420,7 +420,7 @@ const Discovery = () => {
               initial={{ y: "100%" }} animate={{ y: 0 }} exit={{ y: "100%" }}
               transition={{ type: "spring", damping: 30, stiffness: 300 }}
               onClick={e => e.stopPropagation()}
-              className="w-full max-w-md max-h-[80vh] rounded-t-2xl bg-card shadow-xl p-5 pb-8 overflow-y-auto"
+              className="w-full max-w-md max-h-[80vh] rounded-t-2xl bg-card shadow-xl p-5 pb-10 overflow-y-auto"
             >
               <div className="flex justify-center mb-4"><div className="h-1.5 w-10 rounded-full bg-border" /></div>
               <div className="flex items-start justify-between mb-3">
@@ -481,7 +481,7 @@ const Discovery = () => {
               initial={{ y: "100%" }} animate={{ y: 0 }} exit={{ y: "100%" }}
               transition={{ type: "spring", damping: 30, stiffness: 300 }}
               onClick={e => e.stopPropagation()}
-              className="w-full max-w-md max-h-[80vh] rounded-t-2xl bg-card shadow-xl p-5 pb-8 overflow-y-auto"
+              className="w-full max-w-md max-h-[80vh] rounded-t-2xl bg-card shadow-xl p-5 pb-10 overflow-y-auto"
             >
               <div className="flex justify-center mb-4"><div className="h-1.5 w-10 rounded-full bg-border" /></div>
               <div className="flex items-start justify-between mb-4">
