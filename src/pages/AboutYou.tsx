@@ -226,6 +226,8 @@ const TellUsAboutYou = ({ onComplete, onBack }: Props) => {
   const [incomeRange, setIncomeRange] = useState<[number, number]>([30000000, 70000000]);
   const [expenseRange, setExpenseRange] = useState<[number, number]>([20000000, 50000000]);
   const [investmentView, setInvestmentView] = useState("");
+  const [occupation, setOccupation] = useState("");
+  const [occupationOther, setOccupationOther] = useState("");
 
   const toggleGoal = (g: string) =>
     setSelectedGoals((prev) => (prev.includes(g) ? prev.filter((x) => x !== g) : [...prev, g]));
