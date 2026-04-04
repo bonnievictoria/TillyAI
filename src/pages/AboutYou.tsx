@@ -2,7 +2,7 @@ import type React from "react";
 import { useState, useRef, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { ArrowRight, Calendar, Check, Plus, Target, Wallet, X, ShieldCheck } from "lucide-react";
+import { ArrowRight, Briefcase, Calendar, Check, Plus, Target, Wallet, X, ShieldCheck } from "lucide-react";
 import { saveOnboardingProfile } from "@/lib/api";
 
 interface Props {
