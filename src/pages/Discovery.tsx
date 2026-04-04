@@ -392,11 +392,8 @@ const Discovery = () => {
             ))}
           </div>
         </div>
-      </div>
-
-      {/* Quick Invest CTA */}
-      <div className="fixed bottom-[calc(3.5rem+env(safe-area-inset-bottom,8px)+12px)] left-0 right-0 z-30">
-        <div className="max-w-md mx-auto px-5">
+        {/* Start Investing — inline at end of scroll */}
+        <div className="px-5 mt-4 pb-6">
           <motion.button
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
