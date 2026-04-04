@@ -256,7 +256,7 @@ const Discovery = () => {
       </div>
 
       {/* Scrollable content */}
-      <div className="pb-24">
+      <div className="pb-40">
 
         {/* ── House View editorial card ── */}
         <div className="px-5 mb-5">
