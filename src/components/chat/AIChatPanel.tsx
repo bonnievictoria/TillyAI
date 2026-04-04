@@ -41,13 +41,13 @@ const suggestedQuestions = [
 
 /* ── Onboarding sections (matches /profile/complete) ── */
 const CHAT_ONBOARDING_SECTIONS = [
-  { name: "Who are you?", prompt: "Let's start with the basics — tell me about yourself. Where do you live, what's your family situation, and who depends on you financially?" },
-  { name: "Your financial picture", prompt: "Now let's talk about your finances. Walk me through your income, savings, assets, any property you own, and any large expenses coming up." },
-  { name: "What are you trying to achieve?", prompt: "What are your main investment goals? Think about what you're saving for, how much you need, and when you'll need the money." },
-  { name: "How much risk can you handle?", prompt: "Let's talk about risk. How much investing experience do you have, and how would you react if your portfolio dropped 20% in a month?" },
-  { name: "Rules & limits", prompt: "Are there any rules or constraints for your investments? For example, asset classes to avoid, ethical preferences, or minimum allocations you'd like." },
-  { name: "Tax situation", prompt: "Tell me about your tax situation — your tax residency, approximate bracket, and whether you use any tax-advantaged accounts." },
-  { name: "Staying involved", prompt: "Last one — how hands-on do you want to be? How often would you like portfolio reviews and what's your preferred way to stay updated?" },
+  { name: "Who are you?", prompt: "Let's start with the basics — tell me about yourself. Where do you live, what's your family situation, and who depends on you financially?", estimate: "~2 minutes" },
+  { name: "Your financial picture", prompt: "Now let's talk about your finances. Walk me through your income, savings, assets, any property you own, and any large expenses coming up.", estimate: "~3 minutes" },
+  { name: "What are you trying to achieve?", prompt: "What are your main investment goals? Think about what you're saving for, how much you need, and when you'll need the money.", estimate: "~2 minutes" },
+  { name: "How much risk can you handle?", prompt: "Let's talk about risk. How much investing experience do you have, and how would you react if your portfolio dropped 20% in a month?", estimate: "~2 minutes" },
+  { name: "Rules & limits", prompt: "Are there any rules or constraints for your investments? For example, asset classes to avoid, ethical preferences, or minimum allocations you'd like.", estimate: "~3 minutes" },
+  { name: "Tax situation", prompt: "Tell me about your tax situation — your tax residency, approximate bracket, and whether you use any tax-advantaged accounts.", estimate: "~2 minutes" },
+  { name: "Staying involved", prompt: "Last one — how hands-on do you want to be? How often would you like portfolio reviews and what's your preferred way to stay updated?", estimate: "~1 minute" },
 ];
 
 const CHAT_ONBOARDING_NOTES: Record<number, string[]> = {
