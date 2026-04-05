@@ -550,9 +550,6 @@ const CompleteProfile = () => {
   const [riskCapacity, setRiskCapacity] = useState("");
   const [investmentExperience, setInvestmentExperience] = useState("");
   const [investmentHorizon, setInvestmentHorizon] = useState("");
-  const [riskQ1, setRiskQ1] = useState("");
-  const [riskQ2, setRiskQ2] = useState("");
-  const [riskQ3, setRiskQ3] = useState("");
   const [showBehavModal, setShowBehavModal] = useState(false);
   const [behavQ1, setBehavQ1] = useState("");
   const [behavQ2, setBehavQ2] = useState("");
