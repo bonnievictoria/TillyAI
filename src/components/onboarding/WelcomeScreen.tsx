@@ -2,6 +2,7 @@ import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ArrowRight, Shield, TrendingUp, Sparkles, ChevronDown, ArrowLeft, Loader2 } from "lucide-react";
 import AccountDiscoveryModal from "./AccountDiscoveryModal";
+import prozprLogo from "@/assets/prozpr-logo.png";
 import { signup, login } from "@/lib/api";
 import { useAuth } from "@/context/AuthContext";
 import {
