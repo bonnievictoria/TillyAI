@@ -14,6 +14,8 @@ import {
 } from "@/lib/api";
 import ReactMarkdown from "react-markdown";
 
+const PENDING_CHAT_BOOTSTRAP_KEY = "asktilly.pendingChatBootstrap.v1";
+
 interface AIChatPanelProps {
   isOpen: boolean;
   onClose: () => void;
@@ -21,6 +23,15 @@ interface AIChatPanelProps {
   chatFirst?: boolean;
   completionMessage?: string;
   onCompletionShown?: () => void;
+}
+
+/** Call from other screens before navigating to /chat to send one user message after load. */
+export function queueChatBootstrapMessage(text: string): void {
+  try {
+    sessionStorage.setItem(PENDING_CHAT_BOOTSTRAP_KEY, JSON.stringify({ text }));
+  } catch {
+    // Ignore storage errors.
+  }
 }
 
 interface Message {
@@ -581,6 +592,26 @@ const AIChatPanel = ({ isOpen, onClose, embedded = false, chatFirst = false, com
       setMessages((prev) => [...prev, { role: "ai", content: fallback }]);
     }
   }, [ensureSession, clientContext, onboardingActive, awaitingResponse, handleOnboardingResponse, messages]);
+
+  const sendMessageRef = useRef(sendMessage);
+  sendMessageRef.current = sendMessage;
+
+  // One-shot user message from Goals / other screens (queued before navigate to /chat).
+  useEffect(() => {
+    try {
+      const raw = sessionStorage.getItem(PENDING_CHAT_BOOTSTRAP_KEY);
+      if (!raw) return;
+      sessionStorage.removeItem(PENDING_CHAT_BOOTSTRAP_KEY);
+      const { text } = JSON.parse(raw) as { text?: string };
+      if (typeof text !== "string" || !text.trim()) return;
+      const tid = window.setTimeout(() => {
+        void sendMessageRef.current(text.trim());
+      }, 300);
+      return () => window.clearTimeout(tid);
+    } catch {
+      // Ignore malformed storage.
+    }
+  }, []);
 
   const toggleListening = useCallback(() => {
     setMicError(false);

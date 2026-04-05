@@ -106,6 +106,9 @@ async function request<T>(
     }
     throw new Error(msg || `Request failed (${res.status})`);
   }
+  if (res.status === 204 || res.status === 205) {
+    return undefined as T;
+  }
   return res.json() as Promise<T>;
 }
 
@@ -684,6 +687,56 @@ export interface GoalResponse {
 
 export async function listGoals(): Promise<GoalResponse[]> {
   return request<GoalResponse[]>("/goals/");
+}
+
+export interface GoalCreatePayload {
+  name: string;
+  goal_type?: string;
+  target_amount: number;
+  target_date?: string;
+  priority?: string;
+  notes?: string;
+}
+
+export async function createGoal(payload: GoalCreatePayload): Promise<GoalResponse> {
+  return request<GoalResponse>("/goals/", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+}
+
+export interface GoalUpdatePayload {
+  name?: string;
+  target_amount?: number;
+  target_date?: string;
+  priority?: string;
+  notes?: string;
+}
+
+export async function updateGoal(goalId: string, payload: GoalUpdatePayload): Promise<GoalResponse> {
+  return request<GoalResponse>(`/goals/${goalId}`, {
+    method: "PUT",
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function removeGoal(goalId: string): Promise<void> {
+  await request<void>(`/goals/${goalId}`, { method: "DELETE" });
+}
+
+export interface GoalContributionCreatePayload {
+  amount: number;
+  note?: string;
+}
+
+export async function addGoalContribution(
+  goalId: string,
+  payload: GoalContributionCreatePayload,
+): Promise<{ id: string; amount: number; contributed_at: string; note?: string | null }> {
+  return request(`/goals/${goalId}/contributions`, {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
 }
 
 // ── Discovery API ─────────────────────────────────────
