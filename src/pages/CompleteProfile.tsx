@@ -918,6 +918,16 @@ const CompleteProfile = () => {
               )}
             </div>
 
+            {/* Income & Expenses — mirrored from onboarding */}
+            <div>
+              <FieldLabel>Annual income range</FieldLabel>
+              <IncomeExpenseSlider label="Income" range={incomeRange} onChange={setIncomeRange} />
+            </div>
+            <div>
+              <FieldLabel>Annual expense range</FieldLabel>
+              <IncomeExpenseSlider label="Expenses" range={expenseRange} onChange={setExpenseRange} />
+            </div>
+
             <div className="flex gap-3">
               <div className="flex-1"><FieldLabel>Emergency fund target</FieldLabel><TextInput value={emergencyFund} onChange={setEmergencyFund} prefix="₹" placeholder="e.g. 3,00,000" /></div>
               <div className="w-32"><FieldLabel>Timeframe</FieldLabel><SelectInput value={emergencyTimeframe} onChange={setEmergencyTimeframe} options={EMERGENCY_TIMEFRAMES} /></div>
@@ -1020,34 +1030,18 @@ const CompleteProfile = () => {
               />
             </div>
 
-            {/* New Q1 */}
+            {/* Behavioural Risk Assessment — opens modal */}
             <div>
-              <FieldLabel>If your portfolio dropped 20%+ in one month, what would you do?</FieldLabel>
-              <div className="flex flex-wrap gap-1.5">
-                {RISK_Q1_OPTIONS.map((o) => (
-                  <Chip key={o} label={o} active={riskQ1 === o} onClick={() => setRiskQ1(o)} />
-                ))}
-              </div>
-            </div>
-
-            {/* New Q2 */}
-            <div>
-              <FieldLabel>Which would keep you up more at night?</FieldLabel>
-              <div className="flex flex-wrap gap-1.5">
-                {RISK_Q2_OPTIONS.map((o) => (
-                  <Chip key={o} label={o} active={riskQ2 === o} onClick={() => setRiskQ2(o)} />
-                ))}
-              </div>
-            </div>
-
-            {/* New Q3 */}
-            <div>
-              <FieldLabel>When you think of the word 'risk,' what comes to mind?</FieldLabel>
-              <div className="flex flex-wrap gap-1.5">
-                {RISK_Q3_OPTIONS.map((o) => (
-                  <Chip key={o} label={o} active={riskQ3 === o} onClick={() => setRiskQ3(o)} />
-                ))}
-              </div>
+              <button
+                onClick={() => setShowBehavModal(true)}
+                className="w-full rounded-xl border border-border bg-card px-4 py-3 text-left hover:border-accent/40 transition-all"
+              >
+                <p className="text-xs font-semibold text-foreground">Behavioural Risk Assessment</p>
+                <p className="text-[10px] text-muted-foreground mt-0.5">3 quick questions to understand your behaviour</p>
+                {behavQ1 && behavQ2 && behavQ3 && (
+                  <span className="inline-flex items-center gap-1 mt-1.5 text-[10px] font-medium text-[hsl(160_50%_38%)]">✓ Completed</span>
+                )}
+              </button>
             </div>
 
             <div>
