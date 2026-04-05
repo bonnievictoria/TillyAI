@@ -731,7 +731,7 @@ const AIChatPanel = ({ isOpen, onClose, embedded = false, chatFirst = false, com
               transition={{ duration: 0.25 }}
               className="flex min-h-0 flex-1 flex-col"
             >
-              <div ref={scrollRef} className="flex-1 space-y-2 overflow-y-auto px-4 py-2 pb-4">
+              <div ref={scrollRef} className="flex-1 space-y-2 overflow-y-auto px-4 pt-4 pb-4">
                 {renderMessages()}
               </div>
             </motion.div>
@@ -975,7 +975,7 @@ const AIChatPanel = ({ isOpen, onClose, embedded = false, chatFirst = false, com
         >
           <div className="flex items-center justify-between px-5 py-4" />
 
-          <div ref={scrollRef} className="flex-1 overflow-y-auto px-4 py-4 space-y-2">
+          <div ref={scrollRef} className="flex-1 overflow-y-auto px-4 pt-6 pb-4 space-y-2">
             {!hasMessages && (
               <motion.div
                 initial={{ opacity: 0 }}
