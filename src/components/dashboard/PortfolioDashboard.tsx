@@ -6,6 +6,7 @@ import BottomNav from "@/components/BottomNav";
 import NetWorthSparkline from "./NetWorthSparkline";
 import CurrentAllocationCard from "./CurrentAllocationCard";
 import DailyInsights from "./DailyInsights";
+import SkillsQuiz from "./SkillsQuiz";
 import ProfileSwitcher from "./ProfileSwitcher";
 import { useFamily } from "@/context/FamilyContext";
 import {
@@ -359,6 +360,7 @@ const PortfolioDashboard = () => {
                 middleSlot={<CumulativeMemberBreakdownCard data={cumulativeData} />}
               />
               <div className="px-5 pb-24">
+                <SkillsQuiz />
                 <DailyInsights />
               </div>
             </>
@@ -391,6 +393,7 @@ const PortfolioDashboard = () => {
                 showHoldingsCard
               />
               <div className="px-5 pb-24">
+                <SkillsQuiz />
                 <DailyInsights />
               </div>
             </>
@@ -442,6 +445,7 @@ const PortfolioDashboard = () => {
           )}
 
           <div className="px-5 pb-24">
+            <SkillsQuiz />
             <DailyInsights />
           </div>
         </>
