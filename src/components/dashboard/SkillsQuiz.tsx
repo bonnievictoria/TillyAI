@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Lock, ChevronRight, X, Trophy, Rocket, RotateCcw } from "lucide-react";
+import { Lock, X, Trophy, Rocket, RotateCcw, TrendingUp, BarChart3, Landmark, Gem, CheckCircle2, XCircle } from "lucide-react";
 
 /* ── Data ── */
 interface Question {
@@ -125,13 +125,13 @@ const LEVEL_2: Question[] = [
 ];
 
 const categories = [
-  { label: "ETFs", active: true },
-  { label: "Stocks", active: false },
-  { label: "Bonds", active: false },
-  { label: "Commodities", active: false },
+  { label: "ETFs", active: true, icon: TrendingUp, color: "bg-[#C9A84C]", ringColor: "ring-[#C9A84C]/30" },
+  { label: "Stocks", active: false, icon: BarChart3, color: "bg-[#4A7BF7]", ringColor: "ring-[#4A7BF7]/20" },
+  { label: "Bonds", active: false, icon: Landmark, color: "bg-[#2EAA6F]", ringColor: "ring-[#2EAA6F]/20" },
+  { label: "Commodities", active: false, icon: Gem, color: "bg-[#E8734A]", ringColor: "ring-[#E8734A]/20" },
 ];
 
-/* ── Quiz overlay component ── */
+/* ── Quiz overlay component — premium dark modal ── */
 function QuizOverlay({ onClose }: { onClose: () => void }) {
   const [level, setLevel] = useState<1 | 2>(1);
   const [qIdx, setQIdx] = useState(0);
@@ -156,12 +156,8 @@ function QuizOverlay({ onClose }: { onClose: () => void }) {
       setQIdx((i) => i + 1);
       setSelected(null);
     } else {
-      // End of level
-      if (level === 1) {
-        setShowSummary(true);
-      } else {
-        setShowCongrats(true);
-      }
+      if (level === 1) setShowSummary(true);
+      else setShowCongrats(true);
     }
   };
 
@@ -182,6 +178,8 @@ function QuizOverlay({ onClose }: { onClose: () => void }) {
     setShowSummary(false);
   };
 
+  const progressPct = ((qIdx + (selected !== null ? 1 : 0)) / total) * 100;
+
   /* ── Congrats screen (after level 2) ── */
   if (showCongrats) {
     return (
@@ -189,20 +187,35 @@ function QuizOverlay({ onClose }: { onClose: () => void }) {
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
-        className="fixed inset-0 z-[60] flex flex-col bg-background"
+        className="fixed inset-0 z-[60] flex flex-col"
+        style={{ backgroundColor: "#0F0F1A" }}
       >
         <div className="flex items-center justify-between px-5 pt-12 pb-4">
-          <span className="text-xs font-semibold text-muted-foreground">ETF Quiz</span>
-          <button onClick={onClose} className="p-1 rounded-full text-muted-foreground hover:text-foreground"><X className="h-5 w-5" /></button>
+          <span className="text-xs font-semibold" style={{ color: "#C9A84C" }}>ETF Quiz</span>
+          <button onClick={onClose} className="p-1.5 rounded-full hover:bg-white/10 transition-colors">
+            <X className="h-5 w-5 text-white/60" />
+          </button>
         </div>
-        <div className="flex-1 flex flex-col items-center justify-center px-8 text-center gap-4">
-          <Trophy className="h-14 w-14 text-yellow-500" />
-          <h2 className="text-xl font-bold text-foreground">You're an ETF expert! 🏆</h2>
-          <p className="text-sm text-muted-foreground">More categories coming soon.</p>
-          <button onClick={retakeLevel1} className="mt-4 flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors">
+        <div className="flex-1 flex flex-col items-center justify-center px-8 text-center gap-5">
+          <motion.div
+            initial={{ scale: 0 }}
+            animate={{ scale: 1 }}
+            transition={{ type: "spring", damping: 10, stiffness: 200, delay: 0.2 }}
+          >
+            <Trophy className="h-16 w-16" style={{ color: "#C9A84C" }} />
+          </motion.div>
+          <h2 className="text-xl font-bold text-white">You're an ETF expert! 🏆</h2>
+          <p className="text-sm text-white/50">More categories coming soon.</p>
+          <button onClick={retakeLevel1} className="mt-2 flex items-center gap-2 text-sm text-white/40 hover:text-white/70 transition-colors">
             <RotateCcw className="h-4 w-4" /> Retake Level 1
           </button>
-          <button onClick={onClose} className="mt-2 rounded-xl bg-foreground px-6 py-3 text-sm font-semibold text-background active:scale-[0.97]">Done</button>
+          <button
+            onClick={onClose}
+            className="mt-2 rounded-xl px-8 py-3 text-sm font-semibold text-[#0F0F1A] active:scale-[0.97]"
+            style={{ backgroundColor: "#C9A84C" }}
+          >
+            Done
+          </button>
         </div>
       </motion.div>
     );
@@ -216,27 +229,49 @@ function QuizOverlay({ onClose }: { onClose: () => void }) {
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
-        className="fixed inset-0 z-[60] flex flex-col bg-background"
+        className="fixed inset-0 z-[60] flex flex-col"
+        style={{ backgroundColor: "#0F0F1A" }}
       >
         <div className="flex items-center justify-between px-5 pt-12 pb-4">
-          <span className="text-xs font-semibold text-muted-foreground">ETF Quiz — Level 1</span>
-          <button onClick={onClose} className="p-1 rounded-full text-muted-foreground hover:text-foreground"><X className="h-5 w-5" /></button>
-        </div>
-        <div className="flex-1 flex flex-col items-center justify-center px-8 text-center gap-4">
-          {perfect ? <Rocket className="h-14 w-14 text-primary" /> : <span className="text-5xl">💪</span>}
-          <h2 className="text-xl font-bold text-foreground">
-            {perfect ? "Nailed it! You're ready for the next level 🚀" : "Great effort! Knowledge takes time."}
-          </h2>
-          <p className="text-sm text-muted-foreground">You got {correctCount} out of {total} correct.</p>
-
-          {perfect && (
-            <button onClick={goToLevel2} className="mt-4 w-full rounded-xl bg-foreground py-3 text-sm font-semibold text-background active:scale-[0.97]">
-              Go to Level 2
-            </button>
-          )}
-          <button onClick={retakeLevel1} className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors">
-            <RotateCcw className="h-4 w-4" /> Retake Level 1
+          <span className="text-xs font-semibold" style={{ color: "#C9A84C" }}>Level 1 · ETFs</span>
+          <button onClick={onClose} className="p-1.5 rounded-full hover:bg-white/10 transition-colors">
+            <X className="h-5 w-5 text-white/60" />
           </button>
+        </div>
+        <div className="flex-1 flex flex-col items-center justify-center px-8 text-center gap-5">
+          <motion.div
+            initial={{ scale: 0 }}
+            animate={{ scale: 1 }}
+            transition={{ type: "spring", damping: 10, stiffness: 200, delay: 0.2 }}
+          >
+            {perfect ? (
+              <Rocket className="h-16 w-16" style={{ color: "#C9A84C" }} />
+            ) : (
+              <span className="text-6xl">💪</span>
+            )}
+          </motion.div>
+          <h2 className="text-xl font-bold text-white">
+            {perfect ? "Nailed it! Ready for the next level 🚀" : "Great effort! Knowledge takes time."}
+          </h2>
+          <p className="text-sm text-white/50">You got {correctCount} out of {total} correct.</p>
+
+          <div className="flex w-full gap-2 mt-4 max-w-[280px]">
+            {perfect && (
+              <button
+                onClick={goToLevel2}
+                className="flex-1 rounded-xl py-3 text-sm font-semibold text-[#0F0F1A] active:scale-[0.97]"
+                style={{ backgroundColor: "#C9A84C" }}
+              >
+                Unlock Level 2
+              </button>
+            )}
+            <button
+              onClick={retakeLevel1}
+              className="flex-1 flex items-center justify-center gap-2 rounded-xl py-3 text-sm font-medium text-white/70 border border-white/15 hover:bg-white/5 transition-colors"
+            >
+              <RotateCcw className="h-3.5 w-3.5" /> Retake
+            </button>
+          </div>
         </div>
       </motion.div>
     );
@@ -248,65 +283,103 @@ function QuizOverlay({ onClose }: { onClose: () => void }) {
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="fixed inset-0 z-[60] flex flex-col bg-background"
+      className="fixed inset-0 z-[60] flex flex-col"
+      style={{ backgroundColor: "#0F0F1A" }}
     >
       {/* Header */}
-      <div className="flex items-center justify-between px-5 pt-12 pb-2">
-        <span className="text-xs font-semibold text-muted-foreground">
-          Level {level} — Question {qIdx + 1} of {total}
-        </span>
-        <button onClick={onClose} className="p-1 rounded-full text-muted-foreground hover:text-foreground">
-          <X className="h-5 w-5" />
+      <div className="flex items-center justify-between px-5 pt-12 pb-3">
+        <div>
+          <span className="text-xs font-semibold" style={{ color: "#C9A84C" }}>
+            Level {level} · ETFs
+          </span>
+          <p className="text-[10px] text-white/40 mt-0.5">Question {qIdx + 1} of {total}</p>
+        </div>
+        <button onClick={onClose} className="p-1.5 rounded-full hover:bg-white/10 transition-colors">
+          <X className="h-5 w-5 text-white/60" />
         </button>
       </div>
 
       {/* Progress bar */}
-      <div className="mx-5 h-1 rounded-full bg-muted overflow-hidden">
+      <div className="mx-5 h-1.5 rounded-full overflow-hidden" style={{ backgroundColor: "rgba(255,255,255,0.08)" }}>
         <motion.div
-          className="h-full rounded-full bg-primary"
+          className="h-full rounded-full"
+          style={{ backgroundColor: "#C9A84C" }}
           initial={false}
-          animate={{ width: `${((qIdx + (selected !== null ? 1 : 0)) / total) * 100}%` }}
-          transition={{ duration: 0.3 }}
+          animate={{ width: `${progressPct}%` }}
+          transition={{ duration: 0.4, ease: "easeOut" }}
         />
       </div>
 
       {/* Question */}
-      <div className="flex-1 overflow-y-auto px-5 pt-6 pb-32">
-        <h3 className="text-base font-semibold text-foreground leading-snug mb-5">{current.question}</h3>
+      <div className="flex-1 overflow-y-auto px-5 pt-8 pb-32">
+        <motion.h3
+          key={`q-${level}-${qIdx}`}
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="text-lg font-semibold text-white leading-snug mb-6"
+        >
+          {current.question}
+        </motion.h3>
 
-        <div className="space-y-2.5">
+        <div className="space-y-3">
           {current.options.map((opt, i) => {
-            let cardStyle = "border-border/60 bg-card";
+            let bg = "rgba(255,255,255,0.04)";
+            let border = "rgba(255,255,255,0.1)";
+            let textColor = "rgba(255,255,255,0.85)";
+            let icon = null;
+
             if (selected !== null) {
-              if (i === current.correctIndex) cardStyle = "border-green-500/60 bg-green-500/10";
-              else if (i === selected && !isCorrect) cardStyle = "border-destructive/60 bg-destructive/10";
+              if (i === current.correctIndex) {
+                bg = "rgba(34,197,94,0.12)";
+                border = "rgba(34,197,94,0.5)";
+                textColor = "#22c55e";
+                icon = <CheckCircle2 className="h-4 w-4 shrink-0" style={{ color: "#22c55e" }} />;
+              } else if (i === selected && !isCorrect) {
+                bg = "rgba(239,68,68,0.12)";
+                border = "rgba(239,68,68,0.5)";
+                textColor = "#ef4444";
+                icon = <XCircle className="h-4 w-4 shrink-0" style={{ color: "#ef4444" }} />;
+              }
             }
+
             return (
               <motion.button
                 key={i}
                 onClick={() => handleSelect(i)}
                 disabled={selected !== null}
-                className={`w-full text-left rounded-xl border p-3.5 text-[13px] leading-snug transition-all ${cardStyle} ${selected === null ? "active:scale-[0.98]" : ""}`}
-                layout
+                className="w-full text-left rounded-xl p-4 text-[13px] leading-snug flex items-start gap-3 transition-all"
+                style={{
+                  backgroundColor: bg,
+                  border: `1px solid ${border}`,
+                  color: textColor,
+                }}
+                whileTap={selected === null ? { scale: 0.98 } : undefined}
               >
-                <span className="font-medium text-foreground">{String.fromCharCode(65 + i)})</span>{" "}
-                <span className="text-foreground/90">{opt}</span>
+                <span className="font-bold shrink-0 w-5">{String.fromCharCode(65 + i)})</span>
+                <span className="flex-1">{opt}</span>
+                {icon}
               </motion.button>
             );
           })}
         </div>
 
-        {/* Explanation */}
+        {/* Feedback + explanation */}
         <AnimatePresence>
           {selected !== null && (
             <motion.div
-              initial={{ opacity: 0, y: 8 }}
+              initial={{ opacity: 0, y: 12 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0 }}
-              className="mt-4 rounded-xl border border-border/40 bg-muted/40 p-4"
+              className="mt-5 rounded-xl p-4"
+              style={{
+                backgroundColor: isCorrect ? "rgba(34,197,94,0.08)" : "rgba(239,68,68,0.08)",
+                border: `1px solid ${isCorrect ? "rgba(34,197,94,0.2)" : "rgba(239,68,68,0.2)"}`,
+              }}
             >
-              <p className="text-xs font-semibold mb-1 text-foreground">{isCorrect ? "✅ Correct!" : "❌ Not quite"}</p>
-              <p className="text-[12px] leading-relaxed text-muted-foreground">{current.explanation}</p>
+              <p className="text-sm font-semibold mb-1.5" style={{ color: isCorrect ? "#22c55e" : "#ef4444" }}>
+                {isCorrect ? "Correct! Keep going 🔥" : "Not quite — here's why…"}
+              </p>
+              <p className="text-xs leading-relaxed text-white/60">{current.explanation}</p>
             </motion.div>
           )}
         </AnimatePresence>
@@ -322,12 +395,13 @@ function QuizOverlay({ onClose }: { onClose: () => void }) {
           >
             <button
               onClick={handleNext}
-              className="w-full rounded-xl bg-foreground py-3.5 text-sm font-semibold text-background active:scale-[0.97]"
+              className="w-full rounded-xl py-3.5 text-sm font-semibold text-[#0F0F1A] active:scale-[0.97]"
+              style={{ backgroundColor: "#C9A84C" }}
             >
-              {qIdx < total - 1 ? "Next question" : level === 1 ? "See results" : "Finish quiz"}
+              {qIdx < total - 1 ? "Next question →" : level === 1 ? "See results" : "Finish quiz"}
             </button>
             {level === 2 && (
-              <button onClick={retakeLevel1} className="mt-2 w-full text-center text-xs text-muted-foreground hover:text-foreground transition-colors">
+              <button onClick={retakeLevel1} className="mt-2 w-full text-center text-xs text-white/40 hover:text-white/60 transition-colors">
                 <RotateCcw className="inline h-3 w-3 mr-1" />Retake Level 1
               </button>
             )}
@@ -344,33 +418,39 @@ export default function SkillsQuiz() {
 
   return (
     <>
-      <div className="pt-1 pb-3">
-        <h3 className="text-sm font-semibold text-foreground mb-3">Test your skills in 2 minutes!</h3>
-        <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide">
-          {categories.map((cat) => (
-            <button
-              key={cat.label}
-              disabled={!cat.active}
-              onClick={() => cat.active && setQuizOpen(true)}
-              className={`relative flex-shrink-0 w-[130px] rounded-2xl border p-4 transition-all ${
-                cat.active
-                  ? "border-primary/30 bg-card active:scale-[0.97] cursor-pointer"
-                  : "border-border/30 bg-muted/30 cursor-default"
-              }`}
-            >
-              <p className={`text-sm font-semibold ${cat.active ? "text-foreground" : "text-muted-foreground/50"}`}>
-                {cat.label}
-              </p>
-              {cat.active ? (
-                <ChevronRight className="mt-3 h-4 w-4 text-primary" />
-              ) : (
-                <div className="mt-3 flex items-center gap-1">
-                  <Lock className="h-3 w-3 text-muted-foreground/40" />
-                  <span className="text-[10px] text-muted-foreground/40">Coming soon</span>
+      <div>
+        <div className="flex items-center gap-4 justify-center">
+          {categories.map((cat) => {
+            const Icon = cat.icon;
+            return (
+              <button
+                key={cat.label}
+                disabled={!cat.active}
+                onClick={() => cat.active && setQuizOpen(true)}
+                className="flex flex-col items-center gap-1.5 group"
+              >
+                <div
+                  className={`relative flex h-14 w-14 items-center justify-center rounded-full ring-2 transition-all ${
+                    cat.active
+                      ? `${cat.color} ${cat.ringColor} shadow-lg cursor-pointer group-active:scale-95`
+                      : "bg-muted/40 ring-border/20 cursor-default"
+                  }`}
+                >
+                  <Icon
+                    className={`h-5 w-5 ${cat.active ? "text-white" : "text-muted-foreground/30"}`}
+                  />
+                  {!cat.active && (
+                    <div className="absolute -bottom-0.5 -right-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-muted border border-border/40">
+                      <Lock className="h-2.5 w-2.5 text-muted-foreground/50" />
+                    </div>
+                  )}
                 </div>
-              )}
-            </button>
-          ))}
+                <span className={`text-[10px] font-medium ${cat.active ? "text-foreground" : "text-muted-foreground/40"}`}>
+                  {cat.label}
+                </span>
+              </button>
+            );
+          })}
         </div>
       </div>
 
