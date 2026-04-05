@@ -544,6 +544,8 @@ const CompleteProfile = () => {
   // Section 2 — What are you trying to achieve?
   const [selectedObjectives, setSelectedObjectives] = useState<string[]>([]);
   const [goalDetails, setGoalDetails] = useState<Record<string, GoalDetail>>({});
+  const [customGoals, setCustomGoals] = useState<string[]>([]);
+  const [customGoalInput, setCustomGoalInput] = useState("");
 
   // Section 3 — How much risk?
   const [riskLevelIdx, setRiskLevelIdx] = useState(2);
