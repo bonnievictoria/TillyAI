@@ -174,7 +174,7 @@ const WelcomeScreen = ({ onNext }: WelcomeScreenProps) => {
           <img src={prozprLogo} alt="Prozpr — Wealth, Unified." className="w-[345px] h-auto" />
         </div>
 
-        <div className="mt-10 space-y-2.5 mb-auto">
+        <div className="mt-0 space-y-2.5 mb-auto">
           {[
             { icon: TrendingUp, label: "Track all investments", sub: "Mutual funds, stocks and more" },
             { icon: Sparkles, label: "Tilly, your own AI wealth advisor", sub: "Personalized recommendations" },
