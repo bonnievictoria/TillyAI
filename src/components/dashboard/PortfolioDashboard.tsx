@@ -1,7 +1,5 @@
 import { useState, useEffect, type ReactNode } from "react";
-import { motion } from "framer-motion";
-import { TrendingUp, TrendingDown, Compass } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { TrendingUp, TrendingDown } from "lucide-react";
 import BottomNav from "@/components/BottomNav";
 import NetWorthSparkline from "./NetWorthSparkline";
 import CurrentAllocationCard from "./CurrentAllocationCard";
@@ -174,7 +172,6 @@ function CumulativeMemberBreakdownCard({ data }: { data: CumulativePortfolioResp
 }
 
 const PortfolioDashboard = () => {
-  const navigate = useNavigate();
   const { activeView } = useFamily();
   const [timePeriod, setTimePeriod] = useState<"1M" | "6M" | "1Y" | "All">("All");
 
@@ -391,20 +388,6 @@ const PortfolioDashboard = () => {
         </>
       )}
 
-      {/* Discovery FAB */}
-      <motion.button
-        onClick={() => navigate("/discovery")}
-        whileHover={{ scale: 1.05 }}
-        whileTap={{ scale: 0.97 }}
-        className="fixed bottom-20 right-5 z-40 flex h-12 items-center gap-2 rounded-full px-4 wealth-gradient"
-        style={{
-          boxShadow:
-            "0 4px 24px -4px hsl(var(--wealth-navy) / 0.5), 0 0 16px 2px hsl(var(--wealth-blue) / 0.25)",
-        }}
-      >
-        <Compass className="h-4 w-4 text-primary-foreground" />
-        <span className="text-xs font-semibold text-primary-foreground">Discovery</span>
-      </motion.button>
 
       <BottomNav />
     </div>
