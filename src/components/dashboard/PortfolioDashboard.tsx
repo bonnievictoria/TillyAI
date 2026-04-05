@@ -6,6 +6,7 @@ import BottomNav from "@/components/BottomNav";
 import NetWorthSparkline from "./NetWorthSparkline";
 import CurrentAllocationCard from "./CurrentAllocationCard";
 import DailyInsights from "./DailyInsights";
+import SkillsQuiz from "./SkillsQuiz";
 import ProfileSwitcher from "./ProfileSwitcher";
 import { useFamily } from "@/context/FamilyContext";
 import {
