@@ -2,6 +2,7 @@ import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ArrowRight, Shield, TrendingUp, Sparkles, ChevronDown, ArrowLeft, Loader2 } from "lucide-react";
 import AccountDiscoveryModal from "./AccountDiscoveryModal";
+import prozprLogo from "@/assets/prozpr-logo.png";
 import { signup, login } from "@/lib/api";
 import { useAuth } from "@/context/AuthContext";
 import {
@@ -170,29 +171,7 @@ const WelcomeScreen = ({ onNext }: WelcomeScreenProps) => {
         className="flex-1 flex flex-col"
       >
         <div className="flex flex-col items-center text-center mb-4 mt-12">
-          <div className="inline-flex flex-col">
-            <div className="flex items-end" style={{ gap: '10px' }}>
-              {/* Rising bars icon */}
-              <svg width="45" height="90" viewBox="0 0 45 90" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ marginBottom: '8px' }}>
-                <rect x="0" y="52" width="13" height="38" rx="2" fill="#C9A84C" fillOpacity="0.4" />
-                <rect x="16" y="29" width="13" height="61" rx="2" fill="#C9A84C" fillOpacity="0.65" />
-                <rect x="32" y="0" width="13" height="90" rx="2" fill="#C9A84C" />
-              </svg>
-              {/* Wordmark + tagline */}
-              <div className="flex flex-col items-center pb-[1px]">
-                <h1 className="leading-[1] font-bold" style={{ fontFamily: 'Georgia, "Times New Roman", serif', fontSize: '48px', letterSpacing: '-1px' }}>
-                  <span style={{ color: '#1A1A2E', marginRight: '-8px' }}>Pr</span>
-                  <span style={{ color: '#C9A84C', position: 'relative', zIndex: 1 }}>o</span>
-                  <span style={{ color: '#1A1A2E' }}>zpr</span>
-                </h1>
-                <p className="uppercase mt-1" style={{ fontFamily: 'Georgia, "Times New Roman", serif', fontSize: '11px', color: '#888888', letterSpacing: '3.5px' }}>
-                  Wealth, Unified.
-                </p>
-                {/* Gold rule */}
-                <div className="w-full mt-2" style={{ height: '0.7px', backgroundColor: '#C9A84C', marginLeft: '-55px', width: 'calc(100% + 45px)' }} />
-              </div>
-            </div>
-          </div>
+          <img src={prozprLogo} alt="Prozpr — Wealth, Unified." className="w-72 h-auto" />
         </div>
 
         <div className="mt-24 space-y-2.5 mb-auto">
