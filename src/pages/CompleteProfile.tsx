@@ -95,20 +95,25 @@ const RISK_LEVELS = [...RISK_CATEGORIES];
 
 const HORIZON_OPTIONS = ["0–5 years", "5–10 years", "10–15 years", "15–20 years", "20+ years"];
 
-const RISK_Q1_OPTIONS = [
-  "Sell everything to prevent further loss",
-  "Do nothing",
-  "Invest more cash",
+const BEHAV_Q1_OPTIONS = [
+  "Cut losses immediately and liquidate all investments. Capital preservation is paramount.",
+  "Cut your losses and transfer investments to safer asset classes.",
+  "You would be worried, but would give your investments a little more time.",
+  "You accept volatility and decline in portfolio value as a part of investing. You would keep your investments as is.",
+  "You would add to your investments to bring the average buying price lower. You are confident about your investments and are not perturbed by notional losses.",
 ];
 
-const RISK_Q2_OPTIONS = [
-  "Knowing you missed a 30% market gain",
-  "Knowing you lost 15% of your capital",
+const BEHAV_Q2_OPTIONS = [
+  "Knowing you missed a 20%+ market gain",
+  "Knowing you lost 15%+ of your capital",
 ];
 
-const RISK_Q3_OPTIONS = [
-  "A dangerous gamble",
-  "An opportunity for higher returns",
+const BEHAV_Q3_OPTIONS = [
+  "Investment A — Worst Year: 1% / Best Year: 15%",
+  "Investment B — Worst Year: -5% / Best Year: 20%",
+  "Investment C — Worst Year: -10% / Best Year: 25%",
+  "Investment D — Worst Year: -14% / Best Year: 30%",
+  "Investment E — Worst Year: -18% / Best Year: 35%",
 ];
 
 const ASSET_COMFORT = ["Equities", "Bonds", "Real Estate", "Gold", "Crypto", "International Markets"];
