@@ -435,6 +435,11 @@ const CompleteProfile = () => {
   const [riskQ1, setRiskQ1] = useState("");
   const [riskQ2, setRiskQ2] = useState("");
   const [riskQ3, setRiskQ3] = useState("");
+  const [showBehavModal, setShowBehavModal] = useState(false);
+  const [behavQ1, setBehavQ1] = useState("");
+  const [behavQ2, setBehavQ2] = useState("");
+  const [behavQ3, setBehavQ3] = useState("");
+  const [riskQ3, setRiskQ3] = useState("");
   const [maxDrawdown, setMaxDrawdown] = useState("");
   const [comfortAssets, setComfortAssets] = useState<string[]>([]);
 
