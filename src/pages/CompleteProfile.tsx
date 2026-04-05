@@ -780,7 +780,7 @@ const CompleteProfile = () => {
             risk_capacity: riskCapacity || null,
             investment_experience: investmentExperience || null,
             investment_horizon: investmentHorizon || null,
-            drop_reaction: riskQ1 || null,
+            drop_reaction: behavQ1 || null,
             max_drawdown: maxDrawdown ? Number(maxDrawdown) : null,
             comfort_assets: comfortAssets.length ? comfortAssets : null,
           });
@@ -831,7 +831,7 @@ const CompleteProfile = () => {
     occupation, primaryResidence, earningMembers, dependents, values,
     primaryWealthSource, investableAssets, liabilities, properties, plannedExpenses, emergencyFund, emergencyTimeframe, otherAssets, ownsHome, expectingLargeIncome, largeIncomeAmount, largeIncomeCurrency, largeIncomeYear,
     selectedObjectives, goalDetails,
-    riskLevelIdx, riskCapacity, investmentExperience, investmentHorizon, horizonNotes, riskQ1, riskQ2, riskQ3, maxDrawdown, comfortAssets,
+    riskLevelIdx, riskCapacity, investmentExperience, investmentHorizon, horizonNotes, behavQ1, behavQ2, behavQ3, maxDrawdown, comfortAssets,
     permittedAssets, allocations, prohibited, leverage, derivatives, diversificationNotes,
     incomeTaxRate, cgtRate, taxNotes,
     reviewFreq, reviewTriggers, updateProcess,
