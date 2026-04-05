@@ -171,7 +171,7 @@ const WelcomeScreen = ({ onNext }: WelcomeScreenProps) => {
         className="flex-1 flex flex-col"
       >
         <div className="flex flex-col items-center text-center mb-4 mt-12">
-          <img src={prozprLogo} alt="Prozpr — Wealth, Unified." className="w-72 h-auto" />
+          <img src={prozprLogo} alt="Prozpr — Wealth, Unified." className="w-[345px] h-auto" />
         </div>
 
         <div className="mt-24 space-y-2.5 mb-auto">
