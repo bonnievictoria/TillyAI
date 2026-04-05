@@ -360,6 +360,7 @@ const PortfolioDashboard = () => {
                 middleSlot={<CumulativeMemberBreakdownCard data={cumulativeData} />}
               />
               <div className="px-5 pb-24">
+                <SkillsQuiz />
                 <DailyInsights />
               </div>
             </>
@@ -392,6 +393,7 @@ const PortfolioDashboard = () => {
                 showHoldingsCard
               />
               <div className="px-5 pb-24">
+                <SkillsQuiz />
                 <DailyInsights />
               </div>
             </>
@@ -443,6 +445,7 @@ const PortfolioDashboard = () => {
           )}
 
           <div className="px-5 pb-24">
+            <SkillsQuiz />
             <DailyInsights />
           </div>
         </>
