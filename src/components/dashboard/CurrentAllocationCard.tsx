@@ -112,20 +112,20 @@ const CurrentAllocationCard = ({ portfolio, riskCategory, horizonLabel }: Curren
           </div>
         </div>
 
-        <div className="grid grid-cols-2 gap-x-4 gap-y-2 flex-1">
+        <div className="flex flex-col gap-2 flex-1">
           {allocations.map((item) => (
-            <div key={item.name} className="flex items-center gap-1.5">
-              <span
-                className="h-2.5 w-2.5 rounded-full shrink-0"
-                style={{
-                  backgroundColor: item.color,
-                  border: item.color === "#E8D5B7" ? "1px solid #D4B896" : undefined,
-                }}
-              />
-              <div className="flex flex-col min-w-0">
-                <span className="text-[10px] text-muted-foreground leading-tight truncate">{item.name}</span>
-                <span className="text-xs font-semibold text-foreground leading-tight">{item.value}%</span>
+            <div key={item.name} className="flex items-center justify-between">
+              <div className="flex items-center gap-1.5">
+                <span
+                  className="h-2.5 w-2.5 rounded-full shrink-0"
+                  style={{
+                    backgroundColor: item.color,
+                    border: item.color === "#E8D5B7" ? "1px solid #D4B896" : undefined,
+                  }}
+                />
+                <span className="text-[10px] text-muted-foreground leading-tight">{item.name}</span>
               </div>
+              <span className="text-xs font-semibold text-foreground">{item.value}%</span>
             </div>
           ))}
         </div>
@@ -150,7 +150,7 @@ const CurrentAllocationCard = ({ portfolio, riskCategory, horizonLabel }: Curren
         style={{ borderTop: "1px solid #f5f5f5" }}
         onClick={() => setHoldingsOpen((o) => !o)}
       >
-        <p className="text-[11px] font-medium" style={{ color: "#C9A84C" }}>
+        <p className="text-[13px] font-medium text-center w-full" style={{ color: "#1a1a2e" }}>
           {holdingsOpen ? "Hide holdings ↑" : "View holdings →"}
         </p>
       </div>
