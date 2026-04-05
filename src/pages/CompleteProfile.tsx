@@ -390,8 +390,126 @@ const toNum = (s: string): number | null => {
   const n = Number(cleaned);
   return Number.isNaN(n) ? null : n;
 };
+/* ── Format INR ── */
+const formatINR = (v: number) => {
+  if (v >= 100000000) return "₹10 Cr+";
+  if (v >= 10000000) return `₹${(v / 10000000).toFixed(1)} Cr`;
+  if (v >= 100000) return `₹${(v / 100000).toFixed(1)}L`;
+  if (v >= 1000) return `₹${(v / 1000).toFixed(0)}K`;
+  return `₹${v}`;
+};
 
-/* ── Main Component ── */
+const IE_SLIDER_TICKS = [
+  { value: 0, label: "₹0" }, { value: 2500000, label: "₹25L" }, { value: 5000000, label: "₹50L" },
+  { value: 10000000, label: "₹1Cr" }, { value: 50000000, label: "₹5Cr" }, { value: 100000000, label: "₹10Cr+" },
+];
+
+const IncomeExpenseSlider = ({ label, range, onChange }: {
+  label: string; range: [number, number]; onChange: (r: [number, number]) => void;
+}) => {
+  const max = 100000000;
+  const minPct = (range[0] / max) * 100;
+  const maxPct = (range[1] / max) * 100;
+  const isSingleValue = range[0] === range[1];
+
+  return (
+    <div className="space-y-2">
+      <div className="flex items-center justify-between">
+        <span className="text-xs font-medium text-muted-foreground">{label}</span>
+        <span className="text-xs font-semibold text-foreground">
+          {isSingleValue ? formatINR(range[0]) : `${formatINR(range[0])} – ${formatINR(range[1])}`}
+        </span>
+      </div>
+      <div className="relative h-2 rounded-full bg-secondary">
+        <div className="absolute h-full rounded-full bg-accent" style={{ left: `${minPct}%`, width: `${Math.max(0, maxPct - minPct)}%` }} />
+        <input type="range" min={0} max={max} step={100000} value={range[0]}
+          onChange={(e) => { const v = Math.max(0, Math.min(Number(e.target.value), range[1])); onChange([v, range[1]]); }}
+          className="absolute inset-0 w-full h-full appearance-none bg-transparent cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:h-5 [&::-webkit-slider-thumb]:w-5 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-accent [&::-webkit-slider-thumb]:border-2 [&::-webkit-slider-thumb]:border-card [&::-webkit-slider-thumb]:shadow-md pointer-events-none [&::-webkit-slider-thumb]:pointer-events-auto" />
+        <input type="range" min={0} max={max} step={100000} value={range[1]}
+          onChange={(e) => { const v = Math.max(Number(e.target.value), range[0]); onChange([range[0], v]); }}
+          className="absolute inset-0 w-full h-full appearance-none bg-transparent cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:h-5 [&::-webkit-slider-thumb]:w-5 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-accent [&::-webkit-slider-thumb]:border-2 [&::-webkit-slider-thumb]:border-card [&::-webkit-slider-thumb]:shadow-md pointer-events-none [&::-webkit-slider-thumb]:pointer-events-auto" />
+      </div>
+      <div className="flex justify-between">
+        {IE_SLIDER_TICKS.map((t) => (<span key={t.value} className="text-[9px] text-muted-foreground/50">{t.label}</span>))}
+      </div>
+    </div>
+  );
+};
+
+/* ── Behavioural Risk Modal ── */
+const BehaviouralRiskModal = ({
+  open, onClose, q1, setQ1, q2, setQ2, q3, setQ3,
+}: {
+  open: boolean; onClose: () => void;
+  q1: string; setQ1: (v: string) => void;
+  q2: string; setQ2: (v: string) => void;
+  q3: string; setQ3: (v: string) => void;
+}) => {
+  if (!open) return null;
+  const canSave = q1 !== "" && q2 !== "" && q3 !== "";
+
+  const OptionCard = ({ label, selected, onClick }: { label: string; selected: boolean; onClick: () => void }) => (
+    <button
+      onClick={onClick}
+      className={`w-full text-left rounded-xl px-4 py-3 text-xs font-medium border transition-all ${
+        selected ? "bg-accent text-accent-foreground border-accent" : "bg-card text-foreground border-border hover:border-accent/40"
+      }`}
+    >
+      {label}
+    </button>
+  );
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center">
+      <div className="absolute inset-0 bg-black/50" onClick={onClose} />
+      <div className="relative w-full max-w-md max-h-[85vh] bg-background rounded-t-2xl sm:rounded-2xl overflow-hidden flex flex-col">
+        <div className="flex items-center justify-between px-5 pt-5 pb-3 border-b border-border">
+          <div>
+            <h3 className="text-sm font-semibold text-foreground">Behavioural Risk Assessment</h3>
+            <p className="text-[10px] text-muted-foreground mt-0.5">Understanding your behaviour</p>
+          </div>
+          <button onClick={onClose} className="flex h-7 w-7 items-center justify-center rounded-full bg-muted hover:bg-muted/80">
+            <X className="h-3.5 w-3.5 text-foreground" />
+          </button>
+        </div>
+        <div className="flex-1 overflow-y-auto px-5 py-4 space-y-6">
+          {/* Q1 */}
+          <div className="space-y-2">
+            <p className="text-xs font-semibold text-foreground">1. If your portfolio dropped 20%+ in one month, what would you do?</p>
+            <div className="space-y-1.5">
+              {BEHAV_Q1_OPTIONS.map((o) => <OptionCard key={o} label={o} selected={q1 === o} onClick={() => setQ1(o)} />)}
+            </div>
+          </div>
+          {/* Q2 */}
+          <div className="space-y-2">
+            <p className="text-xs font-semibold text-foreground">2. Which would keep you up more at night?</p>
+            <div className="space-y-1.5">
+              {BEHAV_Q2_OPTIONS.map((o) => <OptionCard key={o} label={o} selected={q2 === o} onClick={() => setQ2(o)} />)}
+            </div>
+          </div>
+          {/* Q3 */}
+          <div className="space-y-2">
+            <p className="text-xs font-semibold text-foreground">3. Which scenario best describes your "Risk Range"?</p>
+            <div className="space-y-1.5">
+              {BEHAV_Q3_OPTIONS.map((o) => <OptionCard key={o} label={o} selected={q3 === o} onClick={() => setQ3(o)} />)}
+            </div>
+          </div>
+        </div>
+        <div className="px-5 py-4 border-t border-border">
+          <button
+            onClick={onClose}
+            disabled={!canSave}
+            className={`w-full rounded-xl py-3 text-sm font-semibold transition-all ${canSave ? "bg-foreground text-background hover:opacity-90" : "bg-muted text-muted-foreground cursor-not-allowed"}`}
+          >
+            Save responses
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+
 const CompleteProfile = () => {
   const navigate = useNavigate();
   const [openSection, setOpenSection] = useState(0);
