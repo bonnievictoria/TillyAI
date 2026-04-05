@@ -169,15 +169,17 @@ const WelcomeScreen = ({ onNext }: WelcomeScreenProps) => {
         transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
         className="flex-1 flex flex-col"
       >
-        <h1 className="font-display text-[2.75rem] leading-[1.05] tracking-tight text-primary font-bold mb-1">
-          Prozpr
-        </h1>
+        <div className="flex flex-col items-center text-center mb-4">
+          <h1 className="font-display text-[3.5rem] leading-[1] tracking-tight text-primary font-bold mb-2">
+            Prozpr
+          </h1>
 
-        <p className="text-muted-foreground text-sm leading-relaxed tracking-wide font-medium mb-8 max-w-[260px]">
-          Wealth, <span className="italic">Unified.</span>
-        </p>
+          <p className="text-muted-foreground text-base leading-relaxed tracking-wide font-medium">
+            Wealth, <span className="italic">Unified.</span>
+          </p>
+        </div>
 
-        <div className="space-y-2.5 mb-auto">
+        <div className="mt-24 space-y-2.5 mb-auto">
           {[
             { icon: TrendingUp, label: "Track all investments", sub: "Mutual funds, stocks and more" },
             { icon: Sparkles, label: "Tilly, your own AI wealth advisor", sub: "Personalized recommendations" },
