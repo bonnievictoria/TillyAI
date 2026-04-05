@@ -439,7 +439,8 @@ const CompleteProfile = () => {
   const [behavQ1, setBehavQ1] = useState("");
   const [behavQ2, setBehavQ2] = useState("");
   const [behavQ3, setBehavQ3] = useState("");
-  const [riskQ3, setRiskQ3] = useState("");
+  const [incomeRange, setIncomeRange] = useState<[number, number]>([30000000, 70000000]);
+  const [expenseRange, setExpenseRange] = useState<[number, number]>([20000000, 50000000]);
   const [maxDrawdown, setMaxDrawdown] = useState("");
   const [comfortAssets, setComfortAssets] = useState<string[]>([]);
 
