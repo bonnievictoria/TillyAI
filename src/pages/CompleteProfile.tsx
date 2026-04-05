@@ -1347,6 +1347,15 @@ const CompleteProfile = () => {
         })}
       </div>
 
+      {/* Behavioural Risk Modal */}
+      <BehaviouralRiskModal
+        open={showBehavModal}
+        onClose={() => setShowBehavModal(false)}
+        q1={behavQ1} setQ1={setBehavQ1}
+        q2={behavQ2} setQ2={setBehavQ2}
+        q3={behavQ3} setQ3={setBehavQ3}
+      />
+
       {/* Bottom CTA */}
       <div className="fixed bottom-0 left-0 right-0 z-50 bg-background/90 backdrop-blur-sm border-t border-border px-5 py-4">
         <div className="max-w-md mx-auto">
