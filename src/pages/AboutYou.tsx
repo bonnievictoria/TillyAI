@@ -301,7 +301,7 @@ const TellUsAboutYou = ({ onComplete, onBack }: Props) => {
                     <div>
                       <p className="text-xs font-medium text-muted-foreground mb-2.5">Occupation</p>
                       <div className="flex flex-wrap gap-2">
-                        {["Salaried full time", "Salaried part time", "Commission-based", "Gig worker", "Retired", "Other"].map((opt) => {
+                        {["Salaried", "Commission-based", "Freelance", "Homemaker", "Retired", "Other"].map((opt) => {
                           const isSelected = occupation === opt;
                           return (
                             <button key={opt} onClick={() => { setOccupation(opt); if (opt !== "Other") setOccupationOther(""); }}
