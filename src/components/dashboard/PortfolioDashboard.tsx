@@ -1,7 +1,5 @@
 import { useState, useEffect, type ReactNode } from "react";
-import { motion } from "framer-motion";
-import { TrendingUp, TrendingDown, Compass } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { TrendingUp, TrendingDown } from "lucide-react";
 import BottomNav from "@/components/BottomNav";
 import NetWorthSparkline from "./NetWorthSparkline";
 import CurrentAllocationCard from "./CurrentAllocationCard";
@@ -174,7 +172,6 @@ function CumulativeMemberBreakdownCard({ data }: { data: CumulativePortfolioResp
 }
 
 const PortfolioDashboard = () => {
-  const navigate = useNavigate();
   const { activeView } = useFamily();
   const [timePeriod, setTimePeriod] = useState<"1M" | "6M" | "1Y" | "All">("All");
 
