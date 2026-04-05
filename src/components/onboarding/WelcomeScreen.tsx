@@ -169,15 +169,13 @@ const WelcomeScreen = ({ onNext }: WelcomeScreenProps) => {
         transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
         className="flex-1 flex flex-col"
       >
-        <div className="flex flex-col items-center text-center mb-4">
+        <div className="flex flex-col items-center text-center mb-4 mt-12">
           <div className="flex items-center gap-3">
-            {/* Compass rose icon */}
-            <svg width="56" height="56" viewBox="0 0 56 56" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <circle cx="28" cy="28" r="24" stroke="#C9A84C" strokeWidth="0.75" fill="none" />
-              <line x1="28" y1="6" x2="28" y2="50" stroke="#C9A84C" strokeWidth="0.7" />
-              <line x1="6" y1="28" x2="50" y2="28" stroke="#C9A84C" strokeWidth="0.7" />
-              <polygon points="28,4 25.5,10 30.5,10" fill="#C9A84C" />
-              <circle cx="28" cy="28" r="2.5" fill="#C9A84C" />
+            {/* Rising bars icon */}
+            <svg width="36" height="68" viewBox="0 0 36 68" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <rect x="0" y="40" width="10" height="28" rx="2" fill="#C9A84C" fillOpacity="0.5" />
+              <rect x="13" y="22" width="10" height="46" rx="2" fill="#C9A84C" fillOpacity="0.7" />
+              <rect x="26" y="0" width="10" height="68" rx="2" fill="#C9A84C" />
             </svg>
             {/* Wordmark */}
             <div className="flex flex-col items-start">
