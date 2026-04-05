@@ -1071,6 +1071,64 @@ const CompleteProfile = () => {
               </div>
             </div>
 
+            {/* Custom goals */}
+            <div>
+              <FieldLabel>Add your own goal</FieldLabel>
+              <div className="flex gap-2">
+                <input
+                  value={customGoalInput}
+                  onChange={(e) => setCustomGoalInput(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" && customGoalInput.trim()) {
+                      const g = customGoalInput.trim();
+                      if (!customGoals.includes(g) && !selectedObjectives.includes(g)) {
+                        setCustomGoals((prev) => [...prev, g]);
+                        setSelectedObjectives((prev) => [...prev, g]);
+                      }
+                      setCustomGoalInput("");
+                    }
+                  }}
+                  placeholder="e.g. Start a business, Travel the world..."
+                  className="flex-1 rounded-lg border border-border bg-card px-3 py-2 text-sm text-foreground outline-none focus:border-accent transition-colors placeholder:text-muted-foreground/50"
+                />
+                <button
+                  type="button"
+                  onClick={() => {
+                    const g = customGoalInput.trim();
+                    if (g && !customGoals.includes(g) && !selectedObjectives.includes(g)) {
+                      setCustomGoals((prev) => [...prev, g]);
+                      setSelectedObjectives((prev) => [...prev, g]);
+                    }
+                    setCustomGoalInput("");
+                  }}
+                  disabled={!customGoalInput.trim()}
+                  className="rounded-lg px-3 py-2 text-sm font-medium wealth-gradient text-primary-foreground disabled:opacity-40 transition-all"
+                >
+                  Add
+                </button>
+              </div>
+              {customGoals.length > 0 && (
+                <div className="flex flex-wrap gap-1.5 mt-2">
+                  {customGoals.map((g) => (
+                    <span key={g} className="inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-medium bg-accent/10 text-accent border border-accent/20">
+                      {g}
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setCustomGoals((prev) => prev.filter((x) => x !== g));
+                          setSelectedObjectives((prev) => prev.filter((x) => x !== g));
+                          setGoalDetails((prev) => { const n = { ...prev }; delete n[g]; return n; });
+                        }}
+                        className="ml-0.5 text-accent/60 hover:text-accent"
+                      >
+                        ×
+                      </button>
+                    </span>
+                  ))}
+                </div>
+              )}
+            </div>
+
             {/* Per-goal detail cards */}
             {selectedObjectives.map((obj) => {
               const detail = getOrCreateGoalDetail(obj);
