@@ -73,7 +73,7 @@ function PortfolioMainPanel({
 }) {
   return (
     <>
-      <div className="px-5 pb-2">
+      <div className="px-5 pb-3">
         <div className="flex items-center gap-2.5">
           <p className="text-2xl font-bold text-foreground tracking-tight">{formatInrPaisa(portfolio.total_value)}</p>
           {portfolio.total_gain_percentage != null && (
@@ -97,7 +97,7 @@ function PortfolioMainPanel({
         <p className="text-[10px] text-muted-foreground/80 mt-1">Invested {formatInrPaisa(portfolio.total_invested)}</p>
       </div>
 
-      <div className="px-5 pb-2">
+      <div className="px-5 pb-3">
         <div className="flex gap-1.5">
           {(["1M", "6M", "1Y", "All"] as const).map((period) => (
             <button
@@ -116,11 +116,11 @@ function PortfolioMainPanel({
         </div>
       </div>
 
-      <div className="px-5 pb-2">
+      <div className="px-5 pb-3">
         <NetWorthSparkline values={sparkline} />
       </div>
 
-      <div className="px-5 pb-2">
+      <div className="px-5 pb-3">
         <CurrentAllocationCard
           portfolio={portfolio}
           riskCategory={riskCategory}
@@ -131,9 +131,9 @@ function PortfolioMainPanel({
       {middleSlot}
 
       {showHoldingsCard && portfolio.holdings.length > 0 && (
-        <div className="px-5 pb-2">
+        <div className="px-5 pb-3">
           <div className="rounded-2xl bg-card p-4 border border-border/40">
-            <p className="text-xs font-semibold tracking-wide uppercase text-muted-foreground mb-3">Holdings</p>
+            <p className="text-[10px] font-semibold tracking-[0.1em] uppercase text-muted-foreground/70 mb-3">Holdings</p>
             <div className="space-y-0">
               {portfolio.holdings.map((h, i, arr) => (
                 <div key={h.id}>
@@ -155,7 +155,7 @@ function PortfolioMainPanel({
         </div>
       )}
 
-      <div className="px-5 pb-2">
+      <div className="px-5 pb-3">
         {portfolio.allocations.length > 0 ? (
           portfolio.allocations.map((item, i, arr) => {
             const perf = item.performance_percentage;
@@ -195,9 +195,9 @@ function PortfolioMainPanel({
 function CumulativeMemberBreakdownCard({ data }: { data: CumulativePortfolioResponse }) {
   if (!data.members.length) return null;
   return (
-    <div className="px-5 pb-2">
+    <div className="px-5 pb-3">
       <div className="rounded-2xl bg-card p-4 border border-border/40">
-        <p className="text-xs font-semibold tracking-wide uppercase text-muted-foreground mb-3">
+        <p className="text-[10px] font-semibold tracking-[0.1em] uppercase text-muted-foreground/70 mb-3">
           Member breakdown
         </p>
         <div className="space-y-0">
@@ -327,7 +327,7 @@ const PortfolioDashboard = () => {
       {/* Top bar with profile switcher */}
       <div className="flex items-center justify-between px-5 pt-12 pb-2">
         <div>
-          <p className="text-xs text-muted-foreground">{viewLabel}</p>
+          <p className="text-[10px] font-semibold tracking-[0.1em] uppercase text-muted-foreground/70">{viewLabel}</p>
           {activeView.type === "cumulative" && cumulativeData && (
             <p className="text-[9px] text-muted-foreground/60">
               {cumulativeData.member_count} members combined
@@ -359,8 +359,11 @@ const PortfolioDashboard = () => {
                 showHoldingsCard={false}
                 middleSlot={<CumulativeMemberBreakdownCard data={cumulativeData} />}
               />
-              <div className="px-5 pb-24">
-                <SkillsQuiz />
+              <div className="px-5 pb-24 space-y-5">
+                <div>
+                  <p className="text-[10px] font-semibold tracking-[0.1em] uppercase text-muted-foreground/70 mb-3">Test your skills in 2 minutes!</p>
+                  <SkillsQuiz />
+                </div>
                 <DailyInsights />
               </div>
             </>
@@ -392,8 +395,11 @@ const PortfolioDashboard = () => {
                 horizonLabel={null}
                 showHoldingsCard
               />
-              <div className="px-5 pb-24">
-                <SkillsQuiz />
+              <div className="px-5 pb-24 space-y-5">
+                <div>
+                  <p className="text-[10px] font-semibold tracking-[0.1em] uppercase text-muted-foreground/70 mb-3">Test your skills in 2 minutes!</p>
+                  <SkillsQuiz />
+                </div>
                 <DailyInsights />
               </div>
             </>
@@ -444,8 +450,11 @@ const PortfolioDashboard = () => {
             </div>
           )}
 
-          <div className="px-5 pb-24">
-            <SkillsQuiz />
+          <div className="px-5 pb-24 space-y-5">
+            <div>
+              <p className="text-[10px] font-semibold tracking-[0.1em] uppercase text-muted-foreground/70 mb-3">Test your skills in 2 minutes!</p>
+              <SkillsQuiz />
+            </div>
             <DailyInsights />
           </div>
         </>

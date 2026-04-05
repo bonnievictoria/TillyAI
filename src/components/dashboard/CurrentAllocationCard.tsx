@@ -45,7 +45,7 @@ const CurrentAllocationCard = ({ portfolio, riskCategory, horizonLabel }: Curren
 
   return (
     <div className="rounded-2xl bg-card p-4">
-      <p className="text-xs font-semibold tracking-wide uppercase text-muted-foreground mb-3">
+      <p className="text-[10px] font-semibold tracking-[0.1em] uppercase text-muted-foreground/70 mb-3">
         Current Allocation
         {!hasAllocations && (
           <span className="ml-2 font-normal normal-case text-[10px] text-muted-foreground/70">
