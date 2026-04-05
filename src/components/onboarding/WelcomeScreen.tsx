@@ -170,13 +170,27 @@ const WelcomeScreen = ({ onNext }: WelcomeScreenProps) => {
         className="flex-1 flex flex-col"
       >
         <div className="flex flex-col items-center text-center mb-4">
-          <h1 className="font-display text-[3.5rem] leading-[1] tracking-tight text-primary font-bold mb-2">
-            Prozpr
-          </h1>
-
-          <p className="text-muted-foreground text-base leading-relaxed tracking-wide font-medium">
-            Wealth, <span className="italic">Unified.</span>
-          </p>
+          <div className="flex items-center gap-3">
+            {/* Compass rose icon */}
+            <svg width="56" height="56" viewBox="0 0 56 56" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <circle cx="28" cy="28" r="24" stroke="#C9A84C" strokeWidth="0.75" fill="none" />
+              <line x1="28" y1="6" x2="28" y2="50" stroke="#C9A84C" strokeWidth="0.7" />
+              <line x1="6" y1="28" x2="50" y2="28" stroke="#C9A84C" strokeWidth="0.7" />
+              <polygon points="28,4 25.5,10 30.5,10" fill="#C9A84C" />
+              <circle cx="28" cy="28" r="2.5" fill="#C9A84C" />
+            </svg>
+            {/* Wordmark */}
+            <div className="flex flex-col items-start">
+              <h1 className="text-[30px] leading-[1] font-bold tracking-[-0.5px]" style={{ fontFamily: 'Georgia, "Times New Roman", serif' }}>
+                <span style={{ color: '#1A1A2E' }}>Pr</span>
+                <span style={{ color: '#C9A84C' }}>o</span>
+                <span style={{ color: '#1A1A2E' }}>zpr</span>
+              </h1>
+              <p className="text-[9px] uppercase mt-1" style={{ color: '#888888', letterSpacing: '3px' }}>
+                Wealth, Unified.
+              </p>
+            </div>
+          </div>
         </div>
 
         <div className="mt-24 space-y-2.5 mb-auto">
