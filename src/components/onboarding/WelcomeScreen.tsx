@@ -170,27 +170,27 @@ const WelcomeScreen = ({ onNext }: WelcomeScreenProps) => {
         className="flex-1 flex flex-col"
       >
         <div className="flex flex-col items-center text-center mb-4 mt-12">
-          <div className="flex flex-col items-center">
-            <div className="flex items-end gap-2">
+          <div className="inline-flex flex-col">
+            <div className="flex items-end" style={{ gap: '10px' }}>
               {/* Rising bars icon */}
-              <svg width="36" height="52" viewBox="0 0 36 52" fill="none" xmlns="http://www.w3.org/2000/svg" className="mb-1">
-                <rect x="0" y="30" width="10" height="22" rx="2" fill="#C9A84C" fillOpacity="0.5" />
-                <rect x="13" y="16" width="10" height="36" rx="2" fill="#C9A84C" fillOpacity="0.7" />
-                <rect x="26" y="0" width="10" height="52" rx="2" fill="#C9A84C" />
+              <svg width="45" height="90" viewBox="0 0 45 90" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <rect x="0" y="52" width="13" height="38" rx="2" fill="#C9A84C" fillOpacity="0.4" />
+                <rect x="16" y="29" width="13" height="61" rx="2" fill="#C9A84C" fillOpacity="0.65" />
+                <rect x="32" y="0" width="13" height="90" rx="2" fill="#C9A84C" />
               </svg>
-              {/* Wordmark */}
-              <h1 className="text-[32px] leading-[1] font-bold tracking-[-0.5px]" style={{ fontFamily: 'Georgia, "Times New Roman", serif' }}>
-                <span style={{ color: '#1A1A2E' }}>Pr</span>
-                <span style={{ color: '#C9A84C' }}>o</span>
-                <span style={{ color: '#1A1A2E' }}>zpr</span>
-              </h1>
-            </div>
-            {/* Gold divider line + tagline */}
-            <div className="w-full mt-2 flex flex-col items-center">
-              <div className="w-[180px] h-px" style={{ backgroundColor: '#C9A84C', opacity: 0.3 }} />
-              <p className="text-[9px] uppercase mt-1.5" style={{ color: '#888888', letterSpacing: '3px' }}>
-                Wealth, Unified.
-              </p>
+              {/* Wordmark + tagline */}
+              <div className="flex flex-col items-center pb-[1px]">
+                <h1 className="leading-[1] font-bold" style={{ fontFamily: 'Georgia, "Times New Roman", serif', fontSize: '56px', letterSpacing: '-1px' }}>
+                  <span style={{ color: '#1A1A2E' }}>Pr</span>
+                  <span style={{ color: '#C9A84C', letterSpacing: '-6px', marginRight: '-2px' }}>o</span>
+                  <span style={{ color: '#1A1A2E' }}>zpr</span>
+                </h1>
+                <p className="uppercase mt-1" style={{ fontFamily: 'Georgia, "Times New Roman", serif', fontSize: '11px', color: '#888888', letterSpacing: '3.5px' }}>
+                  Wealth, Unified.
+                </p>
+                {/* Gold rule */}
+                <div className="w-full mt-2" style={{ height: '0.7px', backgroundColor: '#C9A84C', marginLeft: '-55px', width: 'calc(100% + 45px)' }} />
+              </div>
             </div>
           </div>
         </div>
