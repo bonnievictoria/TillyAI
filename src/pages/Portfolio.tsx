@@ -58,9 +58,9 @@ const Portfolio = () => {
                   </button>
                   <button
                     onClick={dismiss}
-                    className="mt-2 w-full py-2 text-[13px] text-muted-foreground hover:text-foreground transition-colors"
+                    className="mt-1 w-full py-1.5 text-[13px] text-muted-foreground hover:text-foreground transition-colors"
                   >
-                    Maybe later
+                    Maybe later →
                   </button>
                 </div>
               </div>
