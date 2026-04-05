@@ -131,7 +131,7 @@ const categories = [
   { label: "Commodities", active: false, icon: Gem, color: "bg-[#E8734A]", ringColor: "ring-[#E8734A]/20" },
 ];
 
-/* ── Quiz overlay component — premium dark modal ── */
+/* ── Quiz overlay component — light theme ── */
 function QuizOverlay({ onClose }: { onClose: () => void }) {
   const [level, setLevel] = useState<1 | 2>(1);
   const [qIdx, setQIdx] = useState(0);
@@ -180,6 +180,9 @@ function QuizOverlay({ onClose }: { onClose: () => void }) {
 
   const progressPct = ((qIdx + (selected !== null ? 1 : 0)) / total) * 100;
 
+  const ctaBtnClass = "rounded-[12px] py-3 text-sm font-semibold text-white active:scale-[0.97] transition-transform";
+  const ctaBtnStyle = { backgroundColor: "#1a1a2e" };
+
   /* ── Congrats screen (after level 2) ── */
   if (showCongrats) {
     return (
@@ -187,13 +190,12 @@ function QuizOverlay({ onClose }: { onClose: () => void }) {
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
-        className="fixed inset-0 z-[60] flex flex-col"
-        style={{ backgroundColor: "#0F0F1A" }}
+        className="fixed inset-0 z-[60] flex flex-col bg-white"
       >
         <div className="flex items-center justify-between px-5 pt-12 pb-4">
-          <span className="text-xs font-semibold" style={{ color: "#C9A84C" }}>ETF Quiz</span>
-          <button onClick={onClose} className="p-1.5 rounded-full hover:bg-white/10 transition-colors">
-            <X className="h-5 w-5 text-white/60" />
+          <span className="inline-block text-xs font-medium rounded-[20px] px-3 py-1" style={{ backgroundColor: "#f5f5f5", color: "#1a1a2e" }}>ETF Quiz</span>
+          <button onClick={onClose} className="p-1.5">
+            <X className="h-5 w-5" style={{ color: "#1a1a2e" }} />
           </button>
         </div>
         <div className="flex-1 flex flex-col items-center justify-center px-8 text-center gap-5">
@@ -204,15 +206,15 @@ function QuizOverlay({ onClose }: { onClose: () => void }) {
           >
             <Trophy className="h-16 w-16" style={{ color: "#C9A84C" }} />
           </motion.div>
-          <h2 className="text-xl font-bold text-white">You're an ETF expert! 🏆</h2>
-          <p className="text-sm text-white/50">More categories coming soon.</p>
-          <button onClick={retakeLevel1} className="mt-2 flex items-center gap-2 text-sm text-white/40 hover:text-white/70 transition-colors">
+          <h2 className="text-xl font-bold" style={{ color: "#1a1a2e" }}>You're an ETF expert! 🏆</h2>
+          <p className="text-sm" style={{ color: "#888" }}>More categories coming soon.</p>
+          <button onClick={retakeLevel1} className="mt-2 flex items-center gap-2 text-sm transition-colors" style={{ color: "#888" }}>
             <RotateCcw className="h-4 w-4" /> Retake Level 1
           </button>
           <button
             onClick={onClose}
-            className="mt-2 rounded-xl px-8 py-3 text-sm font-semibold text-[#0F0F1A] active:scale-[0.97]"
-            style={{ backgroundColor: "#C9A84C" }}
+            className={`mt-2 px-8 ${ctaBtnClass}`}
+            style={ctaBtnStyle}
           >
             Done
           </button>
@@ -229,13 +231,12 @@ function QuizOverlay({ onClose }: { onClose: () => void }) {
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
-        className="fixed inset-0 z-[60] flex flex-col"
-        style={{ backgroundColor: "#0F0F1A" }}
+        className="fixed inset-0 z-[60] flex flex-col bg-white"
       >
         <div className="flex items-center justify-between px-5 pt-12 pb-4">
-          <span className="text-xs font-semibold" style={{ color: "#C9A84C" }}>Level 1 · ETFs</span>
-          <button onClick={onClose} className="p-1.5 rounded-full hover:bg-white/10 transition-colors">
-            <X className="h-5 w-5 text-white/60" />
+          <span className="inline-block text-xs font-medium rounded-[20px] px-3 py-1" style={{ backgroundColor: "#f5f5f5", color: "#1a1a2e" }}>Level 1 · ETFs</span>
+          <button onClick={onClose} className="p-1.5">
+            <X className="h-5 w-5" style={{ color: "#1a1a2e" }} />
           </button>
         </div>
         <div className="flex-1 flex flex-col items-center justify-center px-8 text-center gap-5">
@@ -250,24 +251,25 @@ function QuizOverlay({ onClose }: { onClose: () => void }) {
               <span className="text-6xl">💪</span>
             )}
           </motion.div>
-          <h2 className="text-xl font-bold text-white">
+          <h2 className="text-xl font-bold" style={{ color: "#1a1a2e" }}>
             {perfect ? "Nailed it! Ready for the next level 🚀" : "Great effort! Knowledge takes time."}
           </h2>
-          <p className="text-sm text-white/50">You got {correctCount} out of {total} correct.</p>
+          <p className="text-sm" style={{ color: "#888" }}>You got {correctCount} out of {total} correct.</p>
 
           <div className="flex w-full gap-2 mt-4 max-w-[280px]">
             {perfect && (
               <button
                 onClick={goToLevel2}
-                className="flex-1 rounded-xl py-3 text-sm font-semibold text-[#0F0F1A] active:scale-[0.97]"
-                style={{ backgroundColor: "#C9A84C" }}
+                className={`flex-1 ${ctaBtnClass}`}
+                style={ctaBtnStyle}
               >
                 Unlock Level 2
               </button>
             )}
             <button
               onClick={retakeLevel1}
-              className="flex-1 flex items-center justify-center gap-2 rounded-xl py-3 text-sm font-medium text-white/70 border border-white/15 hover:bg-white/5 transition-colors"
+              className="flex-1 flex items-center justify-center gap-2 rounded-[12px] py-3 text-sm font-medium transition-colors"
+              style={{ color: "#1a1a2e", border: "1px solid #e0e0e0" }}
             >
               <RotateCcw className="h-3.5 w-3.5" /> Retake
             </button>
@@ -283,24 +285,23 @@ function QuizOverlay({ onClose }: { onClose: () => void }) {
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="fixed inset-0 z-[60] flex flex-col"
-      style={{ backgroundColor: "#0F0F1A" }}
+      className="fixed inset-0 z-[60] flex flex-col bg-white"
     >
       {/* Header */}
       <div className="flex items-center justify-between px-5 pt-12 pb-3">
-        <div>
-          <span className="text-xs font-semibold" style={{ color: "#C9A84C" }}>
+        <div className="flex items-center gap-2">
+          <span className="inline-block text-xs font-medium rounded-[20px] px-3 py-1" style={{ backgroundColor: "#f5f5f5", color: "#1a1a2e" }}>
             Level {level} · ETFs
           </span>
-          <p className="text-[10px] text-white/40 mt-0.5">Question {qIdx + 1} of {total}</p>
+          <span className="text-[10px]" style={{ color: "#b0b0b0" }}>Question {qIdx + 1} of {total}</span>
         </div>
-        <button onClick={onClose} className="p-1.5 rounded-full hover:bg-white/10 transition-colors">
-          <X className="h-5 w-5 text-white/60" />
+        <button onClick={onClose} className="p-1.5">
+          <X className="h-5 w-5" style={{ color: "#1a1a2e" }} />
         </button>
       </div>
 
       {/* Progress bar */}
-      <div className="mx-5 h-1.5 rounded-full overflow-hidden" style={{ backgroundColor: "rgba(255,255,255,0.08)" }}>
+      <div className="mx-5 h-1.5 rounded-full overflow-hidden" style={{ backgroundColor: "#f0f0f0" }}>
         <motion.div
           className="h-full rounded-full"
           style={{ backgroundColor: "#C9A84C" }}
@@ -316,29 +317,30 @@ function QuizOverlay({ onClose }: { onClose: () => void }) {
           key={`q-${level}-${qIdx}`}
           initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
-          className="text-lg font-semibold text-white leading-snug mb-6"
+          className="text-[18px] font-semibold leading-snug mb-6"
+          style={{ color: "#1a1a2e" }}
         >
           {current.question}
         </motion.h3>
 
         <div className="space-y-3">
           {current.options.map((opt, i) => {
-            let bg = "rgba(255,255,255,0.04)";
-            let border = "rgba(255,255,255,0.1)";
-            let textColor = "rgba(255,255,255,0.85)";
+            let bg = "#ffffff";
+            let border = "#e0e0e0";
+            let textColor = "#1a1a2e";
             let icon = null;
 
             if (selected !== null) {
               if (i === current.correctIndex) {
-                bg = "rgba(34,197,94,0.12)";
-                border = "rgba(34,197,94,0.5)";
-                textColor = "#22c55e";
-                icon = <CheckCircle2 className="h-4 w-4 shrink-0" style={{ color: "#22c55e" }} />;
+                bg = "#e6f9ee";
+                border = "#a3d9b1";
+                textColor = "#1a7a3f";
+                icon = <CheckCircle2 className="h-4 w-4 shrink-0" style={{ color: "#1a7a3f" }} />;
               } else if (i === selected && !isCorrect) {
-                bg = "rgba(239,68,68,0.12)";
-                border = "rgba(239,68,68,0.5)";
-                textColor = "#ef4444";
-                icon = <XCircle className="h-4 w-4 shrink-0" style={{ color: "#ef4444" }} />;
+                bg = "#fdecea";
+                border = "#f0a0a0";
+                textColor = "#b52a2a";
+                icon = <XCircle className="h-4 w-4 shrink-0" style={{ color: "#b52a2a" }} />;
               }
             }
 
@@ -347,7 +349,7 @@ function QuizOverlay({ onClose }: { onClose: () => void }) {
                 key={i}
                 onClick={() => handleSelect(i)}
                 disabled={selected !== null}
-                className="w-full text-left rounded-xl p-4 text-[13px] leading-snug flex items-start gap-3 transition-all"
+                className="w-full text-left rounded-[12px] p-4 text-[14px] leading-snug flex items-start gap-3 transition-all"
                 style={{
                   backgroundColor: bg,
                   border: `1px solid ${border}`,
@@ -370,16 +372,13 @@ function QuizOverlay({ onClose }: { onClose: () => void }) {
               initial={{ opacity: 0, y: 12 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0 }}
-              className="mt-5 rounded-xl p-4"
-              style={{
-                backgroundColor: isCorrect ? "rgba(34,197,94,0.08)" : "rgba(239,68,68,0.08)",
-                border: `1px solid ${isCorrect ? "rgba(34,197,94,0.2)" : "rgba(239,68,68,0.2)"}`,
-              }}
+              className="mt-5 rounded-[10px] p-3"
+              style={{ backgroundColor: "#f7f7f7" }}
             >
-              <p className="text-sm font-semibold mb-1.5" style={{ color: isCorrect ? "#22c55e" : "#ef4444" }}>
+              <p className="text-sm font-semibold mb-1.5" style={{ color: isCorrect ? "#1a7a3f" : "#b52a2a" }}>
                 {isCorrect ? "Correct! Keep going 🔥" : "Not quite — here's why…"}
               </p>
-              <p className="text-xs leading-relaxed text-white/60">{current.explanation}</p>
+              <p className="text-xs leading-relaxed" style={{ color: "#1a1a2e" }}>{current.explanation}</p>
             </motion.div>
           )}
         </AnimatePresence>
@@ -395,13 +394,13 @@ function QuizOverlay({ onClose }: { onClose: () => void }) {
           >
             <button
               onClick={handleNext}
-              className="w-full rounded-xl py-3.5 text-sm font-semibold text-[#0F0F1A] active:scale-[0.97]"
-              style={{ backgroundColor: "#C9A84C" }}
+              className={`w-full ${ctaBtnClass}`}
+              style={ctaBtnStyle}
             >
               {qIdx < total - 1 ? "Next question →" : level === 1 ? "See results" : "Finish quiz"}
             </button>
             {level === 2 && (
-              <button onClick={retakeLevel1} className="mt-2 w-full text-center text-xs text-white/40 hover:text-white/60 transition-colors">
+              <button onClick={retakeLevel1} className="mt-2 w-full text-center text-xs transition-colors" style={{ color: "#888" }}>
                 <RotateCcw className="inline h-3 w-3 mr-1" />Retake Level 1
               </button>
             )}
