@@ -170,21 +170,25 @@ const WelcomeScreen = ({ onNext }: WelcomeScreenProps) => {
         className="flex-1 flex flex-col"
       >
         <div className="flex flex-col items-center text-center mb-4 mt-12">
-          <div className="flex items-center gap-3">
-            {/* Rising bars icon */}
-            <svg width="36" height="68" viewBox="0 0 36 68" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <rect x="0" y="40" width="10" height="28" rx="2" fill="#C9A84C" fillOpacity="0.5" />
-              <rect x="13" y="22" width="10" height="46" rx="2" fill="#C9A84C" fillOpacity="0.7" />
-              <rect x="26" y="0" width="10" height="68" rx="2" fill="#C9A84C" />
-            </svg>
-            {/* Wordmark */}
-            <div className="flex flex-col items-start">
-              <h1 className="text-[30px] leading-[1] font-bold tracking-[-0.5px]" style={{ fontFamily: 'Georgia, "Times New Roman", serif' }}>
+          <div className="flex flex-col items-center">
+            <div className="flex items-end gap-2">
+              {/* Rising bars icon */}
+              <svg width="36" height="52" viewBox="0 0 36 52" fill="none" xmlns="http://www.w3.org/2000/svg" className="mb-1">
+                <rect x="0" y="30" width="10" height="22" rx="2" fill="#C9A84C" fillOpacity="0.5" />
+                <rect x="13" y="16" width="10" height="36" rx="2" fill="#C9A84C" fillOpacity="0.7" />
+                <rect x="26" y="0" width="10" height="52" rx="2" fill="#C9A84C" />
+              </svg>
+              {/* Wordmark */}
+              <h1 className="text-[32px] leading-[1] font-bold tracking-[-0.5px]" style={{ fontFamily: 'Georgia, "Times New Roman", serif' }}>
                 <span style={{ color: '#1A1A2E' }}>Pr</span>
                 <span style={{ color: '#C9A84C' }}>o</span>
                 <span style={{ color: '#1A1A2E' }}>zpr</span>
               </h1>
-              <p className="text-[9px] uppercase mt-1" style={{ color: '#888888', letterSpacing: '3px' }}>
+            </div>
+            {/* Gold divider line + tagline */}
+            <div className="w-full mt-2 flex flex-col items-center">
+              <div className="w-[180px] h-px" style={{ backgroundColor: '#C9A84C', opacity: 0.3 }} />
+              <p className="text-[9px] uppercase mt-1.5" style={{ color: '#888888', letterSpacing: '3px' }}>
                 Wealth, Unified.
               </p>
             </div>
