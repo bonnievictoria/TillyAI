@@ -130,14 +130,16 @@ const DEFAULT_GOALS = [
 
 const HORIZON_OPTIONS = [
   { label: "< 2 years", sub: "Short-term investments" },
-  { label: "2–10 years", sub: "Medium-term growth" },
-  { label: "10+ years", sub: "Long-term wealth building" },
+  { label: "2 – 7 years", sub: "Medium-term growth" },
+  { label: "7+ years", sub: "Long-term wealth building" },
 ];
 
-const RISK_OPTIONS = [
-  { label: "Conservative", desc: "Prioritizes stability, capital preservation & security" },
-  { label: "Moderate", desc: "Balances growth and capital preservation" },
-  { label: "Aggressive", desc: "Seeks high returns, accepts volatility" },
+const INVESTMENT_PREF_OPTIONS = [
+  { letter: "A", equity: 10, debt: 90, best: 11, worst: 2 },
+  { letter: "B", equity: 30, debt: 70, best: 18, worst: 6 },
+  { letter: "C", equity: 50, debt: 50, best: 24, worst: 13 },
+  { letter: "D", equity: 70, debt: 30, best: 30, worst: 20 },
+  { letter: "E", equity: 90, debt: 10, best: 37, worst: 27 },
 ];
 
 type SectionId = "basic" | "goals" | "income" | "risk";
@@ -301,23 +303,33 @@ const TellUsAboutYou = ({ onComplete, onBack }: Props) => {
                     <div>
                       <p className="text-xs font-medium text-muted-foreground mb-2.5">Occupation</p>
                       <div className="flex flex-wrap gap-2">
-                        {["Salaried", "Commission-based", "Freelance", "Homemaker", "Retired", "Other"].map((opt) => {
+                        {["Salaried", "Business", "Freelance", "Homemaker", "Retired"].map((opt) => {
                           const isSelected = occupation === opt;
                           return (
-                            <button key={opt} onClick={() => { setOccupation(opt); if (opt !== "Other") setOccupationOther(""); }}
+                            <button key={opt} onClick={() => { setOccupation(opt); setOccupationOther(""); }}
                               className={`px-3 py-2 rounded-full text-xs font-medium text-center transition-all ${isSelected ? "bg-primary text-primary-foreground" : "bg-secondary text-secondary-foreground hover:bg-muted"}`}>
                               {opt}
                             </button>
                           );
                         })}
-                      </div>
-                      {occupation === "Other" && (
-                        <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} className="mt-3 overflow-hidden">
-                          <input autoFocus value={occupationOther} onChange={(e) => setOccupationOther(e.target.value)}
-                            placeholder="Enter your occupation"
-                            className="w-full rounded-xl border border-border bg-background px-3 py-2.5 text-xs text-foreground outline-none placeholder:text-muted-foreground/50 focus:ring-1 focus:ring-primary" />
-                        </motion.div>
-                      )}
+                        {occupation === "Other" && occupationOther.trim() ? (
+                          <button onClick={() => { setOccupation(""); setOccupationOther(""); }}
+                            className="flex items-center gap-1.5 px-3 py-2 rounded-full text-xs font-medium bg-primary text-primary-foreground">
+                            <Check className="h-3 w-3" />{occupationOther}
+                          </button>
+                        ) : occupation === "Other" ? (
+                          <input autoFocus value={occupationOther}
+                            onChange={(e) => setOccupationOther(e.target.value)}
+                            onKeyDown={(e) => { if (e.key === "Enter" && occupationOther.trim()) { /* keep Other state */ } }}
+                            onBlur={() => { if (!occupationOther.trim()) { setOccupation(""); } }}
+                            placeholder="Type occupation"
+                            className="px-3 py-2 rounded-full text-xs bg-secondary text-foreground outline-none w-32 border border-border" />
+                        ) : (
+                          <button onClick={() => setOccupation("Other")}
+                            className="flex items-center gap-1 px-3 py-2 rounded-full text-xs font-medium bg-secondary text-muted-foreground hover:bg-muted border border-dashed border-border">
+                            <Plus className="h-3 w-3" /> Other
+                          </button>
+                        )}
                     </div>
                   </div>
                 </motion.div>
@@ -354,15 +366,14 @@ const TellUsAboutYou = ({ onComplete, onBack }: Props) => {
                           );
                         })}
                         {addingGoal ? (
-                          <div className="flex items-center gap-1">
-                            <input autoFocus value={newGoalText} onChange={(e) => setNewGoalText(e.target.value)} onKeyDown={(e) => e.key === "Enter" && addCustomGoal()}
-                              placeholder="Type goal" className="px-3 py-2 rounded-full text-xs bg-secondary text-foreground outline-none w-28 border border-border" />
-                            <button onClick={addCustomGoal} className="p-1.5 rounded-full bg-primary text-primary-foreground"><Check className="h-3 w-3" /></button>
-                            <button onClick={() => { setAddingGoal(false); setNewGoalText(""); }} className="p-1.5 rounded-full bg-secondary text-muted-foreground"><X className="h-3 w-3" /></button>
-                          </div>
+                          <input autoFocus value={newGoalText} onChange={(e) => setNewGoalText(e.target.value)}
+                            onKeyDown={(e) => { if (e.key === "Enter") { addCustomGoal(); } }}
+                            onBlur={() => { if (newGoalText.trim()) { addCustomGoal(); } else { setAddingGoal(false); setNewGoalText(""); } }}
+                            placeholder="Type goal"
+                            className="px-3 py-2 rounded-full text-xs bg-secondary text-foreground outline-none w-28 border border-border" />
                         ) : (
                           <button onClick={() => setAddingGoal(true)} className="flex items-center gap-1 px-3 py-2 rounded-full text-xs font-medium bg-secondary text-muted-foreground hover:bg-muted border border-dashed border-border">
-                            <Plus className="h-3 w-3" /> Add your own
+                            <Plus className="h-3 w-3" /> Other
                           </button>
                         )}
                       </div>
@@ -416,9 +427,9 @@ const TellUsAboutYou = ({ onComplete, onBack }: Props) => {
             </AnimatePresence>
           </div>
 
-          {/* Risk Assessment */}
+          {/* Investment Preference */}
           <div className="border rounded-xl bg-card overflow-hidden border-border/60">
-            {sectionHeader("risk", <ShieldCheck className="h-[20px] w-[20px] text-muted-foreground" />, "Risk Assessment")}
+            {sectionHeader("risk", <ShieldCheck className="h-[20px] w-[20px] text-muted-foreground" />, "Investment Preference")}
             <AnimatePresence initial={false}>
               {openSection === "risk" && (
                 <motion.div
@@ -430,24 +441,18 @@ const TellUsAboutYou = ({ onComplete, onBack }: Props) => {
                   className="overflow-hidden"
                 >
                   <div className="px-4 pb-4">
-                    <p className="text-xs font-medium text-muted-foreground mb-2.5">What is your investment view?</p>
-                    <div className="flex flex-wrap gap-2">
-                      {RISK_OPTIONS.map((option) => {
-                        const isSelected = investmentView === option.label;
+                    <p className="text-xs font-medium text-muted-foreground mb-2.5">Which scenario best fits your comfort level?</p>
+                    <div className="space-y-2">
+                      {INVESTMENT_PREF_OPTIONS.map((opt) => {
+                        const isSelected = investmentView === opt.letter;
                         return (
-                          <button key={option.label} onClick={() => setInvestmentView(option.label)}
-                            className={`px-4 py-2.5 rounded-xl text-xs font-medium text-center transition-all ${isSelected ? "bg-primary text-primary-foreground" : "bg-secondary text-secondary-foreground hover:bg-muted"}`}>
-                            {option.label}
+                          <button key={opt.letter} onClick={() => setInvestmentView(opt.letter)}
+                            className={`w-full text-left px-3 py-2.5 rounded-xl text-xs font-medium transition-all border ${isSelected ? "bg-primary/10 border-primary text-foreground" : "bg-secondary border-transparent text-secondary-foreground hover:bg-muted"}`}>
+                            {opt.letter} — {opt.equity}% equity and {opt.debt}% debt — +{opt.best}% in best year, -{opt.worst}% in worst year
                           </button>
                         );
                       })}
                     </div>
-                    {investmentView && (
-                      <motion.p initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }} key={investmentView}
-                        className="text-[11px] text-muted-foreground mt-2.5 italic">
-                        {RISK_OPTIONS.find((r) => r.label === investmentView)?.desc}
-                      </motion.p>
-                    )}
                   </div>
                 </motion.div>
               )}
