@@ -135,12 +135,17 @@ const HORIZON_OPTIONS = [
 ];
 
 const INVESTMENT_PREF_OPTIONS = [
-  { letter: "A", equity: 10, debt: 90, best: 11, worst: 2 },
-  { letter: "B", equity: 30, debt: 70, best: 18, worst: 6 },
-  { letter: "C", equity: 50, debt: 50, best: 24, worst: 13 },
-  { letter: "D", equity: 70, debt: 30, best: 30, worst: 20 },
-  { letter: "E", equity: 90, debt: 10, best: 37, worst: 27 },
+  { letter: "A", equity: 10, debt: 90, best: 11, worst: -2, riskLabel: "Conservative" },
+  { letter: "B", equity: 30, debt: 70, best: 18, worst: -6, riskLabel: "Moderately conservative" },
+  { letter: "C", equity: 50, debt: 50, best: 24, worst: -13, riskLabel: "Balanced" },
+  { letter: "D", equity: 70, debt: 30, best: 30, worst: -20, riskLabel: "Moderately aggressive" },
+  { letter: "E", equity: 90, debt: 10, best: 37, worst: -27, riskLabel: "Aggressive" },
 ];
+
+const RANGE_MIN = -30;
+const RANGE_MAX = 40;
+const rangeToPercent = (v: number) => ((v - RANGE_MIN) / (RANGE_MAX - RANGE_MIN)) * 100;
+const ZERO_PCT = rangeToPercent(0);
 
 type SectionId = "basic" | "goals" | "income" | "risk";
 const SECTION_ORDER: SectionId[] = ["basic", "goals", "income", "risk"];
@@ -443,13 +448,47 @@ const TellUsAboutYou = ({ onComplete, onBack }: Props) => {
                 >
                   <div className="px-4 pb-4">
                     <p className="text-xs font-medium text-muted-foreground mb-2.5">Which scenario best fits your comfort level?</p>
-                    <div className="space-y-2">
+                    {/* Column headers */}
+                    <div className="flex items-end mb-2 pl-7">
+                      <div className="flex-1 pr-2">
+                        <span className="text-[9px] uppercase tracking-wider text-muted-foreground/70 font-medium">Portfolio</span>
+                      </div>
+                      <div className="w-[110px] flex-shrink-0">
+                        <span className="text-[9px] uppercase tracking-wider text-muted-foreground/70 font-medium">Possible yearly return</span>
+                      </div>
+                    </div>
+                    <div className="space-y-1.5">
                       {INVESTMENT_PREF_OPTIONS.map((opt) => {
                         const isSelected = investmentView === opt.letter;
+                        const leftPct = rangeToPercent(opt.worst);
+                        const rightPct = rangeToPercent(opt.best);
                         return (
                           <button key={opt.letter} onClick={() => setInvestmentView(opt.letter)}
-                            className={`w-full text-left px-3 py-2.5 rounded-xl text-xs font-medium transition-all border ${isSelected ? "bg-primary/10 border-primary text-foreground" : "bg-secondary border-transparent text-secondary-foreground hover:bg-muted"}`}>
-                            {opt.letter} — {opt.equity}% equity and {opt.debt}% debt — +{opt.best}% in best year, -{opt.worst}% in worst year
+                            className={`w-full text-left flex items-center gap-2 px-2 py-2 rounded-lg transition-all ${isSelected ? "bg-primary/8 border-l-[3px] border-l-primary" : "border-l-[3px] border-l-transparent hover:bg-muted/50"}`}>
+                            {/* Letter */}
+                            <span className="text-xs font-bold text-foreground w-5 flex-shrink-0">{opt.letter}</span>
+                            {/* Middle: portfolio info */}
+                            <div className="flex-1 min-w-0 pr-2">
+                              <p className="text-[11px] font-medium text-foreground leading-tight">{opt.equity}% equity · {opt.debt}% debt</p>
+                              <p className="text-[10px] text-muted-foreground leading-tight">{opt.riskLabel}</p>
+                            </div>
+                            {/* Right: range bar */}
+                            <div className="w-[110px] flex-shrink-0">
+                              <div className="flex justify-between mb-0.5">
+                                <span className="text-[9px] font-medium" style={{ color: "hsl(0 72% 51%)" }}>{opt.worst}%</span>
+                                <span className="text-[9px] font-medium" style={{ color: "hsl(160 50% 38%)" }}>+{opt.best}%</span>
+                              </div>
+                              <div className="relative h-[5px] rounded-full bg-muted">
+                                {/* Zero tick */}
+                                <div className="absolute top-[-1px] bottom-[-1px] w-px bg-muted-foreground/30" style={{ left: `${ZERO_PCT}%` }} />
+                                {/* Filled range */}
+                                <div className="absolute inset-y-0 rounded-full" style={{
+                                  left: `${leftPct}%`,
+                                  width: `${rightPct - leftPct}%`,
+                                  background: `linear-gradient(to right, hsl(0 72% 51%), hsl(160 50% 38%))`,
+                                }} />
+                              </div>
+                            </div>
                           </button>
                         );
                       })}
