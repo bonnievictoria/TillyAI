@@ -330,6 +330,7 @@ const TellUsAboutYou = ({ onComplete, onBack }: Props) => {
                             <Plus className="h-3 w-3" /> Other
                           </button>
                         )}
+                      </div>
                     </div>
                   </div>
                 </motion.div>
