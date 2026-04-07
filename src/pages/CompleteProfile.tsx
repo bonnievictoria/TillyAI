@@ -1149,32 +1149,9 @@ const CompleteProfile = () => {
                   className="rounded-lg border border-border bg-card/50 p-3 space-y-2.5"
                 >
                   <p className="text-xs font-semibold text-foreground">{obj}</p>
-                  <div className="grid grid-cols-2 gap-2">
-                    <div><label className="text-[10px] text-muted-foreground">Total amount needed</label><TextInput value={detail.amount} onChange={(v) => updateGoalDetail(obj, { amount: v })} prefix="₹" /></div>
-                    <div><label className="text-[10px] text-muted-foreground">Currency</label><SelectInput value={detail.currency} onChange={(v) => updateGoalDetail(obj, { currency: v })} options={CURRENCIES} /></div>
-                  </div>
-                  <div><label className="text-[10px] text-muted-foreground">Year to achieve by</label><TextInput value={detail.year} onChange={(v) => updateGoalDetail(obj, { year: v })} placeholder="e.g. 2035" /></div>
-                  <div>
-                    <label className="text-[10px] text-muted-foreground">Purpose (select up to 4)</label>
-                    <div className="flex flex-wrap gap-1.5 mt-1">
-                      {GOAL_PURPOSES.map((p) => (
-                        <Chip
-                          key={p.value}
-                          label={`${p.label}`}
-                          active={detail.purposes.includes(p.value)}
-                          onClick={() => toggleGoalPurpose(obj, p.value)}
-                        />
-                      ))}
-                    </div>
-                    <p className="text-[9px] text-muted-foreground/60 mt-1">
-                      {GOAL_PURPOSES.map((p) => `${p.label}: ${p.desc}`).join(" · ")}
-                    </p>
-                  </div>
-                  {detail.purposes.includes("Income") && (
-                    <div><label className="text-[10px] text-muted-foreground">How much income per month/year?</label><TextInput value={detail.incomeAmount} onChange={(v) => updateGoalDetail(obj, { incomeAmount: v })} prefix="₹" placeholder="e.g. 50,000/month" /></div>
-                  )}
-                  <div><label className="text-[10px] text-muted-foreground">Minimum annual return expected (%)</label><TextInput value={detail.minReturn} onChange={(v) => updateGoalDetail(obj, { minReturn: v })} placeholder="e.g. 12" /></div>
-                  <div><label className="text-[10px] text-muted-foreground">Anything else about this goal?</label><TextInput value={detail.notes} onChange={(v) => updateGoalDetail(obj, { notes: v })} placeholder="Free-text elaboration..." /></div>
+                  <div><label className="text-[10px] text-muted-foreground">Amount</label><TextInput value={detail.amount} onChange={(v) => updateGoalDetail(obj, { amount: v })} prefix="₹" placeholder="e.g. 50,00,000" /></div>
+                  <div><label className="text-[10px] text-muted-foreground">Expected year</label><TextInput value={detail.year} onChange={(v) => updateGoalDetail(obj, { year: v })} placeholder="e.g. 2035" /></div>
+                  <div><label className="text-[10px] text-muted-foreground">Value</label><TextInput value={detail.notes} onChange={(v) => updateGoalDetail(obj, { notes: v })} placeholder="e.g. current value, priority, notes..." /></div>
                 </motion.div>
               );
             })}
