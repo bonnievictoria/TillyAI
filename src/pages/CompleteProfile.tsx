@@ -1021,7 +1021,7 @@ const CompleteProfile = () => {
                         <div><label className="text-[10px] text-muted-foreground">Property value</label><TextInput value={prop.value} onChange={(v) => updateProp("value", v)} prefix="₹" placeholder="e.g. 1.20 Cr" /></div>
                         <div><label className="text-[10px] text-muted-foreground">Total outstanding mortgage</label><TextInput value={prop.mortgage} onChange={(v) => updateProp("mortgage", v)} prefix="₹" placeholder="e.g. 45,00,000" /></div>
                         <div><label className="text-[10px] text-muted-foreground">Current monthly repayment</label><TextInput value={prop.monthlyRepayment} onChange={(v) => updateProp("monthlyRepayment", v)} prefix="₹" placeholder="e.g. 35,000" /></div>
-                        <div><label className="text-[10px] text-muted-foreground">Year purchased</label><TextInput value={prop.yearPurchased} onChange={(v) => updateProp("yearPurchased", v)} placeholder="e.g. 2018" /></div>
+                        
                       </div>
                     );
                   })}
