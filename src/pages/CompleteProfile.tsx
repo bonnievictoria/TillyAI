@@ -132,6 +132,14 @@ const EMERGENCY_TIMEFRAMES = ["3 months", "6 months", "12 months", "Custom"];
 const REVIEW_FREQ = ["Monthly", "Quarterly", "Semi-annual"];
 const REVIEW_TRIGGERS = ["Job change", "Marriage or divorce", "New dependant", "Major windfall", "Market drop >20%", "Other"];
 
+const INVEST_PREF_OPTIONS = [
+  { letter: "A", worst: -2, best: 11 },
+  { letter: "B", worst: -6, best: 18 },
+  { letter: "C", worst: -13, best: 24 },
+  { letter: "D", worst: -20, best: 30 },
+  { letter: "E", worst: -27, best: 37 },
+];
+
 /* ── Reusable micro-components ── */
 const FieldLabel = ({ children }: { children: React.ReactNode }) => (
   <label className="block text-[11px] uppercase tracking-wide text-muted-foreground mb-1">{children}</label>
@@ -522,6 +530,9 @@ const CompleteProfile = () => {
   const [earningMembers, setEarningMembers] = useState("");
   const [dependents, setDependents] = useState("");
   const [values, setValues] = useState("");
+  const [dobDay, setDobDay] = useState("");
+  const [dobMonth, setDobMonth] = useState("");
+  const [dobYear, setDobYear] = useState("");
 
   // Section 1 — Your financial picture
   const [occupationType, setOccupationType] = useState("");
@@ -553,6 +564,7 @@ const CompleteProfile = () => {
   const [investmentExperience, setInvestmentExperience] = useState("");
   const [investmentHorizon, setInvestmentHorizon] = useState("");
   const [showBehavModal, setShowBehavModal] = useState(false);
+  const [investmentPref, setInvestmentPref] = useState("");
   const [behavQ1, setBehavQ1] = useState("");
   const [behavQ2, setBehavQ2] = useState("");
   const [behavQ3, setBehavQ3] = useState("");
@@ -894,6 +906,26 @@ const CompleteProfile = () => {
       case 0:
         return (
           <div className="space-y-3">
+            <div>
+              <FieldLabel>Date of birth</FieldLabel>
+              <div className="grid grid-cols-3 gap-2">
+                <div>
+                  <label className="text-[10px] text-muted-foreground">Day</label>
+                  <input type="number" min={1} max={31} value={dobDay} onChange={(e) => setDobDay(e.target.value)} placeholder="DD"
+                    className="w-full rounded-lg border border-border bg-card px-3 py-2 text-sm text-foreground outline-none focus:border-accent transition-colors placeholder:text-[12px]" />
+                </div>
+                <div>
+                  <label className="text-[10px] text-muted-foreground">Month</label>
+                  <input type="number" min={1} max={12} value={dobMonth} onChange={(e) => setDobMonth(e.target.value)} placeholder="MM"
+                    className="w-full rounded-lg border border-border bg-card px-3 py-2 text-sm text-foreground outline-none focus:border-accent transition-colors placeholder:text-[12px]" />
+                </div>
+                <div>
+                  <label className="text-[10px] text-muted-foreground">Year</label>
+                  <input type="number" min={1920} max={2010} value={dobYear} onChange={(e) => setDobYear(e.target.value)} placeholder="YYYY"
+                    className="w-full rounded-lg border border-border bg-card px-3 py-2 text-sm text-foreground outline-none focus:border-accent transition-colors placeholder:text-[12px]" />
+                </div>
+              </div>
+            </div>
             <div><FieldLabel>Occupation</FieldLabel><TextInput value={occupation} onChange={setOccupation} placeholder="e.g. Software engineer" /></div>
             <div><FieldLabel>Primary residence</FieldLabel><TextInput value={primaryResidence} onChange={setPrimaryResidence} placeholder="e.g. London, United Kingdom" /></div>
             <div>
@@ -923,7 +955,6 @@ const CompleteProfile = () => {
                 </div>
               </div>
             </div>
-            <div><FieldLabel>Values / exclusions</FieldLabel><TextInput value={values} onChange={setValues} placeholder="e.g. ESG preferred, no defence stocks" /></div>
           </div>
         );
 
@@ -1169,6 +1200,9 @@ const CompleteProfile = () => {
                 </motion.div>
               );
             })}
+
+            {/* Values / Exclusions */}
+            <div><FieldLabel>Values / exclusions</FieldLabel><TextInput value={values} onChange={setValues} placeholder="e.g. ESG preferred, no defence stocks" /></div>
           </div>
         );
 
@@ -1217,6 +1251,22 @@ const CompleteProfile = () => {
                   <span className="inline-flex items-center gap-1 mt-1.5 text-[10px] font-medium text-[hsl(160_50%_38%)]">✓ Completed</span>
                 )}
               </button>
+            </div>
+
+            {/* Investment Preference — synced from onboarding */}
+            <div>
+              <FieldLabel>Which scenario best fits your comfort level?</FieldLabel>
+              <div className="space-y-1.5">
+                {INVEST_PREF_OPTIONS.map((opt) => {
+                  const isSelected = investmentPref === opt.letter;
+                  return (
+                    <button key={opt.letter} onClick={() => setInvestmentPref(opt.letter)}
+                      className={`w-full text-left rounded-xl px-4 py-3 text-xs font-medium border transition-all ${isSelected ? "bg-accent text-accent-foreground border-accent" : "bg-card text-foreground border-border hover:border-accent/40"}`}>
+                      Worst {opt.worst}% / Best {opt.best}%
+                    </button>
+                  );
+                })}
+              </div>
             </div>
 
             <div>
