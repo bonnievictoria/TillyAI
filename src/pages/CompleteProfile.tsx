@@ -987,18 +987,6 @@ const CompleteProfile = () => {
             <div><FieldLabel>Financial and liquid assets</FieldLabel><TextInput value={investableAssets} onChange={setInvestableAssets} prefix="₹" placeholder="e.g. 42,00,000" /></div>
             <div><FieldLabel>Total liabilities / debts</FieldLabel><TextInput value={liabilities} onChange={setLiabilities} prefix="₹" placeholder="e.g. 5,00,000" /></div>
 
-            {/* Other assets */}
-            <div>
-              <FieldLabel>Other assets (car, jewellery, art, etc.)</FieldLabel>
-              {otherAssets.map((asset, i) => (
-                <div key={i} className="flex items-start gap-2 mb-2">
-                  <div className="flex-1"><TextInput value={asset.name} onChange={(v) => updateOtherAsset(i, "name", v)} placeholder="Asset name/type" /></div>
-                  <div className="w-32"><TextInput value={asset.value} onChange={(v) => updateOtherAsset(i, "value", v)} prefix="₹" placeholder="Value" /></div>
-                  <button onClick={() => removeOtherAsset(i)} className="mt-2 text-muted-foreground hover:text-destructive"><X className="h-3.5 w-3.5" /></button>
-                </div>
-              ))}
-              <button onClick={addOtherAsset} className="flex items-center gap-1 text-xs text-accent font-medium mt-1"><Plus className="h-3 w-3" /> Add asset</button>
-            </div>
 
             {/* Property */}
             <div>
