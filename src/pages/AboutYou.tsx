@@ -142,10 +142,7 @@ const INVESTMENT_PREF_OPTIONS = [
   { letter: "E", equity: 90, debt: 10, best: 37, worst: -27, riskLabel: "Aggressive" },
 ];
 
-const RANGE_MIN = -30;
-const RANGE_MAX = 40;
-const rangeToPercent = (v: number) => ((v - RANGE_MIN) / (RANGE_MAX - RANGE_MIN)) * 100;
-const ZERO_PCT = rangeToPercent(0);
+
 
 type SectionId = "basic" | "goals" | "income" | "risk";
 const SECTION_ORDER: SectionId[] = ["basic", "goals", "income", "risk"];

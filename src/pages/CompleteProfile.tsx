@@ -522,6 +522,9 @@ const CompleteProfile = () => {
   const [earningMembers, setEarningMembers] = useState("");
   const [dependents, setDependents] = useState("");
   const [values, setValues] = useState("");
+  const [dobDay, setDobDay] = useState("");
+  const [dobMonth, setDobMonth] = useState("");
+  const [dobYear, setDobYear] = useState("");
 
   // Section 1 — Your financial picture
   const [occupationType, setOccupationType] = useState("");
