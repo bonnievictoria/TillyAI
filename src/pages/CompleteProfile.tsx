@@ -564,6 +564,7 @@ const CompleteProfile = () => {
   const [investmentExperience, setInvestmentExperience] = useState("");
   const [investmentHorizon, setInvestmentHorizon] = useState("");
   const [showBehavModal, setShowBehavModal] = useState(false);
+  const [investmentPref, setInvestmentPref] = useState("");
   const [behavQ1, setBehavQ1] = useState("");
   const [behavQ2, setBehavQ2] = useState("");
   const [behavQ3, setBehavQ3] = useState("");
@@ -905,6 +906,26 @@ const CompleteProfile = () => {
       case 0:
         return (
           <div className="space-y-3">
+            <div>
+              <FieldLabel>Date of birth</FieldLabel>
+              <div className="grid grid-cols-3 gap-2">
+                <div>
+                  <label className="text-[10px] text-muted-foreground">Day</label>
+                  <input type="number" min={1} max={31} value={dobDay} onChange={(e) => setDobDay(e.target.value)} placeholder="DD"
+                    className="w-full rounded-lg border border-border bg-card px-3 py-2 text-sm text-foreground outline-none focus:border-accent transition-colors placeholder:text-[12px]" />
+                </div>
+                <div>
+                  <label className="text-[10px] text-muted-foreground">Month</label>
+                  <input type="number" min={1} max={12} value={dobMonth} onChange={(e) => setDobMonth(e.target.value)} placeholder="MM"
+                    className="w-full rounded-lg border border-border bg-card px-3 py-2 text-sm text-foreground outline-none focus:border-accent transition-colors placeholder:text-[12px]" />
+                </div>
+                <div>
+                  <label className="text-[10px] text-muted-foreground">Year</label>
+                  <input type="number" min={1920} max={2010} value={dobYear} onChange={(e) => setDobYear(e.target.value)} placeholder="YYYY"
+                    className="w-full rounded-lg border border-border bg-card px-3 py-2 text-sm text-foreground outline-none focus:border-accent transition-colors placeholder:text-[12px]" />
+                </div>
+              </div>
+            </div>
             <div><FieldLabel>Occupation</FieldLabel><TextInput value={occupation} onChange={setOccupation} placeholder="e.g. Software engineer" /></div>
             <div><FieldLabel>Primary residence</FieldLabel><TextInput value={primaryResidence} onChange={setPrimaryResidence} placeholder="e.g. London, United Kingdom" /></div>
             <div>
