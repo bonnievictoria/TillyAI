@@ -73,10 +73,8 @@ const OBJECTIVES = [
   "Retirement Planning",
   "Child's Education",
   "Home Purchase",
-  "Emergency Fund",
-  "Tax Efficiency",
   "Income Generation",
-  "Legacy / Estate Planning",
+  "Estate Planning",
 ];
 
 const GOAL_PURPOSES = [
@@ -93,7 +91,7 @@ const OCCUPATION_OPTIONS = ["Salaried", "Business", "Freelance", "Homemaker", "R
 
 const RISK_LEVELS = [...RISK_CATEGORIES];
 
-const HORIZON_OPTIONS = ["0–5 years", "5–10 years", "10–15 years", "15–20 years", "20+ years"];
+const HORIZON_OPTIONS = ["< 2 years", "2 – 7 years", "7+ years"];
 
 const BEHAV_Q1_OPTIONS = [
   "Cut losses immediately and liquidate all investments. Capital preservation is paramount.",
@@ -109,11 +107,11 @@ const BEHAV_Q2_OPTIONS = [
 ];
 
 const BEHAV_Q3_OPTIONS = [
-  "Investment A — Worst Year: 1% / Best Year: 15%",
-  "Investment B — Worst Year: -5% / Best Year: 20%",
-  "Investment C — Worst Year: -10% / Best Year: 25%",
-  "Investment D — Worst Year: -14% / Best Year: 30%",
-  "Investment E — Worst Year: -18% / Best Year: 35%",
+  "A — Worst -2% / Best 11%",
+  "B — Worst -6% / Best 18%",
+  "C — Worst -13% / Best 24%",
+  "D — Worst -20% / Best 30%",
+  "E — Worst -27% / Best 37%",
 ];
 
 const ASSET_COMFORT = ["Equities", "Bonds", "Real Estate", "Gold", "Crypto", "International Markets"];
@@ -956,6 +954,16 @@ const CompleteProfile = () => {
               )}
             </div>
 
+            {/* Income & Expenses — moved up below occupation */}
+            <div>
+              <FieldLabel>Annual income range</FieldLabel>
+              <IncomeExpenseSlider label="Income" range={incomeRange} onChange={setIncomeRange} />
+            </div>
+            <div>
+              <FieldLabel>Annual expense range</FieldLabel>
+              <IncomeExpenseSlider label="Expenses" range={expenseRange} onChange={setExpenseRange} />
+            </div>
+
             {/* Primary Wealth Source — multi-select */}
             <div>
               <FieldLabel>Primary wealth source</FieldLabel>
@@ -1045,15 +1053,6 @@ const CompleteProfile = () => {
               )}
             </div>
 
-            {/* Income & Expenses — mirrored from onboarding */}
-            <div>
-              <FieldLabel>Annual income range</FieldLabel>
-              <IncomeExpenseSlider label="Income" range={incomeRange} onChange={setIncomeRange} />
-            </div>
-            <div>
-              <FieldLabel>Annual expense range</FieldLabel>
-              <IncomeExpenseSlider label="Expenses" range={expenseRange} onChange={setExpenseRange} />
-            </div>
 
             <div className="flex gap-3">
               <div className="flex-1"><FieldLabel>Emergency fund target</FieldLabel><TextInput value={emergencyFund} onChange={setEmergencyFund} prefix="₹" placeholder="e.g. 3,00,000" /></div>
@@ -1150,32 +1149,9 @@ const CompleteProfile = () => {
                   className="rounded-lg border border-border bg-card/50 p-3 space-y-2.5"
                 >
                   <p className="text-xs font-semibold text-foreground">{obj}</p>
-                  <div className="grid grid-cols-2 gap-2">
-                    <div><label className="text-[10px] text-muted-foreground">Total amount needed</label><TextInput value={detail.amount} onChange={(v) => updateGoalDetail(obj, { amount: v })} prefix="₹" /></div>
-                    <div><label className="text-[10px] text-muted-foreground">Currency</label><SelectInput value={detail.currency} onChange={(v) => updateGoalDetail(obj, { currency: v })} options={CURRENCIES} /></div>
-                  </div>
-                  <div><label className="text-[10px] text-muted-foreground">Year to achieve by</label><TextInput value={detail.year} onChange={(v) => updateGoalDetail(obj, { year: v })} placeholder="e.g. 2035" /></div>
-                  <div>
-                    <label className="text-[10px] text-muted-foreground">Purpose (select up to 4)</label>
-                    <div className="flex flex-wrap gap-1.5 mt-1">
-                      {GOAL_PURPOSES.map((p) => (
-                        <Chip
-                          key={p.value}
-                          label={`${p.label}`}
-                          active={detail.purposes.includes(p.value)}
-                          onClick={() => toggleGoalPurpose(obj, p.value)}
-                        />
-                      ))}
-                    </div>
-                    <p className="text-[9px] text-muted-foreground/60 mt-1">
-                      {GOAL_PURPOSES.map((p) => `${p.label}: ${p.desc}`).join(" · ")}
-                    </p>
-                  </div>
-                  {detail.purposes.includes("Income") && (
-                    <div><label className="text-[10px] text-muted-foreground">How much income per month/year?</label><TextInput value={detail.incomeAmount} onChange={(v) => updateGoalDetail(obj, { incomeAmount: v })} prefix="₹" placeholder="e.g. 50,000/month" /></div>
-                  )}
-                  <div><label className="text-[10px] text-muted-foreground">Minimum annual return expected (%)</label><TextInput value={detail.minReturn} onChange={(v) => updateGoalDetail(obj, { minReturn: v })} placeholder="e.g. 12" /></div>
-                  <div><label className="text-[10px] text-muted-foreground">Anything else about this goal?</label><TextInput value={detail.notes} onChange={(v) => updateGoalDetail(obj, { notes: v })} placeholder="Free-text elaboration..." /></div>
+                  <div><label className="text-[10px] text-muted-foreground">Amount</label><TextInput value={detail.amount} onChange={(v) => updateGoalDetail(obj, { amount: v })} prefix="₹" placeholder="e.g. 50,00,000" /></div>
+                  <div><label className="text-[10px] text-muted-foreground">Expected year</label><TextInput value={detail.year} onChange={(v) => updateGoalDetail(obj, { year: v })} placeholder="e.g. 2035" /></div>
+                  <div><label className="text-[10px] text-muted-foreground">Value</label><TextInput value={detail.notes} onChange={(v) => updateGoalDetail(obj, { notes: v })} placeholder="e.g. current value, priority, notes..." /></div>
                 </motion.div>
               );
             })}
@@ -1232,26 +1208,6 @@ const CompleteProfile = () => {
               </button>
             </div>
 
-            {/* Investment Preference — synced from onboarding */}
-            <div>
-              <FieldLabel>Which scenario best fits your comfort level?</FieldLabel>
-              <div className="space-y-1.5">
-                {INVEST_PREF_OPTIONS.map((opt) => {
-                  const isSelected = investmentPref === opt.letter;
-                  return (
-                    <button key={opt.letter} onClick={() => setInvestmentPref(opt.letter)}
-                      className={`w-full text-left rounded-xl px-4 py-3 text-xs font-medium border transition-all ${isSelected ? "bg-accent text-accent-foreground border-accent" : "bg-card text-foreground border-border hover:border-accent/40"}`}>
-                      Worst {opt.worst}% / Best {opt.best}%
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-
-            <div>
-              <FieldLabel>Max acceptable annual drawdown (%)</FieldLabel>
-              <TextInput value={maxDrawdown} onChange={setMaxDrawdown} placeholder="e.g. 25" />
-            </div>
 
             {/* Comfort across asset classes — Coming soon teaser */}
             <div className="relative">
