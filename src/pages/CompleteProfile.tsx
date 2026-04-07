@@ -1209,27 +1209,6 @@ const CompleteProfile = () => {
             </div>
 
 
-            {/* Comfort across asset classes — Coming soon teaser */}
-            <div className="relative">
-              <div className="flex items-center gap-2 mb-1">
-                <FieldLabel>Comfort across asset classes</FieldLabel>
-                <span className="inline-flex items-center gap-1 rounded-full bg-[hsl(38_80%_93%)] px-2 py-0.5 text-[9px] font-semibold text-[hsl(38_80%_38%)]">
-                  <Lock className="h-2.5 w-2.5" /> Coming soon
-                </span>
-              </div>
-              <p className="text-[10px] text-muted-foreground/60 mb-2 italic">Coming soon: Play a Q&A game (2–3 quick questions per asset class)</p>
-              <div className="grid grid-cols-2 gap-2 mt-1 opacity-40 pointer-events-none">
-                {ASSET_COMFORT.map((a) => (
-                  <Chip
-                    key={a}
-                    label={a}
-                    active={comfortAssets.includes(a)}
-                    onClick={() => {}}
-                    disabled
-                  />
-                ))}
-              </div>
-            </div>
           </div>
         );
 
