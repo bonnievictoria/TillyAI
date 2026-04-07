@@ -809,19 +809,17 @@ const CompleteProfile = () => {
               max_allocation: allocations[asset]?.max ?? null,
             })),
           });
+          await updateReviewPreference({
+            frequency: reviewFreq || null,
+            triggers: null,
+            update_process: null,
+          });
           break;
         case 5:
           await updateTaxProfile({
             income_tax_rate: incomeTaxRate ? Number(incomeTaxRate) : null,
             capital_gains_tax_rate: cgtRate ? Number(cgtRate) : null,
             notes: taxNotes || null,
-          });
-          break;
-        case 6:
-          await updateReviewPreference({
-            frequency: reviewFreq || null,
-            triggers: reviewTriggers.length ? reviewTriggers : null,
-            update_process: updateProcess || null,
           });
           break;
       }
