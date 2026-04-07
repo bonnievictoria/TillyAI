@@ -1253,6 +1253,22 @@ const CompleteProfile = () => {
               </button>
             </div>
 
+            {/* Investment Preference — synced from onboarding */}
+            <div>
+              <FieldLabel>Which scenario best fits your comfort level?</FieldLabel>
+              <div className="space-y-1.5">
+                {INVEST_PREF_OPTIONS.map((opt) => {
+                  const isSelected = investmentPref === opt.letter;
+                  return (
+                    <button key={opt.letter} onClick={() => setInvestmentPref(opt.letter)}
+                      className={`w-full text-left rounded-xl px-4 py-3 text-xs font-medium border transition-all ${isSelected ? "bg-accent text-accent-foreground border-accent" : "bg-card text-foreground border-border hover:border-accent/40"}`}>
+                      Worst {opt.worst}% / Best {opt.best}%
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
             <div>
               <FieldLabel>Max acceptable annual drawdown (%)</FieldLabel>
               <TextInput value={maxDrawdown} onChange={setMaxDrawdown} placeholder="e.g. 25" />
