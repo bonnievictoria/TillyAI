@@ -954,6 +954,16 @@ const CompleteProfile = () => {
               )}
             </div>
 
+            {/* Income & Expenses — moved up below occupation */}
+            <div>
+              <FieldLabel>Annual income range</FieldLabel>
+              <IncomeExpenseSlider label="Income" range={incomeRange} onChange={setIncomeRange} />
+            </div>
+            <div>
+              <FieldLabel>Annual expense range</FieldLabel>
+              <IncomeExpenseSlider label="Expenses" range={expenseRange} onChange={setExpenseRange} />
+            </div>
+
             {/* Primary Wealth Source — multi-select */}
             <div>
               <FieldLabel>Primary wealth source</FieldLabel>
@@ -1043,15 +1053,6 @@ const CompleteProfile = () => {
               )}
             </div>
 
-            {/* Income & Expenses — mirrored from onboarding */}
-            <div>
-              <FieldLabel>Annual income range</FieldLabel>
-              <IncomeExpenseSlider label="Income" range={incomeRange} onChange={setIncomeRange} />
-            </div>
-            <div>
-              <FieldLabel>Annual expense range</FieldLabel>
-              <IncomeExpenseSlider label="Expenses" range={expenseRange} onChange={setExpenseRange} />
-            </div>
 
             <div className="flex gap-3">
               <div className="flex-1"><FieldLabel>Emergency fund target</FieldLabel><TextInput value={emergencyFund} onChange={setEmergencyFund} prefix="₹" placeholder="e.g. 3,00,000" /></div>
