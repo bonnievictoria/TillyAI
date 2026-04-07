@@ -452,7 +452,7 @@ const TellUsAboutYou = ({ onComplete, onBack }: Props) => {
                         return (
                           <button key={opt.letter} onClick={() => setInvestmentView(opt.letter)}
                             className={`w-full text-left px-4 py-3 rounded-xl text-xs font-medium transition-all ${isSelected ? "bg-primary text-primary-foreground" : "bg-secondary text-secondary-foreground hover:bg-muted"}`}>
-                            Worst {worstLabel} / Best {opt.best}%
+                            {opt.letter} — Worst {worstLabel} / Best {opt.best}%
                           </button>
                         );
                       })}
