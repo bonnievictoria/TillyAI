@@ -923,7 +923,6 @@ const CompleteProfile = () => {
                 </div>
               </div>
             </div>
-            <div><FieldLabel>Values / exclusions</FieldLabel><TextInput value={values} onChange={setValues} placeholder="e.g. ESG preferred, no defence stocks" /></div>
           </div>
         );
 
@@ -1169,6 +1168,9 @@ const CompleteProfile = () => {
                 </motion.div>
               );
             })}
+
+            {/* Values / Exclusions */}
+            <div><FieldLabel>Values / exclusions</FieldLabel><TextInput value={values} onChange={setValues} placeholder="e.g. ESG preferred, no defence stocks" /></div>
           </div>
         );
 
