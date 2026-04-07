@@ -132,6 +132,14 @@ const EMERGENCY_TIMEFRAMES = ["3 months", "6 months", "12 months", "Custom"];
 const REVIEW_FREQ = ["Monthly", "Quarterly", "Semi-annual"];
 const REVIEW_TRIGGERS = ["Job change", "Marriage or divorce", "New dependant", "Major windfall", "Market drop >20%", "Other"];
 
+const INVEST_PREF_OPTIONS = [
+  { letter: "A", worst: -2, best: 11 },
+  { letter: "B", worst: -6, best: 18 },
+  { letter: "C", worst: -13, best: 24 },
+  { letter: "D", worst: -20, best: 30 },
+  { letter: "E", worst: -27, best: 37 },
+];
+
 /* ── Reusable micro-components ── */
 const FieldLabel = ({ children }: { children: React.ReactNode }) => (
   <label className="block text-[11px] uppercase tracking-wide text-muted-foreground mb-1">{children}</label>
