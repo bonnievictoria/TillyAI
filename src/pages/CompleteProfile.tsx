@@ -65,7 +65,6 @@ const SECTION_TITLES = [
   "How much risk can you handle?",
   "Rules & limits",
   "Tax situation",
-  "Staying involved",
 ];
 
 const OBJECTIVES = [
@@ -1151,7 +1150,13 @@ const CompleteProfile = () => {
                   <p className="text-xs font-semibold text-foreground">{obj}</p>
                   <div><label className="text-[10px] text-muted-foreground">Amount</label><TextInput value={detail.amount} onChange={(v) => updateGoalDetail(obj, { amount: v })} prefix="₹" placeholder="e.g. 50,00,000" /></div>
                   <div><label className="text-[10px] text-muted-foreground">Expected year</label><TextInput value={detail.year} onChange={(v) => updateGoalDetail(obj, { year: v })} placeholder="e.g. 2035" /></div>
-                  <div><label className="text-[10px] text-muted-foreground">Value</label><TextInput value={detail.notes} onChange={(v) => updateGoalDetail(obj, { notes: v })} placeholder="e.g. current value, priority, notes..." /></div>
+                  <div>
+                    <label className="text-[10px] text-muted-foreground">Value type</label>
+                    <div className="flex gap-2 mt-1">
+                      <Chip label="Present Value" active={detail.notes === "Present Value"} onClick={() => updateGoalDetail(obj, { notes: "Present Value" })} />
+                      <Chip label="Future Value" active={detail.notes === "Future Value"} onClick={() => updateGoalDetail(obj, { notes: "Future Value" })} />
+                    </div>
+                  </div>
                 </motion.div>
               );
             })}
@@ -1253,6 +1258,10 @@ const CompleteProfile = () => {
               {derivatives && <div className="mt-2"><TextInput value={derivativesNotes} onChange={setDerivativesNotes} placeholder="Notes on derivatives use" /></div>}
             </div>
             <div><FieldLabel>Diversification notes (optional)</FieldLabel><TextInput value={diversificationNotes} onChange={setDiversificationNotes} placeholder="Any specific diversification requirements" /></div>
+            <div>
+              <FieldLabel>Review frequency</FieldLabel>
+              <div className="flex flex-wrap gap-2">{REVIEW_FREQ.map((f) => <Chip key={f} label={f} active={reviewFreq === f} onClick={() => setReviewFreq(f)} />)}</div>
+            </div>
           </div>
         );
 
@@ -1266,21 +1275,6 @@ const CompleteProfile = () => {
           </div>
         );
 
-      /* ── Section 6: Staying involved ── */
-      case 6:
-        return (
-          <div className="space-y-4">
-            <div>
-              <FieldLabel>Review frequency</FieldLabel>
-              <div className="flex flex-wrap gap-2">{REVIEW_FREQ.map((f) => <Chip key={f} label={f} active={reviewFreq === f} onClick={() => setReviewFreq(f)} />)}</div>
-            </div>
-            <div>
-              <FieldLabel>Review triggers</FieldLabel>
-              <div className="flex flex-wrap gap-2">{REVIEW_TRIGGERS.map((t) => <Chip key={t} label={t} active={reviewTriggers.includes(t)} onClick={() => toggleChipArray(reviewTriggers, t, setReviewTriggers)} />)}</div>
-            </div>
-            <div><FieldLabel>Update process preference (optional)</FieldLabel><TextInput value={updateProcess} onChange={setUpdateProcess} placeholder="How would you like to communicate updates?" /></div>
-          </div>
-        );
 
       default:
         return null;
