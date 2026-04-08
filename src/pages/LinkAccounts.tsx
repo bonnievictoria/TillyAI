@@ -1,15 +1,43 @@
-import { useState } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Check, ChevronRight, ChevronDown, Shield, ArrowLeft, ArrowRight, X, Search, Plus, Landmark } from "lucide-react";
+import { Check, ChevronRight, ChevronDown, Shield, ArrowLeft, ArrowRight, X, Search, Plus, Landmark, Loader2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { BarChart3, TrendingUp, Package } from "lucide-react";
-import { Input } from "@/components/ui/input";
+import AccountDiscoveryModal from "@/components/onboarding/AccountDiscoveryModal";
+import {
+  listLinkedAccounts,
+  getMyPortfolio,
+  BackendOfflineError,
+  type LinkAccountInfo,
+  type PortfolioDetail,
+} from "@/lib/api";
 
-/* ─── Data ─── */
-const CONNECTED_ACCOUNTS = [
-  { icon: BarChart3, title: "Mutual funds", subtitle: "CAMS, Karvy & all AMCs" },
-  { icon: Landmark, title: "Bank account", subtitle: "All banks via account aggregator" },
-];
+function isActiveLinked(a: LinkAccountInfo): boolean {
+  return a.status === "active";
+}
+
+/** MF row: linked folio, or portfolio already has MF holdings / MF bucket allocations from SimBanks sync. */
+function hasMutualFundExposure(linked: LinkAccountInfo[], portfolio: PortfolioDetail | null): boolean {
+  const linkedMf = linked.some((a) => isActiveLinked(a) && a.account_type === "mutual_fund");
+  if (linkedMf) return true;
+  if (!portfolio) return false;
+
+  const holdings = portfolio.holdings ?? [];
+  if (holdings.some((h) => h.instrument_type === "mutual_fund")) return true;
+
+  // SimBanks maps MF schemes into Debt / Other (and Equity for equity MFs). Linked row is only created
+  // for CAMS-style MF XML; bucket lines still reflect MF when sync ingested MF holdings.
+  const allocations = portfolio.allocations ?? [];
+  const hasMfBuckets = allocations.some(
+    (row) =>
+      (row.asset_class === "Debt" || row.asset_class === "Other") &&
+      typeof row.amount === "number" &&
+      row.amount > 0.01
+  );
+  if (hasMfBuckets) return true;
+
+  return false;
+}
 
 const BROKERS = [
   { name: "Zerodha" },
@@ -24,6 +52,55 @@ const BROKERS = [
 
 const LinkAccounts = () => {
   const navigate = useNavigate();
+  const [showDiscovery, setShowDiscovery] = useState(false);
+  const [linkedAccounts, setLinkedAccounts] = useState<LinkAccountInfo[]>([]);
+  const [portfolio, setPortfolio] = useState<PortfolioDetail | null>(null);
+  const [linkedLoading, setLinkedLoading] = useState(true);
+  const [linkedError, setLinkedError] = useState<string | null>(null);
+
+  const refreshLinked = useCallback(async () => {
+    setLinkedLoading(true);
+    setLinkedError(null);
+    try {
+      const res = await listLinkedAccounts();
+      setLinkedAccounts(res.accounts);
+      try {
+        setPortfolio(await getMyPortfolio());
+      } catch {
+        setPortfolio(null);
+      }
+    } catch (e: unknown) {
+      const msg =
+        e instanceof BackendOfflineError
+          ? "Backend unreachable — showing local UI only."
+          : e instanceof Error
+            ? e.message
+            : "Could not load linked accounts.";
+      setLinkedError(msg);
+      setLinkedAccounts([]);
+      setPortfolio(null);
+    } finally {
+      setLinkedLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    void refreshLinked();
+  }, [refreshLinked]);
+
+  const hasMF = useMemo(
+    () => hasMutualFundExposure(linkedAccounts, portfolio),
+    [linkedAccounts, portfolio]
+  );
+  const hasBank = useMemo(
+    () => linkedAccounts.some((a) => a.account_type === "bank_account" && a.status === "active"),
+    [linkedAccounts]
+  );
+  const hasDemat = useMemo(
+    () => linkedAccounts.some((a) => a.account_type === "stock_demat" && a.status === "active"),
+    [linkedAccounts]
+  );
+
   const [showStocksModal, setShowStocksModal] = useState(false);
   const [stockSearch, setStockSearch] = useState("");
   const [selectedBrokers, setSelectedBrokers] = useState<Set<string>>(new Set());
@@ -92,30 +169,96 @@ const LinkAccounts = () => {
         </p>
       </motion.div>
 
-      {/* Account cards */}
+      {linkedError && (
+        <p className="w-full max-w-[340px] text-[11px] text-amber-700 dark:text-amber-400 mb-2">{linkedError}</p>
+      )}
+
+      {/* Account aggregator — SimBanks discover/sync */}
+      <div className="w-full max-w-[340px] mb-3">
+        <button
+          type="button"
+          onClick={() => setShowDiscovery(true)}
+          className="w-full rounded-xl border border-primary/30 bg-primary/5 px-4 py-3 text-left text-[13px] font-medium text-foreground hover:bg-primary/10 transition-colors"
+        >
+          {linkedLoading ? (
+            <span className="flex items-center gap-2">
+              <Loader2 className="h-4 w-4 animate-spin" />
+              Loading linked accounts…
+            </span>
+          ) : (
+            <>
+              Connect via SimBanks / account aggregator
+              <span className="block text-[11px] font-normal text-muted-foreground mt-0.5">
+                Discovers accounts for your mobile and syncs portfolio to the backend
+              </span>
+            </>
+          )}
+        </button>
+      </div>
+
+      {/* Account cards — status from backend linked accounts */}
       <div className="w-full max-w-[340px] flex flex-col gap-1.5">
-        {/* Connected accounts */}
-        {CONNECTED_ACCOUNTS.map((acc, i) => (
+        {[
+          {
+            icon: BarChart3,
+            title: "Mutual funds",
+            subtitle: "CAMS, Karvy & all AMCs",
+            connected: hasMF,
+          },
+          {
+            icon: Landmark,
+            title: "Bank account",
+            subtitle: "All banks via account aggregator",
+            connected: hasBank,
+          },
+        ].map((acc, i) => (
           <motion.div
             key={acc.title}
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.15 + i * 0.05 }}
-            className="flex items-center gap-3 border rounded-[10px] px-3.5 py-3"
-            style={{ backgroundColor: "hsl(120 30% 96%)", borderColor: "hsl(120 30% 75%)" }}
+            className={`flex items-center gap-3 border rounded-[10px] px-3.5 py-3 ${
+              acc.connected ? "" : "opacity-90"
+            }`}
+            style={
+              acc.connected
+                ? { backgroundColor: "hsl(120 30% 96%)", borderColor: "hsl(120 30% 75%)" }
+                : { backgroundColor: "hsl(var(--card))", borderColor: "hsl(var(--border))" }
+            }
           >
-            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg" style={{ backgroundColor: "hsl(120 30% 93%)" }}>
-              <acc.icon className="h-4 w-4" style={{ color: "hsl(120 40% 45%)" }} />
+            <div
+              className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg"
+              style={
+                acc.connected
+                  ? { backgroundColor: "hsl(120 30% 93%)" }
+                  : { backgroundColor: "hsl(var(--secondary))" }
+              }
+            >
+              <acc.icon
+                className="h-4 w-4"
+                style={acc.connected ? { color: "hsl(120 40% 45%)" } : { color: "hsl(var(--muted-foreground))" }}
+              />
             </div>
             <div className="flex-1 min-w-0">
               <p className="text-[13px] font-medium text-foreground">{acc.title}</p>
               <p className="text-[11px] text-muted-foreground">{acc.subtitle}</p>
             </div>
             <div className="flex items-center gap-1.5">
-              <span className="text-[11px] font-medium" style={{ color: "hsl(120 40% 45%)" }}>Connected</span>
-              <div className="flex h-5 w-5 items-center justify-center rounded-full" style={{ backgroundColor: "hsl(120 40% 45%)" }}>
-                <Check className="h-3 w-3 text-white" />
-              </div>
+              {acc.connected ? (
+                <>
+                  <span className="text-[11px] font-medium" style={{ color: "hsl(120 40% 45%)" }}>
+                    Connected
+                  </span>
+                  <div
+                    className="flex h-5 w-5 items-center justify-center rounded-full"
+                    style={{ backgroundColor: "hsl(120 40% 45%)" }}
+                  >
+                    <Check className="h-3 w-3 text-white" />
+                  </div>
+                </>
+              ) : (
+                <span className="text-[10px] text-muted-foreground">Not linked</span>
+              )}
             </div>
           </motion.div>
         ))}
@@ -135,7 +278,14 @@ const LinkAccounts = () => {
             <p className="text-[13px] font-medium text-foreground">Stocks</p>
             <p className="text-[11px] text-muted-foreground">NSE, BSE via CDSL / NSDL</p>
           </div>
-          <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0" />
+          {hasDemat ? (
+            <div className="flex items-center gap-1 shrink-0">
+              <span className="text-[10px] font-medium text-wealth-green">Linked</span>
+              <Check className="h-3.5 w-3.5 text-wealth-green" />
+            </div>
+          ) : (
+            <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0" />
+          )}
         </motion.div>
 
         {/* Others card — expandable inline */}
@@ -331,6 +481,13 @@ const LinkAccounts = () => {
           </motion.div>
         )}
       </AnimatePresence>
+
+      <AccountDiscoveryModal
+        open={showDiscovery}
+        onClose={() => setShowDiscovery(false)}
+        onSynced={() => void refreshLinked()}
+        afterSyncNavigate={null}
+      />
     </div>
   );
 };

@@ -1,6 +1,6 @@
 import { useState, useCallback, useMemo, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { ArrowLeft, Copy, Plus, Check, Target, Clock, Flag, Pencil, Loader2, MessageCircle } from "lucide-react";
+import { ArrowLeft, Copy, Plus, Check, Target, Clock, Flag, Pencil, Loader2, MessageCircle, Sparkles } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "@/hooks/use-toast";
 import BottomNav from "@/components/BottomNav";
@@ -1154,6 +1154,21 @@ const GoalPlanner = () => {
           </motion.div>
         )}
       </AnimatePresence>
+
+      <button
+        type="button"
+        onClick={() => navigate("/chat?mode=goal-planning")}
+        className="fixed bottom-[calc(5.5rem+env(safe-area-inset-bottom,0px))] right-4 z-30 flex max-w-[min(100vw-2rem,18rem)] items-center gap-2.5 rounded-full border border-primary/35 bg-primary py-3 pl-4 pr-5 text-left shadow-lg shadow-primary/25 transition-opacity hover:opacity-95 active:scale-[0.99]"
+        aria-label="Open goal alignment demo with Tilly"
+      >
+        <Sparkles className="h-5 w-5 shrink-0 text-primary-foreground" aria-hidden />
+        <span className="min-w-0">
+          <span className="block text-xs font-semibold leading-tight text-primary-foreground">Plan goals with Tilly</span>
+          <span className="mt-0.5 block text-[10px] font-normal leading-snug text-primary-foreground/90">
+            Goal alignment walkthrough · demo
+          </span>
+        </span>
+      </button>
 
       <BottomNav />
     </div>

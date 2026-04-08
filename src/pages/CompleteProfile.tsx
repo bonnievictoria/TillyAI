@@ -65,7 +65,6 @@ const SECTION_TITLES = [
   "How much risk can you handle?",
   "Rules & limits",
   "Tax situation",
-  "Staying involved",
 ];
 
 const OBJECTIVES = [
@@ -73,10 +72,8 @@ const OBJECTIVES = [
   "Retirement Planning",
   "Child's Education",
   "Home Purchase",
-  "Emergency Fund",
-  "Tax Efficiency",
   "Income Generation",
-  "Legacy / Estate Planning",
+  "Estate Planning",
 ];
 
 const GOAL_PURPOSES = [
@@ -89,25 +86,31 @@ const GOAL_PURPOSES = [
 const CURRENCIES = ["INR", "USD", "GBP"];
 
 const PRIMARY_WEALTH_SOURCES = ["Salary", "Business", "Inheritance", "Investments", "Other"];
+const OCCUPATION_OPTIONS = ["Salaried", "Business", "Freelance", "Homemaker", "Retired", "Other"];
 
 const RISK_LEVELS = [...RISK_CATEGORIES];
 
-const HORIZON_OPTIONS = ["0–5 years", "5–10 years", "10–15 years", "15–20 years", "20+ years"];
+const HORIZON_OPTIONS = ["< 2 years", "2 – 7 years", "7+ years"];
 
-const RISK_Q1_OPTIONS = [
-  "Sell everything to prevent further loss",
-  "Do nothing",
-  "Invest more cash",
+const BEHAV_Q1_OPTIONS = [
+  "Cut losses immediately and liquidate all investments. Capital preservation is paramount.",
+  "Cut your losses and transfer investments to safer asset classes.",
+  "You would be worried, but would give your investments a little more time.",
+  "You accept volatility and decline in portfolio value as a part of investing. You would keep your investments as is.",
+  "You would add to your investments to bring the average buying price lower. You are confident about your investments and are not perturbed by notional losses.",
 ];
 
-const RISK_Q2_OPTIONS = [
-  "Knowing you missed a 30% market gain",
-  "Knowing you lost 15% of your capital",
+const BEHAV_Q2_OPTIONS = [
+  "Knowing you missed a 20%+ market gain",
+  "Knowing you lost 15%+ of your capital",
 ];
 
-const RISK_Q3_OPTIONS = [
-  "A dangerous gamble",
-  "An opportunity for higher returns",
+const BEHAV_Q3_OPTIONS = [
+  "A — Worst -2% / Best 11%",
+  "B — Worst -6% / Best 18%",
+  "C — Worst -13% / Best 24%",
+  "D — Worst -20% / Best 30%",
+  "E — Worst -27% / Best 37%",
 ];
 
 const ASSET_COMFORT = ["Equities", "Bonds", "Real Estate", "Gold", "Crypto", "International Markets"];
@@ -125,6 +128,14 @@ const DEFAULT_ALLOCATIONS: Record<string, AllocationRange> = {
 const EMERGENCY_TIMEFRAMES = ["3 months", "6 months", "12 months", "Custom"];
 const REVIEW_FREQ = ["Monthly", "Quarterly", "Semi-annual"];
 const REVIEW_TRIGGERS = ["Job change", "Marriage or divorce", "New dependant", "Major windfall", "Market drop >20%", "Other"];
+
+const INVEST_PREF_OPTIONS = [
+  { letter: "A", worst: -2, best: 11 },
+  { letter: "B", worst: -6, best: 18 },
+  { letter: "C", worst: -13, best: 24 },
+  { letter: "D", worst: -20, best: 30 },
+  { letter: "E", worst: -27, best: 37 },
+];
 
 /* ── Reusable micro-components ── */
 const FieldLabel = ({ children }: { children: React.ReactNode }) => (
@@ -384,8 +395,126 @@ const toNum = (s: string): number | null => {
   const n = Number(cleaned);
   return Number.isNaN(n) ? null : n;
 };
+/* ── Format INR ── */
+const formatINR = (v: number) => {
+  if (v >= 100000000) return "₹10 Cr+";
+  if (v >= 10000000) return `₹${(v / 10000000).toFixed(1)} Cr`;
+  if (v >= 100000) return `₹${(v / 100000).toFixed(1)}L`;
+  if (v >= 1000) return `₹${(v / 1000).toFixed(0)}K`;
+  return `₹${v}`;
+};
 
-/* ── Main Component ── */
+const IE_SLIDER_TICKS = [
+  { value: 0, label: "₹0" }, { value: 2500000, label: "₹25L" }, { value: 5000000, label: "₹50L" },
+  { value: 10000000, label: "₹1Cr" }, { value: 50000000, label: "₹5Cr" }, { value: 100000000, label: "₹10Cr+" },
+];
+
+const IncomeExpenseSlider = ({ label, range, onChange }: {
+  label: string; range: [number, number]; onChange: (r: [number, number]) => void;
+}) => {
+  const max = 100000000;
+  const minPct = (range[0] / max) * 100;
+  const maxPct = (range[1] / max) * 100;
+  const isSingleValue = range[0] === range[1];
+
+  return (
+    <div className="space-y-2">
+      <div className="flex items-center justify-between">
+        <span className="text-xs font-medium text-muted-foreground">{label}</span>
+        <span className="text-xs font-semibold text-foreground">
+          {isSingleValue ? formatINR(range[0]) : `${formatINR(range[0])} – ${formatINR(range[1])}`}
+        </span>
+      </div>
+      <div className="relative h-2 rounded-full bg-secondary">
+        <div className="absolute h-full rounded-full bg-accent" style={{ left: `${minPct}%`, width: `${Math.max(0, maxPct - minPct)}%` }} />
+        <input type="range" min={0} max={max} step={100000} value={range[0]}
+          onChange={(e) => { const v = Math.max(0, Math.min(Number(e.target.value), range[1])); onChange([v, range[1]]); }}
+          className="absolute inset-0 w-full h-full appearance-none bg-transparent cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:h-5 [&::-webkit-slider-thumb]:w-5 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-accent [&::-webkit-slider-thumb]:border-2 [&::-webkit-slider-thumb]:border-card [&::-webkit-slider-thumb]:shadow-md pointer-events-none [&::-webkit-slider-thumb]:pointer-events-auto" />
+        <input type="range" min={0} max={max} step={100000} value={range[1]}
+          onChange={(e) => { const v = Math.max(Number(e.target.value), range[0]); onChange([range[0], v]); }}
+          className="absolute inset-0 w-full h-full appearance-none bg-transparent cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:h-5 [&::-webkit-slider-thumb]:w-5 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-accent [&::-webkit-slider-thumb]:border-2 [&::-webkit-slider-thumb]:border-card [&::-webkit-slider-thumb]:shadow-md pointer-events-none [&::-webkit-slider-thumb]:pointer-events-auto" />
+      </div>
+      <div className="flex justify-between">
+        {IE_SLIDER_TICKS.map((t) => (<span key={t.value} className="text-[9px] text-muted-foreground/50">{t.label}</span>))}
+      </div>
+    </div>
+  );
+};
+
+/* ── Behavioural Risk Modal ── */
+const BehaviouralRiskModal = ({
+  open, onClose, q1, setQ1, q2, setQ2, q3, setQ3,
+}: {
+  open: boolean; onClose: () => void;
+  q1: string; setQ1: (v: string) => void;
+  q2: string; setQ2: (v: string) => void;
+  q3: string; setQ3: (v: string) => void;
+}) => {
+  if (!open) return null;
+  const canSave = q1 !== "" && q2 !== "" && q3 !== "";
+
+  const OptionCard = ({ label, selected, onClick }: { label: string; selected: boolean; onClick: () => void }) => (
+    <button
+      onClick={onClick}
+      className={`w-full text-left rounded-xl px-4 py-3 text-xs font-medium border transition-all ${
+        selected ? "bg-accent text-accent-foreground border-accent" : "bg-card text-foreground border-border hover:border-accent/40"
+      }`}
+    >
+      {label}
+    </button>
+  );
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center">
+      <div className="absolute inset-0 bg-black/50" onClick={onClose} />
+      <div className="relative w-full max-w-md max-h-[85vh] bg-background rounded-t-2xl sm:rounded-2xl overflow-hidden flex flex-col">
+        <div className="flex items-center justify-between px-5 pt-5 pb-3 border-b border-border">
+          <div>
+            <h3 className="text-sm font-semibold text-foreground">Behavioural Risk Assessment</h3>
+            <p className="text-[10px] text-muted-foreground mt-0.5">Understanding your behaviour</p>
+          </div>
+          <button onClick={onClose} className="flex h-7 w-7 items-center justify-center rounded-full bg-muted hover:bg-muted/80">
+            <X className="h-3.5 w-3.5 text-foreground" />
+          </button>
+        </div>
+        <div className="flex-1 overflow-y-auto px-5 py-4 space-y-6">
+          {/* Q1 */}
+          <div className="space-y-2">
+            <p className="text-xs font-semibold text-foreground">1. If your portfolio dropped 20%+ in one month, what would you do?</p>
+            <div className="space-y-1.5">
+              {BEHAV_Q1_OPTIONS.map((o) => <OptionCard key={o} label={o} selected={q1 === o} onClick={() => setQ1(o)} />)}
+            </div>
+          </div>
+          {/* Q2 */}
+          <div className="space-y-2">
+            <p className="text-xs font-semibold text-foreground">2. Which would keep you up more at night?</p>
+            <div className="space-y-1.5">
+              {BEHAV_Q2_OPTIONS.map((o) => <OptionCard key={o} label={o} selected={q2 === o} onClick={() => setQ2(o)} />)}
+            </div>
+          </div>
+          {/* Q3 */}
+          <div className="space-y-2">
+            <p className="text-xs font-semibold text-foreground">3. Which scenario best describes your "Risk Range"?</p>
+            <div className="space-y-1.5">
+              {BEHAV_Q3_OPTIONS.map((o) => <OptionCard key={o} label={o} selected={q3 === o} onClick={() => setQ3(o)} />)}
+            </div>
+          </div>
+        </div>
+        <div className="px-5 py-4 border-t border-border">
+          <button
+            onClick={onClose}
+            disabled={!canSave}
+            className={`w-full rounded-xl py-3 text-sm font-semibold transition-all ${canSave ? "bg-foreground text-background hover:opacity-90" : "bg-muted text-muted-foreground cursor-not-allowed"}`}
+          >
+            Save responses
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+
 const CompleteProfile = () => {
   const navigate = useNavigate();
   const [openSection, setOpenSection] = useState(0);
@@ -398,9 +527,15 @@ const CompleteProfile = () => {
   const [earningMembers, setEarningMembers] = useState("");
   const [dependents, setDependents] = useState("");
   const [values, setValues] = useState("");
+  const [dobDay, setDobDay] = useState("");
+  const [dobMonth, setDobMonth] = useState("");
+  const [dobYear, setDobYear] = useState("");
 
   // Section 1 — Your financial picture
-  const [primaryWealthSource, setPrimaryWealthSource] = useState("");
+  const [occupationType, setOccupationType] = useState("");
+  const [occupationOtherText, setOccupationOtherText] = useState("");
+  const [primaryWealthSource, setPrimaryWealthSource] = useState<string[]>([]);
+  const [wealthSourceOtherText, setWealthSourceOtherText] = useState("");
   const [investableAssets, setInvestableAssets] = useState("");
   const [liabilities, setLiabilities] = useState("");
   const [otherAssets, setOtherAssets] = useState<OtherAsset[]>([]);
@@ -417,15 +552,21 @@ const CompleteProfile = () => {
   // Section 2 — What are you trying to achieve?
   const [selectedObjectives, setSelectedObjectives] = useState<string[]>([]);
   const [goalDetails, setGoalDetails] = useState<Record<string, GoalDetail>>({});
+  const [customGoals, setCustomGoals] = useState<string[]>([]);
+  const [customGoalInput, setCustomGoalInput] = useState("");
 
   // Section 3 — How much risk?
   const [riskLevelIdx, setRiskLevelIdx] = useState(2);
   const [riskCapacity, setRiskCapacity] = useState("");
   const [investmentExperience, setInvestmentExperience] = useState("");
   const [investmentHorizon, setInvestmentHorizon] = useState("");
-  const [riskQ1, setRiskQ1] = useState("");
-  const [riskQ2, setRiskQ2] = useState("");
-  const [riskQ3, setRiskQ3] = useState("");
+  const [showBehavModal, setShowBehavModal] = useState(false);
+  const [investmentPref, setInvestmentPref] = useState("");
+  const [behavQ1, setBehavQ1] = useState("");
+  const [behavQ2, setBehavQ2] = useState("");
+  const [behavQ3, setBehavQ3] = useState("");
+  const [incomeRange, setIncomeRange] = useState<[number, number]>([30000000, 70000000]);
+  const [expenseRange, setExpenseRange] = useState<[number, number]>([20000000, 50000000]);
   const [maxDrawdown, setMaxDrawdown] = useState("");
   const [comfortAssets, setComfortAssets] = useState<string[]>([]);
 
@@ -484,7 +625,7 @@ const CompleteProfile = () => {
         if (p.investment_profile) {
           const ip = p.investment_profile;
           if (p.personal_info?.wealth_sources?.length) {
-            setPrimaryWealthSource(p.personal_info.wealth_sources[0]);
+            setPrimaryWealthSource(p.personal_info.wealth_sources);
           }
           setInvestableAssets(parseNum(ip.investable_assets?.toString()));
           setLiabilities(parseNum(ip.total_liabilities?.toString()));
@@ -615,9 +756,15 @@ const CompleteProfile = () => {
             emergency_fund: toNum(emergencyFund),
             emergency_fund_months: emergencyTimeframe || null,
           });
-          if (primaryWealthSource) {
+          {
+            const sources = [...primaryWealthSource];
+            if (sources.includes("Other") && wealthSourceOtherText.trim()) {
+              sources[sources.indexOf("Other")] = wealthSourceOtherText.trim();
+            }
+            const occVal = occupationType === "Other" ? occupationOtherText.trim() || "Other" : occupationType;
             await updatePersonalInfo({
-              wealth_sources: [primaryWealthSource],
+              wealth_sources: sources.length ? sources : null,
+              ...(occVal ? { occupation: occVal } : {}),
             });
           }
           break;
@@ -644,7 +791,7 @@ const CompleteProfile = () => {
             risk_capacity: riskCapacity || null,
             investment_experience: investmentExperience || null,
             investment_horizon: investmentHorizon || null,
-            drop_reaction: riskQ1 || null,
+            drop_reaction: behavQ1 || null,
             max_drawdown: maxDrawdown ? Number(maxDrawdown) : null,
             comfort_assets: comfortAssets.length ? comfortAssets : null,
           });
@@ -662,19 +809,17 @@ const CompleteProfile = () => {
               max_allocation: allocations[asset]?.max ?? null,
             })),
           });
+          await updateReviewPreference({
+            frequency: reviewFreq || null,
+            triggers: null,
+            update_process: null,
+          });
           break;
         case 5:
           await updateTaxProfile({
             income_tax_rate: incomeTaxRate ? Number(incomeTaxRate) : null,
             capital_gains_tax_rate: cgtRate ? Number(cgtRate) : null,
             notes: taxNotes || null,
-          });
-          break;
-        case 6:
-          await updateReviewPreference({
-            frequency: reviewFreq || null,
-            triggers: reviewTriggers.length ? reviewTriggers : null,
-            update_process: updateProcess || null,
           });
           break;
       }
@@ -695,7 +840,7 @@ const CompleteProfile = () => {
     occupation, primaryResidence, earningMembers, dependents, values,
     primaryWealthSource, investableAssets, liabilities, properties, plannedExpenses, emergencyFund, emergencyTimeframe, otherAssets, ownsHome, expectingLargeIncome, largeIncomeAmount, largeIncomeCurrency, largeIncomeYear,
     selectedObjectives, goalDetails,
-    riskLevelIdx, riskCapacity, investmentExperience, investmentHorizon, horizonNotes, riskQ1, riskQ2, riskQ3, maxDrawdown, comfortAssets,
+    riskLevelIdx, riskCapacity, investmentExperience, investmentHorizon, horizonNotes, behavQ1, behavQ2, behavQ3, maxDrawdown, comfortAssets,
     permittedAssets, allocations, prohibited, leverage, derivatives, diversificationNotes,
     incomeTaxRate, cgtRate, taxNotes,
     reviewFreq, reviewTriggers, updateProcess,
@@ -756,7 +901,6 @@ const CompleteProfile = () => {
       case 0:
         return (
           <div className="space-y-3">
-            <div><FieldLabel>Occupation</FieldLabel><TextInput value={occupation} onChange={setOccupation} placeholder="e.g. Software engineer" /></div>
             <div><FieldLabel>Primary residence</FieldLabel><TextInput value={primaryResidence} onChange={setPrimaryResidence} placeholder="e.g. London, United Kingdom" /></div>
             <div>
               <FieldLabel>Family situation: earning members and dependents</FieldLabel>
@@ -785,7 +929,6 @@ const CompleteProfile = () => {
                 </div>
               </div>
             </div>
-            <div><FieldLabel>Values / exclusions</FieldLabel><TextInput value={values} onChange={setValues} placeholder="e.g. ESG preferred, no defence stocks" /></div>
           </div>
         );
 
@@ -793,29 +936,57 @@ const CompleteProfile = () => {
       case 1:
         return (
           <div className="space-y-3">
+            {/* Occupation */}
+            <div>
+              <FieldLabel>Occupation</FieldLabel>
+              <div className="flex flex-wrap gap-1.5">
+                {OCCUPATION_OPTIONS.map((o) => (
+                  <Chip key={o} label={o} active={occupationType === o} onClick={() => setOccupationType(occupationType === o ? "" : o)} />
+                ))}
+              </div>
+              {occupationType === "Other" && (
+                <div className="mt-2">
+                  <TextInput value={occupationOtherText} onChange={setOccupationOtherText} placeholder="Enter your occupation" />
+                </div>
+              )}
+            </div>
+
+            {/* Income & Expenses — moved up below occupation */}
+            <div>
+              <FieldLabel>Annual income range</FieldLabel>
+              <IncomeExpenseSlider label="Income" range={incomeRange} onChange={setIncomeRange} />
+            </div>
+            <div>
+              <FieldLabel>Annual expense range</FieldLabel>
+              <IncomeExpenseSlider label="Expenses" range={expenseRange} onChange={setExpenseRange} />
+            </div>
+
+            {/* Primary Wealth Source — multi-select */}
             <div>
               <FieldLabel>Primary wealth source</FieldLabel>
               <div className="flex flex-wrap gap-1.5">
                 {PRIMARY_WEALTH_SOURCES.map((s) => (
-                  <Chip key={s} label={s} active={primaryWealthSource === s} onClick={() => setPrimaryWealthSource(s)} />
+                  <Chip
+                    key={s}
+                    label={s}
+                    active={primaryWealthSource.includes(s)}
+                    onClick={() =>
+                      setPrimaryWealthSource((prev) =>
+                        prev.includes(s) ? prev.filter((x) => x !== s) : [...prev, s]
+                      )
+                    }
+                  />
                 ))}
               </div>
+              {primaryWealthSource.includes("Other") && (
+                <div className="mt-2">
+                  <TextInput value={wealthSourceOtherText} onChange={setWealthSourceOtherText} placeholder="Specify other wealth source" />
+                </div>
+              )}
             </div>
             <div><FieldLabel>Financial and liquid assets</FieldLabel><TextInput value={investableAssets} onChange={setInvestableAssets} prefix="₹" placeholder="e.g. 42,00,000" /></div>
             <div><FieldLabel>Total liabilities / debts</FieldLabel><TextInput value={liabilities} onChange={setLiabilities} prefix="₹" placeholder="e.g. 5,00,000" /></div>
 
-            {/* Other assets */}
-            <div>
-              <FieldLabel>Other assets (car, jewellery, art, etc.)</FieldLabel>
-              {otherAssets.map((asset, i) => (
-                <div key={i} className="flex items-start gap-2 mb-2">
-                  <div className="flex-1"><TextInput value={asset.name} onChange={(v) => updateOtherAsset(i, "name", v)} placeholder="Asset name/type" /></div>
-                  <div className="w-32"><TextInput value={asset.value} onChange={(v) => updateOtherAsset(i, "value", v)} prefix="₹" placeholder="Value" /></div>
-                  <button onClick={() => removeOtherAsset(i)} className="mt-2 text-muted-foreground hover:text-destructive"><X className="h-3.5 w-3.5" /></button>
-                </div>
-              ))}
-              <button onClick={addOtherAsset} className="flex items-center gap-1 text-xs text-accent font-medium mt-1"><Plus className="h-3 w-3" /> Add asset</button>
-            </div>
 
             {/* Property */}
             <div>
@@ -838,7 +1009,7 @@ const CompleteProfile = () => {
                         <div><label className="text-[10px] text-muted-foreground">Property value</label><TextInput value={prop.value} onChange={(v) => updateProp("value", v)} prefix="₹" placeholder="e.g. 1.20 Cr" /></div>
                         <div><label className="text-[10px] text-muted-foreground">Total outstanding mortgage</label><TextInput value={prop.mortgage} onChange={(v) => updateProp("mortgage", v)} prefix="₹" placeholder="e.g. 45,00,000" /></div>
                         <div><label className="text-[10px] text-muted-foreground">Current monthly repayment</label><TextInput value={prop.monthlyRepayment} onChange={(v) => updateProp("monthlyRepayment", v)} prefix="₹" placeholder="e.g. 35,000" /></div>
-                        <div><label className="text-[10px] text-muted-foreground">Year purchased</label><TextInput value={prop.yearPurchased} onChange={(v) => updateProp("yearPurchased", v)} placeholder="e.g. 2018" /></div>
+                        
                       </div>
                     );
                   })}
@@ -867,6 +1038,7 @@ const CompleteProfile = () => {
               )}
             </div>
 
+
             <div className="flex gap-3">
               <div className="flex-1"><FieldLabel>Emergency fund target</FieldLabel><TextInput value={emergencyFund} onChange={setEmergencyFund} prefix="₹" placeholder="e.g. 3,00,000" /></div>
               <div className="w-32"><FieldLabel>Timeframe</FieldLabel><SelectInput value={emergencyTimeframe} onChange={setEmergencyTimeframe} options={EMERGENCY_TIMEFRAMES} /></div>
@@ -893,6 +1065,64 @@ const CompleteProfile = () => {
               </div>
             </div>
 
+            {/* Custom goals */}
+            <div>
+              <FieldLabel>Add your own goal</FieldLabel>
+              <div className="flex gap-2">
+                <input
+                  value={customGoalInput}
+                  onChange={(e) => setCustomGoalInput(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" && customGoalInput.trim()) {
+                      const g = customGoalInput.trim();
+                      if (!customGoals.includes(g) && !selectedObjectives.includes(g)) {
+                        setCustomGoals((prev) => [...prev, g]);
+                        setSelectedObjectives((prev) => [...prev, g]);
+                      }
+                      setCustomGoalInput("");
+                    }
+                  }}
+                  placeholder="e.g. Start a business, Travel the world..."
+                  className="flex-1 rounded-lg border border-border bg-card px-3 py-2 text-sm text-foreground outline-none focus:border-accent transition-colors placeholder:text-muted-foreground/50"
+                />
+                <button
+                  type="button"
+                  onClick={() => {
+                    const g = customGoalInput.trim();
+                    if (g && !customGoals.includes(g) && !selectedObjectives.includes(g)) {
+                      setCustomGoals((prev) => [...prev, g]);
+                      setSelectedObjectives((prev) => [...prev, g]);
+                    }
+                    setCustomGoalInput("");
+                  }}
+                  disabled={!customGoalInput.trim()}
+                  className="rounded-lg px-3 py-2 text-sm font-medium wealth-gradient text-primary-foreground disabled:opacity-40 transition-all"
+                >
+                  Add
+                </button>
+              </div>
+              {customGoals.length > 0 && (
+                <div className="flex flex-wrap gap-1.5 mt-2">
+                  {customGoals.map((g) => (
+                    <span key={g} className="inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-medium bg-accent/10 text-accent border border-accent/20">
+                      {g}
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setCustomGoals((prev) => prev.filter((x) => x !== g));
+                          setSelectedObjectives((prev) => prev.filter((x) => x !== g));
+                          setGoalDetails((prev) => { const n = { ...prev }; delete n[g]; return n; });
+                        }}
+                        className="ml-0.5 text-accent/60 hover:text-accent"
+                      >
+                        ×
+                      </button>
+                    </span>
+                  ))}
+                </div>
+              )}
+            </div>
+
             {/* Per-goal detail cards */}
             {selectedObjectives.map((obj) => {
               const detail = getOrCreateGoalDetail(obj);
@@ -904,35 +1134,21 @@ const CompleteProfile = () => {
                   className="rounded-lg border border-border bg-card/50 p-3 space-y-2.5"
                 >
                   <p className="text-xs font-semibold text-foreground">{obj}</p>
-                  <div className="grid grid-cols-2 gap-2">
-                    <div><label className="text-[10px] text-muted-foreground">Total amount needed</label><TextInput value={detail.amount} onChange={(v) => updateGoalDetail(obj, { amount: v })} prefix="₹" /></div>
-                    <div><label className="text-[10px] text-muted-foreground">Currency</label><SelectInput value={detail.currency} onChange={(v) => updateGoalDetail(obj, { currency: v })} options={CURRENCIES} /></div>
-                  </div>
-                  <div><label className="text-[10px] text-muted-foreground">Year to achieve by</label><TextInput value={detail.year} onChange={(v) => updateGoalDetail(obj, { year: v })} placeholder="e.g. 2035" /></div>
+                  <div><label className="text-[10px] text-muted-foreground">Amount</label><TextInput value={detail.amount} onChange={(v) => updateGoalDetail(obj, { amount: v })} prefix="₹" placeholder="e.g. 50,00,000" /></div>
+                  <div><label className="text-[10px] text-muted-foreground">Expected year</label><TextInput value={detail.year} onChange={(v) => updateGoalDetail(obj, { year: v })} placeholder="e.g. 2035" /></div>
                   <div>
-                    <label className="text-[10px] text-muted-foreground">Purpose (select up to 4)</label>
-                    <div className="flex flex-wrap gap-1.5 mt-1">
-                      {GOAL_PURPOSES.map((p) => (
-                        <Chip
-                          key={p.value}
-                          label={`${p.label}`}
-                          active={detail.purposes.includes(p.value)}
-                          onClick={() => toggleGoalPurpose(obj, p.value)}
-                        />
-                      ))}
+                    <label className="text-[10px] text-muted-foreground">Value type</label>
+                    <div className="flex gap-2 mt-1">
+                      <Chip label="Present Value" active={detail.notes === "Present Value"} onClick={() => updateGoalDetail(obj, { notes: "Present Value" })} />
+                      <Chip label="Future Value" active={detail.notes === "Future Value"} onClick={() => updateGoalDetail(obj, { notes: "Future Value" })} />
                     </div>
-                    <p className="text-[9px] text-muted-foreground/60 mt-1">
-                      {GOAL_PURPOSES.map((p) => `${p.label}: ${p.desc}`).join(" · ")}
-                    </p>
                   </div>
-                  {detail.purposes.includes("Income") && (
-                    <div><label className="text-[10px] text-muted-foreground">How much income per month/year?</label><TextInput value={detail.incomeAmount} onChange={(v) => updateGoalDetail(obj, { incomeAmount: v })} prefix="₹" placeholder="e.g. 50,000/month" /></div>
-                  )}
-                  <div><label className="text-[10px] text-muted-foreground">Minimum annual return expected (%)</label><TextInput value={detail.minReturn} onChange={(v) => updateGoalDetail(obj, { minReturn: v })} placeholder="e.g. 12" /></div>
-                  <div><label className="text-[10px] text-muted-foreground">Anything else about this goal?</label><TextInput value={detail.notes} onChange={(v) => updateGoalDetail(obj, { notes: v })} placeholder="Free-text elaboration..." /></div>
                 </motion.div>
               );
             })}
+
+            {/* Values / Exclusions */}
+            <div><FieldLabel>Values / exclusions</FieldLabel><TextInput value={values} onChange={setValues} placeholder="e.g. ESG preferred, no defence stocks" /></div>
           </div>
         );
 
@@ -969,62 +1185,21 @@ const CompleteProfile = () => {
               />
             </div>
 
-            {/* New Q1 */}
+            {/* Behavioural Risk Assessment — opens modal */}
             <div>
-              <FieldLabel>If your portfolio dropped 20%+ in one month, what would you do?</FieldLabel>
-              <div className="flex flex-wrap gap-1.5">
-                {RISK_Q1_OPTIONS.map((o) => (
-                  <Chip key={o} label={o} active={riskQ1 === o} onClick={() => setRiskQ1(o)} />
-                ))}
-              </div>
+              <button
+                onClick={() => setShowBehavModal(true)}
+                className="w-full rounded-xl border border-border bg-card px-4 py-3 text-left hover:border-accent/40 transition-all"
+              >
+                <p className="text-xs font-semibold text-foreground">Behavioural Risk Assessment</p>
+                <p className="text-[10px] text-muted-foreground mt-0.5">3 quick questions to understand your behaviour</p>
+                {behavQ1 && behavQ2 && behavQ3 && (
+                  <span className="inline-flex items-center gap-1 mt-1.5 text-[10px] font-medium text-[hsl(160_50%_38%)]">✓ Completed</span>
+                )}
+              </button>
             </div>
 
-            {/* New Q2 */}
-            <div>
-              <FieldLabel>Which would keep you up more at night?</FieldLabel>
-              <div className="flex flex-wrap gap-1.5">
-                {RISK_Q2_OPTIONS.map((o) => (
-                  <Chip key={o} label={o} active={riskQ2 === o} onClick={() => setRiskQ2(o)} />
-                ))}
-              </div>
-            </div>
 
-            {/* New Q3 */}
-            <div>
-              <FieldLabel>When you think of the word 'risk,' what comes to mind?</FieldLabel>
-              <div className="flex flex-wrap gap-1.5">
-                {RISK_Q3_OPTIONS.map((o) => (
-                  <Chip key={o} label={o} active={riskQ3 === o} onClick={() => setRiskQ3(o)} />
-                ))}
-              </div>
-            </div>
-
-            <div>
-              <FieldLabel>Max acceptable annual drawdown (%)</FieldLabel>
-              <TextInput value={maxDrawdown} onChange={setMaxDrawdown} placeholder="e.g. 25" />
-            </div>
-
-            {/* Comfort across asset classes — Coming soon teaser */}
-            <div className="relative">
-              <div className="flex items-center gap-2 mb-1">
-                <FieldLabel>Comfort across asset classes</FieldLabel>
-                <span className="inline-flex items-center gap-1 rounded-full bg-[hsl(38_80%_93%)] px-2 py-0.5 text-[9px] font-semibold text-[hsl(38_80%_38%)]">
-                  <Lock className="h-2.5 w-2.5" /> Coming soon
-                </span>
-              </div>
-              <p className="text-[10px] text-muted-foreground/60 mb-2 italic">Coming soon: Play a Q&A game (2–3 quick questions per asset class)</p>
-              <div className="grid grid-cols-2 gap-2 mt-1 opacity-40 pointer-events-none">
-                {ASSET_COMFORT.map((a) => (
-                  <Chip
-                    key={a}
-                    label={a}
-                    active={comfortAssets.includes(a)}
-                    onClick={() => {}}
-                    disabled
-                  />
-                ))}
-              </div>
-            </div>
           </div>
         );
 
@@ -1069,6 +1244,10 @@ const CompleteProfile = () => {
               {derivatives && <div className="mt-2"><TextInput value={derivativesNotes} onChange={setDerivativesNotes} placeholder="Notes on derivatives use" /></div>}
             </div>
             <div><FieldLabel>Diversification notes (optional)</FieldLabel><TextInput value={diversificationNotes} onChange={setDiversificationNotes} placeholder="Any specific diversification requirements" /></div>
+            <div>
+              <FieldLabel>Review frequency</FieldLabel>
+              <div className="flex flex-wrap gap-2">{REVIEW_FREQ.map((f) => <Chip key={f} label={f} active={reviewFreq === f} onClick={() => setReviewFreq(f)} />)}</div>
+            </div>
           </div>
         );
 
@@ -1082,21 +1261,6 @@ const CompleteProfile = () => {
           </div>
         );
 
-      /* ── Section 6: Staying involved ── */
-      case 6:
-        return (
-          <div className="space-y-4">
-            <div>
-              <FieldLabel>Review frequency</FieldLabel>
-              <div className="flex flex-wrap gap-2">{REVIEW_FREQ.map((f) => <Chip key={f} label={f} active={reviewFreq === f} onClick={() => setReviewFreq(f)} />)}</div>
-            </div>
-            <div>
-              <FieldLabel>Review triggers</FieldLabel>
-              <div className="flex flex-wrap gap-2">{REVIEW_TRIGGERS.map((t) => <Chip key={t} label={t} active={reviewTriggers.includes(t)} onClick={() => toggleChipArray(reviewTriggers, t, setReviewTriggers)} />)}</div>
-            </div>
-            <div><FieldLabel>Update process preference (optional)</FieldLabel><TextInput value={updateProcess} onChange={setUpdateProcess} placeholder="How would you like to communicate updates?" /></div>
-          </div>
-        );
 
       default:
         return null;
@@ -1183,6 +1347,15 @@ const CompleteProfile = () => {
           );
         })}
       </div>
+
+      {/* Behavioural Risk Modal */}
+      <BehaviouralRiskModal
+        open={showBehavModal}
+        onClose={() => setShowBehavModal(false)}
+        q1={behavQ1} setQ1={setBehavQ1}
+        q2={behavQ2} setQ2={setBehavQ2}
+        q3={behavQ3} setQ3={setBehavQ3}
+      />
 
       {/* Bottom CTA */}
       <div className="fixed bottom-0 left-0 right-0 z-50 bg-background/90 backdrop-blur-sm border-t border-border px-5 py-4">

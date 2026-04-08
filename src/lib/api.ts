@@ -238,6 +238,49 @@ export async function syncSimBankAccounts(acceptedAccountRefNos: string[]): Prom
   });
 }
 
+// ── Linked accounts (persisted after SimBanks / manual link) ─────────
+export interface LinkAccountInfo {
+  id: string;
+  account_type: string;
+  provider_name: string | null;
+  status: string;
+  linked_at: string | null;
+  created_at: string;
+}
+
+export async function listLinkedAccounts(): Promise<{ accounts: LinkAccountInfo[] }> {
+  return request<{ accounts: LinkAccountInfo[] }>("/linked-accounts/");
+}
+
+// ── Finvu / AA bucket snapshot (post-consent totals from Finvu analytics API) ──
+export type FinvuBucketName = "Cash" | "Debt" | "Equity" | "Other";
+
+export interface FinvuBucketInput {
+  bucket: FinvuBucketName;
+  value_inr: number;
+}
+
+export interface FinvuPortfolioSyncRequest {
+  buckets: FinvuBucketInput[];
+  as_of?: string | null;
+  consent_transaction_id?: string | null;
+  source?: string;
+}
+
+export interface FinvuPortfolioSyncResponse {
+  portfolio_id: string;
+  total_value_inr: number;
+  allocation_rows_written: number;
+  message: string;
+}
+
+export async function syncFinvuPortfolio(payload: FinvuPortfolioSyncRequest): Promise<FinvuPortfolioSyncResponse> {
+  return request<FinvuPortfolioSyncResponse>("/portfolio/finvu/sync", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+}
+
 export function logout() {
   clearToken();
 }

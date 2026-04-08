@@ -1,11 +1,10 @@
 import { useState, useEffect, type ReactNode } from "react";
-import { motion } from "framer-motion";
-import { TrendingUp, TrendingDown, Compass } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { TrendingUp, TrendingDown } from "lucide-react";
 import BottomNav from "@/components/BottomNav";
 import NetWorthSparkline from "./NetWorthSparkline";
 import CurrentAllocationCard from "./CurrentAllocationCard";
 import DailyInsights from "./DailyInsights";
+import SkillsQuiz from "./SkillsQuiz";
 import ProfileSwitcher from "./ProfileSwitcher";
 import { useFamily } from "@/context/FamilyContext";
 import {
@@ -18,9 +17,20 @@ import {
   type FullProfileResponse,
   type PortfolioDetail,
 } from "@/lib/api";
+import {
+  buildDemoSparkline,
+  cloneDemoCumulativePortfolio,
+  cloneDemoFullProfile,
+  cloneDemoMemberPortfolio,
+  cloneDemoSelfPortfolio,
+} from "@/lib/portfolioDemoData";
 import { formatInrCompact, formatInrPaisa } from "@/lib/utils";
 
-/** Map cumulative API payload into a PortfolioDetail so we can reuse PortfolioMainPanel / CurrentAllocationCard. */
+// Unified card style
+const CARD = "bg-white rounded-[14px] p-[14px]" as const;
+const CARD_BORDER = { border: "1px solid #f0f0f0" } as const;
+const SECTION_LABEL = { fontSize: 10, fontWeight: 500, textTransform: "uppercase" as const, letterSpacing: "1.5px", color: "#b0b0b0" };
+
 function cumulativeToPortfolioDetail(c: CumulativePortfolioResponse): PortfolioDetail {
   return {
     id: "cumulative-family",
@@ -42,7 +52,6 @@ function cumulativeToPortfolioDetail(c: CumulativePortfolioResponse): PortfolioD
   };
 }
 
-/** Same main layout as homepage (self) — net worth, sparkline, allocation card, breakdown, optional holdings card. */
 function PortfolioMainPanel({
   portfolio,
   timePeriod,
@@ -50,7 +59,6 @@ function PortfolioMainPanel({
   sparkline,
   riskCategory,
   horizonLabel,
-  showHoldingsCard,
   middleSlot,
 }: {
   portfolio: PortfolioDetail;
@@ -59,13 +67,14 @@ function PortfolioMainPanel({
   sparkline?: number[];
   riskCategory: string | null;
   horizonLabel: string | null;
-  showHoldingsCard?: boolean;
-  /** Renders between allocation card and optional holdings (e.g. cumulative member breakdown). */
   middleSlot?: ReactNode;
 }) {
   return (
-    <>
-      <div className="px-5 pb-2">
+    <div className="space-y-2">
+      {/* Total Portfolio card */}
+      <div className={CARD} style={CARD_BORDER}>
+        <p className="mb-3" style={SECTION_LABEL}>Total Portfolio</p>
+
         <div className="flex items-center gap-2.5">
           <p className="text-2xl font-bold text-foreground tracking-tight">{formatInrPaisa(portfolio.total_value)}</p>
           {portfolio.total_gain_percentage != null && (
@@ -86,11 +95,9 @@ function PortfolioMainPanel({
             </span>
           )}
         </div>
-        <p className="text-[10px] text-muted-foreground/80 mt-1">Invested {formatInrPaisa(portfolio.total_invested)}</p>
-      </div>
+        <p className="text-[10px] text-muted-foreground/80 mt-1 mb-3">Invested {formatInrPaisa(portfolio.total_invested)}</p>
 
-      <div className="px-5 pb-2">
-        <div className="flex gap-1.5">
+        <div className="flex gap-1.5 mb-3">
           {(["1M", "6M", "1Y", "All"] as const).map((period) => (
             <button
               key={period}
@@ -106,13 +113,12 @@ function PortfolioMainPanel({
             </button>
           ))}
         </div>
-      </div>
 
-      <div className="px-5 pb-2">
         <NetWorthSparkline values={sparkline} />
       </div>
 
-      <div className="px-5 pb-2">
+      {/* Current Allocation card (with merged holdings) */}
+      <div className={CARD} style={CARD_BORDER}>
         <CurrentAllocationCard
           portfolio={portfolio}
           riskCategory={riskCategory}
@@ -121,115 +127,51 @@ function PortfolioMainPanel({
       </div>
 
       {middleSlot}
-
-      {showHoldingsCard && portfolio.holdings.length > 0 && (
-        <div className="px-5 pb-2">
-          <div className="rounded-2xl bg-card p-4 border border-border/40">
-            <p className="text-xs font-semibold tracking-wide uppercase text-muted-foreground mb-3">Holdings</p>
-            <div className="space-y-0">
-              {portfolio.holdings.map((h, i, arr) => (
-                <div key={h.id}>
-                  <div className="flex items-center justify-between py-2">
-                    <div>
-                      <p className="text-xs font-medium text-foreground">{h.instrument_name}</p>
-                      <p className="text-[9px] text-muted-foreground">
-                        {h.instrument_type}
-                        {h.ticker_symbol ? ` · ${h.ticker_symbol}` : ""}
-                      </p>
-                    </div>
-                    <p className="text-xs font-semibold text-foreground">{formatInrPaisa(h.current_value)}</p>
-                  </div>
-                  {i < arr.length - 1 && <div className="h-px bg-border/20" />}
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      )}
-
-      <div className="px-5 pb-2">
-        {portfolio.allocations.length > 0 ? (
-          portfolio.allocations.map((item, i, arr) => {
-            const perf = item.performance_percentage;
-            const positive = perf == null ? true : perf >= 0;
-            return (
-              <div key={item.id}>
-                <div className="flex items-center justify-between py-1.5">
-                  <span className="text-xs text-muted-foreground">{item.asset_class}</span>
-                  <div className="flex items-center gap-3">
-                    <span className="text-xs font-semibold text-foreground">{formatInrCompact(item.amount)}</span>
-                    {perf != null && (
-                      <span
-                        className={`text-[10px] font-medium ${
-                          positive ? "text-wealth-green" : "text-destructive"
-                        }`}
-                      >
-                        {positive ? "+" : ""}
-                        {perf.toFixed(1)}%
-                      </span>
-                    )}
-                  </div>
-                </div>
-                {i < arr.length - 1 && <div className="h-px bg-border/20" />}
-              </div>
-            );
-          })
-        ) : (
-          <p className="text-[11px] text-muted-foreground py-2">
-            No allocation rows saved yet. Update allocations in Portfolio to see a breakdown.
-          </p>
-        )}
-      </div>
-    </>
+    </div>
   );
 }
 
 function CumulativeMemberBreakdownCard({ data }: { data: CumulativePortfolioResponse }) {
   if (!data.members.length) return null;
   return (
-    <div className="px-5 pb-2">
-      <div className="rounded-2xl bg-card p-4 border border-border/40">
-        <p className="text-xs font-semibold tracking-wide uppercase text-muted-foreground mb-3">
-          Member breakdown
-        </p>
-        <div className="space-y-0">
-          {data.members.map((m, i, arr) => (
-            <div key={m.member_id}>
-              <div className="flex items-center justify-between py-2">
-                <div className="flex items-center gap-2 min-w-0">
-                  <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-accent/10 text-[9px] font-bold text-accent">
-                    {(m.nickname[0] ?? "?").toUpperCase()}
-                  </div>
-                  <div className="min-w-0">
-                    <p className="text-xs font-semibold text-foreground truncate">{m.nickname}</p>
-                    <p className="text-[9px] text-muted-foreground capitalize">{m.relationship_type}</p>
-                  </div>
+    <div className={CARD} style={CARD_BORDER}>
+      <p className="mb-3" style={SECTION_LABEL}>Member breakdown</p>
+      <div className="space-y-0">
+        {data.members.map((m, i, arr) => (
+          <div key={m.member_id}>
+            <div className="flex items-center justify-between py-2">
+              <div className="flex items-center gap-2 min-w-0">
+                <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-accent/10 text-[9px] font-bold text-accent">
+                  {(m.nickname[0] ?? "?").toUpperCase()}
                 </div>
-                <div className="text-right shrink-0 ml-2">
-                  <p className="text-xs font-semibold text-foreground">{formatInrPaisa(m.portfolio_value)}</p>
-                  {m.gain_percentage != null && (
-                    <p
-                      className={`text-[9px] font-medium ${
-                        m.gain_percentage >= 0 ? "text-wealth-green" : "text-destructive"
-                      }`}
-                    >
-                      {m.gain_percentage >= 0 ? "+" : ""}
-                      {m.gain_percentage}%
-                    </p>
-                  )}
+                <div className="min-w-0">
+                  <p className="text-xs font-semibold text-foreground truncate">{m.nickname}</p>
+                  <p className="text-[9px] text-muted-foreground capitalize">{m.relationship_type}</p>
                 </div>
               </div>
-              {i < arr.length - 1 && <div className="h-px bg-border/20" />}
+              <div className="text-right shrink-0 ml-2">
+                <p className="text-xs font-semibold text-foreground">{formatInrPaisa(m.portfolio_value)}</p>
+                {m.gain_percentage != null && (
+                  <p
+                    className={`text-[9px] font-medium ${
+                      m.gain_percentage >= 0 ? "text-wealth-green" : "text-destructive"
+                    }`}
+                  >
+                    {m.gain_percentage >= 0 ? "+" : ""}
+                    {m.gain_percentage}%
+                  </p>
+                )}
+              </div>
             </div>
-          ))}
-        </div>
+            {i < arr.length - 1 && <div className="h-px bg-border/20" />}
+          </div>
+        ))}
       </div>
     </div>
   );
 }
 
 const PortfolioDashboard = () => {
-  const navigate = useNavigate();
   const { activeView } = useFamily();
   const [timePeriod, setTimePeriod] = useState<"1M" | "6M" | "1Y" | "All">("All");
 
@@ -240,7 +182,7 @@ const PortfolioDashboard = () => {
   const [selfPortfolio, setSelfPortfolio] = useState<PortfolioDetail | null>(null);
   const [selfProfile, setSelfProfile] = useState<FullProfileResponse | null>(null);
   const [selfSparkline, setSelfSparkline] = useState<number[] | undefined>(undefined);
-  const [selfLoading, setSelfLoading] = useState(false);
+  const [selfLoading, setSelfLoading] = useState(true);
 
   useEffect(() => {
     let cancelled = false;
@@ -248,13 +190,18 @@ const PortfolioDashboard = () => {
       setFamilyLoading(true);
       getCumulativePortfolio()
         .then((d) => { if (!cancelled) setCumulativeData(d); })
-        .catch(() => {})
+        .catch(() => {
+          if (!cancelled) setCumulativeData(cloneDemoCumulativePortfolio());
+        })
         .finally(() => { if (!cancelled) setFamilyLoading(false); });
     } else if (activeView.type === "member") {
       setFamilyLoading(true);
+      const nick = activeView.member.nickname;
       getFamilyMemberPortfolio(activeView.member.id)
         .then((d) => { if (!cancelled) setMemberPortfolio(d); })
-        .catch(() => {})
+        .catch(() => {
+          if (!cancelled) setMemberPortfolio(cloneDemoMemberPortfolio(nick));
+        })
         .finally(() => { if (!cancelled) setFamilyLoading(false); });
     }
     return () => { cancelled = true; };
@@ -271,8 +218,9 @@ const PortfolioDashboard = () => {
     ])
       .then(([port, prof, hist]) => {
         if (cancelled) return;
-        setSelfPortfolio(port);
-        setSelfProfile(prof);
+        const useDemoPortfolio = port === null;
+        setSelfPortfolio(useDemoPortfolio ? cloneDemoSelfPortfolio() : port);
+        setSelfProfile(useDemoPortfolio ? (prof ?? cloneDemoFullProfile()) : prof);
         const sorted = [...hist].sort(
           (a, b) => new Date(a.recorded_date).getTime() - new Date(b.recorded_date).getTime()
         );
@@ -282,14 +230,14 @@ const PortfolioDashboard = () => {
         } else if (sorted.length === 1) {
           setSelfSparkline([sorted[0].total_value / 100000]);
         } else {
-          setSelfSparkline(undefined);
+          setSelfSparkline(useDemoPortfolio ? buildDemoSparkline() : undefined);
         }
       })
       .catch(() => {
         if (!cancelled) {
-          setSelfPortfolio(null);
-          setSelfProfile(null);
-          setSelfSparkline(undefined);
+          setSelfPortfolio(cloneDemoSelfPortfolio());
+          setSelfProfile(cloneDemoFullProfile());
+          setSelfSparkline(buildDemoSparkline());
         }
       })
       .finally(() => {
@@ -309,10 +257,10 @@ const PortfolioDashboard = () => {
 
   return (
     <div className="mobile-container bg-background flex flex-col min-h-screen">
-      {/* Top bar with profile switcher */}
-      <div className="flex items-center justify-between px-5 pt-12 pb-2">
+      {/* Top bar */}
+      <div className="flex items-center justify-between px-[14px] pt-12 pb-2">
         <div>
-          <p className="text-xs text-muted-foreground">{viewLabel}</p>
+          <p style={SECTION_LABEL}>{viewLabel}</p>
           {activeView.type === "cumulative" && cumulativeData && (
             <p className="text-[9px] text-muted-foreground/60">
               {cumulativeData.member_count} members combined
@@ -322,18 +270,17 @@ const PortfolioDashboard = () => {
         <ProfileSwitcher />
       </div>
 
-      {/* Loading state for family views */}
       {familyLoading && activeView.type !== "self" && (
-        <div className="px-5 py-8 flex justify-center">
+        <div className="px-[14px] py-8 flex justify-center">
           <div className="h-5 w-5 animate-spin rounded-full border-2 border-muted border-t-foreground" />
         </div>
       )}
 
-      {/* ─── Combined family — same layout as homepage: sparkline, allocation card, member breakdown, insights ─── */}
+      {/* Cumulative family view */}
       {activeView.type === "cumulative" && (
         <>
           {!familyLoading && cumulativeData && cumulativeData.total_value > 0 && (
-            <>
+            <div className="px-[14px] space-y-2">
               <PortfolioMainPanel
                 portfolio={cumulativeToPortfolioDetail(cumulativeData)}
                 timePeriod={timePeriod}
@@ -341,32 +288,35 @@ const PortfolioDashboard = () => {
                 sparkline={[cumulativeData.total_value / 100000]}
                 riskCategory={null}
                 horizonLabel="Combined family"
-                showHoldingsCard={false}
                 middleSlot={<CumulativeMemberBreakdownCard data={cumulativeData} />}
               />
-              <div className="px-5 pb-24">
+              <div className={CARD} style={CARD_BORDER}>
+                <p className="mb-3" style={SECTION_LABEL}>Test your skills in 2 minutes!</p>
+                <SkillsQuiz />
+              </div>
+              <div className={`${CARD} pb-24`} style={CARD_BORDER}>
                 <DailyInsights />
               </div>
-            </>
+            </div>
           )}
           {!familyLoading && cumulativeData && cumulativeData.total_value === 0 && (
-            <div className="px-5 py-8 text-center">
+            <div className="px-[14px] py-8 text-center">
               <p className="text-xs text-muted-foreground">No combined portfolio data yet.</p>
             </div>
           )}
           {!familyLoading && !cumulativeData && (
-            <div className="px-5 py-6 text-center text-xs text-muted-foreground">
+            <div className="px-[14px] py-6 text-center text-xs text-muted-foreground">
               Could not load family portfolio. Check your connection and try again.
             </div>
           )}
         </>
       )}
 
-      {/* ─── Member portfolio — same layout as homepage (self): sparkline, allocation card, insights ─── */}
+      {/* Member view */}
       {activeView.type === "member" && (
         <>
           {!familyLoading && memberPortfolio && memberPortfolio.total_value > 0 && (
-            <>
+            <div className="px-[14px] space-y-2">
               <PortfolioMainPanel
                 portfolio={memberPortfolio}
                 timePeriod={timePeriod}
@@ -374,37 +324,40 @@ const PortfolioDashboard = () => {
                 sparkline={[memberPortfolio.total_value / 100000]}
                 riskCategory={null}
                 horizonLabel={null}
-                showHoldingsCard
               />
-              <div className="px-5 pb-24">
+              <div className={CARD} style={CARD_BORDER}>
+                <p className="mb-3" style={SECTION_LABEL}>Test your skills in 2 minutes!</p>
+                <SkillsQuiz />
+              </div>
+              <div className={`${CARD} pb-24`} style={CARD_BORDER}>
                 <DailyInsights />
               </div>
-            </>
+            </div>
           )}
           {!familyLoading && memberPortfolio && memberPortfolio.total_value === 0 && (
-            <div className="px-5 py-8 text-center">
+            <div className="px-[14px] py-8 text-center">
               <p className="text-xs text-muted-foreground">No portfolio data available for this member yet.</p>
             </div>
           )}
           {!familyLoading && !memberPortfolio && (
-            <div className="px-5 py-6 text-center text-xs text-muted-foreground">
+            <div className="px-[14px] py-6 text-center text-xs text-muted-foreground">
               Could not load this member&apos;s portfolio. Check your connection and try again.
             </div>
           )}
         </>
       )}
 
-      {/* ─── Default Self View — DB-backed when available ─── */}
+      {/* Self view */}
       {activeView.type === "self" && (
         <>
           {selfLoading && (
-            <div className="px-5 py-8 flex justify-center">
+            <div className="px-[14px] py-8 flex justify-center">
               <div className="h-5 w-5 animate-spin rounded-full border-2 border-muted border-t-foreground" />
             </div>
           )}
 
           {!selfLoading && selfPortfolio && (
-            <>
+            <div className="px-[14px] space-y-2">
               <PortfolioMainPanel
                 portfolio={selfPortfolio}
                 timePeriod={timePeriod}
@@ -416,37 +369,25 @@ const PortfolioDashboard = () => {
                   selfProfile?.risk_profile?.investment_horizon ??
                   null
                 }
-                showHoldingsCard={false}
               />
-            </>
-          )}
-
-          {!selfLoading && !selfPortfolio && (
-            <div className="px-5 py-6 text-center text-xs text-muted-foreground">
-              Could not load your portfolio from the server. Check your connection and try again.
+              <div className={CARD} style={CARD_BORDER}>
+                <p className="mb-3" style={SECTION_LABEL}>Test your skills in 2 minutes!</p>
+                <SkillsQuiz />
+              </div>
+              <div className={`${CARD} pb-24`} style={CARD_BORDER}>
+                <DailyInsights />
+              </div>
             </div>
           )}
 
-          <div className="px-5 pb-24">
-            <DailyInsights />
-          </div>
+          {!selfLoading && !selfPortfolio && (
+            <div className="px-[14px] py-6 text-center text-xs text-muted-foreground">
+              Could not load your portfolio from the server. Check your connection and try again.
+            </div>
+          )}
         </>
       )}
 
-      {/* Discovery FAB */}
-      <motion.button
-        onClick={() => navigate("/discovery")}
-        whileHover={{ scale: 1.05 }}
-        whileTap={{ scale: 0.97 }}
-        className="fixed bottom-20 right-5 z-40 flex h-12 items-center gap-2 rounded-full px-4 wealth-gradient"
-        style={{
-          boxShadow:
-            "0 4px 24px -4px hsl(var(--wealth-navy) / 0.5), 0 0 16px 2px hsl(var(--wealth-blue) / 0.25)",
-        }}
-      >
-        <Compass className="h-4 w-4 text-primary-foreground" />
-        <span className="text-xs font-semibold text-primary-foreground">Discovery</span>
-      </motion.button>
 
       <BottomNav />
     </div>

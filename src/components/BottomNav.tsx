@@ -1,26 +1,11 @@
-import type { LucideIcon } from "lucide-react";
 import { Home, Compass, MessageSquare, Target, Bell } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { motion } from "framer-motion";
 
-type NavTab = {
-  icon: LucideIcon;
-  label: string;
-  path: string;
-  badge?: number;
-  /** Also highlight when on these paths (e.g. /invest uses Discover UI + plan card). */
-  activePaths?: readonly string[];
-};
-
-const tabs: NavTab[] = [
+const tabs = [
   { icon: MessageSquare, label: "Chat", path: "/chat" },
   { icon: Home, label: "Portfolio", path: "/portfolio" },
-  {
-    icon: Compass,
-    label: "Discover",
-    path: "/discovery",
-    activePaths: ["/invest"],
-  },
+  { icon: Compass, label: "Discover", path: "/discovery" },
   { icon: Target, label: "Goals", path: "/goal-planner" },
   { icon: Bell, label: "Alerts", path: "/notifications", badge: 2 },
 ];
@@ -33,8 +18,7 @@ const BottomNav = () => {
     <nav className="fixed bottom-0 left-0 right-0 z-50 bg-card/80 backdrop-blur-xl border-t border-border/50">
       <div className="max-w-md mx-auto flex items-center justify-around py-2 pb-[env(safe-area-inset-bottom,8px)]">
         {tabs.map((tab) => {
-          const isActive =
-            location.pathname === tab.path || (tab.activePaths?.includes(location.pathname) ?? false);
+          const isActive = location.pathname === tab.path;
           return (
             <button
               key={tab.path}

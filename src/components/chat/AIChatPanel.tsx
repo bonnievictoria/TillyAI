@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { motion, AnimatePresence } from "framer-motion";
-import { X, Send, Mic, MicOff, AlertCircle, Loader2, Sparkles, Check, Square, ChevronDown, ChevronUp, Pencil } from "lucide-react";
+import { X, Send, Mic, MicOff, AlertCircle, Loader2, Sparkles, Check, Square, ChevronDown, ChevronUp, Pencil, ArrowRight } from "lucide-react";
 import { useState, useRef, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import {
@@ -23,6 +23,10 @@ interface AIChatPanelProps {
   chatFirst?: boolean;
   completionMessage?: string;
   onCompletionShown?: () => void;
+  initialAiMessage?: string;
+  showBackToInvest?: boolean;
+  /** Local demo: scripted goal-alignment walkthrough — no chat API calls. */
+  goalPlanningDemo?: boolean;
 }
 
 /** Call from other screens before navigating to /chat to send one user message after load. */
@@ -37,14 +41,151 @@ export function queueChatBootstrapMessage(text: string): void {
 interface Message {
   role: "user" | "ai";
   content: string;
-  type?: "section-start" | "summary" | "kudos";
+  type?: "section-start" | "summary" | "kudos" | "goal-demo-widget";
   sectionName?: string;
   summaryNotes?: string[];
   kudosId?: number;
+  /** Only when type === "goal-demo-widget" */
+  widgetKind?: "emergency-fund";
+}
+
+const GOAL_DEMO_CHECKPOINT_LABELS = ["Goal focus", "Horizon", "Safety net", "Portfolio fit", "Wrap-up"] as const;
+
+function formatDemoINR(n: number): string {
+  return `₹${Math.round(Math.max(0, n)).toLocaleString("en-IN")}`;
+}
+
+/** Interactive emergency-fund suggestion for goal-planning demo (client-side only). */
+function GoalDemoEmergencyWidget({
+  incomeMonthly,
+  expenseMonthly,
+  emergencyMonths,
+  onIncomeChange,
+  onExpenseChange,
+  onMonthsChange,
+}: {
+  incomeMonthly: number;
+  expenseMonthly: number;
+  emergencyMonths: number;
+  onIncomeChange: (v: number) => void;
+  onExpenseChange: (v: number) => void;
+  onMonthsChange: (v: number) => void;
+}) {
+  const cushion = emergencyMonths * expenseMonthly;
+  const savingsRate =
+    incomeMonthly > 0 ? Math.max(0, Math.min(100, ((incomeMonthly - expenseMonthly) / incomeMonthly) * 100)) : 0;
+  const tight = incomeMonthly > 0 && expenseMonthly / incomeMonthly > 0.85;
+
+  return (
+    <div className="rounded-xl border border-primary/25 bg-gradient-to-br from-primary/5 to-card px-3 py-3 space-y-3">
+      <p className="text-[11px] font-semibold text-foreground">Personalise your emergency buffer</p>
+      <p className="text-[10px] leading-relaxed text-muted-foreground">
+        Drag the checkpoints to match <strong className="text-foreground/90">your</strong> income and spending. We use expenses (not income) for the corpus — that keeps the cushion realistic if income pauses.
+      </p>
+
+      <div className="space-y-2">
+        <div>
+          <div className="flex justify-between text-[10px] text-muted-foreground mb-1">
+            <span>Monthly income (after tax)</span>
+            <span className="font-medium text-foreground tabular-nums">{formatDemoINR(incomeMonthly)}</span>
+          </div>
+          <input
+            type="range"
+            min={15000}
+            max={500000}
+            step={5000}
+            value={incomeMonthly}
+            onChange={(e) => onIncomeChange(Number(e.target.value))}
+            className="w-full h-2 accent-primary cursor-pointer"
+          />
+        </div>
+        <div>
+          <div className="flex justify-between text-[10px] text-muted-foreground mb-1">
+            <span>Monthly expenses</span>
+            <span className="font-medium text-foreground tabular-nums">{formatDemoINR(expenseMonthly)}</span>
+          </div>
+          <input
+            type="range"
+            min={10000}
+            max={400000}
+            step={5000}
+            value={expenseMonthly}
+            onChange={(e) => onExpenseChange(Number(e.target.value))}
+            className="w-full h-2 accent-primary cursor-pointer"
+          />
+        </div>
+        <div>
+          <div className="flex justify-between text-[10px] text-muted-foreground mb-1">
+            <span>Months of expenses to hold</span>
+            <span className="font-medium text-foreground tabular-nums">{emergencyMonths} mo</span>
+          </div>
+          <input
+            type="range"
+            min={3}
+            max={12}
+            step={1}
+            value={emergencyMonths}
+            onChange={(e) => onMonthsChange(Number(e.target.value))}
+            className="w-full h-2 accent-primary cursor-pointer"
+          />
+          <p className="text-[9px] text-muted-foreground/80 mt-0.5">3–6 mo if stable income · 9–12 mo if variable or sole earner</p>
+        </div>
+      </div>
+
+      <div
+        className="rounded-lg border border-border/60 bg-card/80 px-2.5 py-2 space-y-1"
+        style={{ borderLeft: "3px solid hsl(var(--primary) / 0.5)" }}
+      >
+        <p className="text-[10px] font-semibold text-foreground">Suggested emergency fund target</p>
+        <p className="text-lg font-semibold tabular-nums text-foreground">{formatDemoINR(cushion)}</p>
+        <p className="text-[10px] text-muted-foreground leading-relaxed">
+          ≈ {emergencyMonths} months × {formatDemoINR(expenseMonthly)} expenses. Rough savings rate vs income:{" "}
+          <span className="font-medium text-foreground">{savingsRate.toFixed(0)}%</span>.
+          {tight ? (
+            <span className="block mt-1 text-amber-700/90 dark:text-amber-400/90">
+              Your expenses are high relative to income — consider stretching the buffer toward 9–12 months if you can.
+            </span>
+          ) : (
+            <span className="block mt-1">Build this in liquid funds or sweep FDs before locking money into long-term goals.</span>
+          )}
+        </p>
+      </div>
+    </div>
+  );
+}
+
+function GoalPlanningCheckpointRail({ activeIndex }: { activeIndex: number }) {
+  const n = GOAL_DEMO_CHECKPOINT_LABELS.length;
+  const clamped = Math.max(0, Math.min(activeIndex, n - 1));
+  const pct = ((clamped + 1) / n) * 100;
+  return (
+    <div className="space-y-2">
+      <div className="flex justify-between gap-0.5">
+        {GOAL_DEMO_CHECKPOINT_LABELS.map((label, i) => (
+          <div
+            key={label}
+            className={`flex-1 min-w-0 text-center rounded-md px-0.5 py-1 text-[8px] font-medium leading-tight transition-colors ${
+              i <= clamped ? "bg-primary/15 text-primary" : "bg-muted/50 text-muted-foreground"
+            }`}
+          >
+            {label}
+          </div>
+        ))}
+      </div>
+      <div className="h-2 rounded-full bg-muted overflow-hidden">
+        <motion.div
+          className="h-full rounded-full bg-primary"
+          initial={false}
+          animate={{ width: `${pct}%` }}
+          transition={{ type: "spring", stiffness: 120, damping: 20 }}
+        />
+      </div>
+      <p className="text-[9px] text-center text-muted-foreground/80">Updates as you move through the conversation</p>
+    </div>
+  );
 }
 
 type MicState = "idle" | "listening" | "processing";
-const CHAT_STATE_KEY = "asktilly.chat.panel.state.v1";
 
 const suggestedQuestions = [
   "Best performing asset?",
@@ -53,13 +194,13 @@ const suggestedQuestions = [
 
 /* ── Onboarding sections (matches /profile/complete) ── */
 const CHAT_ONBOARDING_SECTIONS = [
-  { name: "Who are you?", prompt: "Let's start with the basics — tell me about yourself. Where do you live, what's your family situation, and who depends on you financially?" },
-  { name: "Your financial picture", prompt: "Now let's talk about your finances. Walk me through your income, savings, assets, any property you own, and any large expenses coming up." },
-  { name: "What are you trying to achieve?", prompt: "What are your main investment goals? Think about what you're saving for, how much you need, and when you'll need the money." },
-  { name: "How much risk can you handle?", prompt: "Let's talk about risk. How much investing experience do you have, and how would you react if your portfolio dropped 20% in a month?" },
-  { name: "Rules & limits", prompt: "Are there any rules or constraints for your investments? For example, asset classes to avoid, ethical preferences, or minimum allocations you'd like." },
-  { name: "Tax situation", prompt: "Tell me about your tax situation — your tax residency, approximate bracket, and whether you use any tax-advantaged accounts." },
-  { name: "Staying involved", prompt: "Last one — how hands-on do you want to be? How often would you like portfolio reviews and what's your preferred way to stay updated?" },
+  { name: "Who are you?", prompt: "Let's start with the basics — tell me about yourself. Where do you live, what's your family situation, and who depends on you financially?", estimate: "~2 minutes" },
+  { name: "Your financial picture", prompt: "Now let's talk about your finances. Walk me through your income, savings, assets, any property you own, and any large expenses coming up.", estimate: "~3 minutes" },
+  { name: "What are you trying to achieve?", prompt: "What are your main investment goals? Think about what you're saving for, how much you need, and when you'll need the money.", estimate: "~2 minutes" },
+  { name: "How much risk can you handle?", prompt: "Let's talk about risk. How much investing experience do you have, and how would you react if your portfolio dropped 20% in a month?", estimate: "~2 minutes" },
+  { name: "Rules & limits", prompt: "Are there any rules or constraints for your investments? For example, asset classes to avoid, ethical preferences, or minimum allocations you'd like.", estimate: "~3 minutes" },
+  { name: "Tax situation", prompt: "Tell me about your tax situation — your tax residency, approximate bracket, and whether you use any tax-advantaged accounts.", estimate: "~2 minutes" },
+  { name: "Staying involved", prompt: "Last one — how hands-on do you want to be? How often would you like portfolio reviews and what's your preferred way to stay updated?", estimate: "~1 minute" },
 ];
 
 const CHAT_ONBOARDING_NOTES: Record<number, string[]> = {
@@ -290,9 +431,25 @@ const KudosBubble = ({ text, onDismiss }: { text: string; onDismiss: () => void 
   );
 };
 
-const AIChatPanel = ({ isOpen, onClose, embedded = false, chatFirst = false, completionMessage, onCompletionShown }: AIChatPanelProps) => {
+const GOAL_DEMO_INTRO = `Hi — I'm **Tilly**. In this guided **goal alignment** session (demo — nothing is saved yet), we'll line up what you want to achieve with how your **portfolio** can support it.
+
+**Goal focus:** what **financial goals** matter most to you right now — retirement, education, a home, or something else? Mention **one or several**; we'll map them together.`;
+
+const AIChatPanel = ({
+  isOpen,
+  onClose,
+  embedded = false,
+  chatFirst = false,
+  completionMessage,
+  onCompletionShown,
+  initialAiMessage,
+  showBackToInvest = false,
+  goalPlanningDemo = false,
+}: AIChatPanelProps) => {
   const navigate = useNavigate();
-  const [messages, setMessages] = useState<Message[]>([]);
+  const [messages, setMessages] = useState<Message[]>(() =>
+    goalPlanningDemo ? [{ role: "ai", content: GOAL_DEMO_INTRO }] : [],
+  );
   const [input, setInput] = useState("");
   const [isTyping, setIsTyping] = useState(false);
   const [micState, setMicState] = useState<MicState>("idle");
@@ -300,20 +457,23 @@ const AIChatPanel = ({ isOpen, onClose, embedded = false, chatFirst = false, com
   const [showFirstUseHint, setShowFirstUseHint] = useState(true);
   const [micError, setMicError] = useState(false);
   const [clientContext, setClientContext] = useState<Record<string, unknown> | null>(null);
-  const [chatStartTime, setChatStartTime] = useState(() => {
-    try {
-      const raw = sessionStorage.getItem(CHAT_STATE_KEY);
-      if (!raw) return formatTimestamp();
-      const parsed = JSON.parse(raw) as { chatStartTime?: string };
-      return parsed.chatStartTime || formatTimestamp();
-    } catch {
-      return formatTimestamp();
-    }
-  });
+  const [chatStartTime] = useState(formatTimestamp);
   const scrollRef = useRef<HTMLDivElement>(null);
   const recognitionRef = useRef<any>(null);
   const sessionIdRef = useRef<string | null>(null);
   const kudosCounterRef = useRef(0);
+
+  const [demoCheckpoint, setDemoCheckpoint] = useState(0);
+  const [demoIncome, setDemoIncome] = useState(100000);
+  const [demoExpense, setDemoExpense] = useState(60000);
+  const [demoEmergencyMonths, setDemoEmergencyMonths] = useState(6);
+  const goalDemoTurnRef = useRef(0);
+  const demoIncomeRef = useRef(demoIncome);
+  const demoExpenseRef = useRef(demoExpense);
+  const demoEmergencyMonthsRef = useRef(demoEmergencyMonths);
+  demoIncomeRef.current = demoIncome;
+  demoExpenseRef.current = demoExpense;
+  demoEmergencyMonthsRef.current = demoEmergencyMonths;
 
   /* ── Kudos dismissal ── */
   const [dismissedKudos, setDismissedKudos] = useState<Set<number>>(new Set());
@@ -326,90 +486,9 @@ const AIChatPanel = ({ isOpen, onClose, embedded = false, chatFirst = false, com
   const [onboardingActive, setOnboardingActive] = useState(false);
   const [onboardingSection, setOnboardingSection] = useState(0);
   const [awaitingResponse, setAwaitingResponse] = useState(false);
-
-  const startNewChat = useCallback(() => {
-    setMessages([]);
-    setInput("");
-    setInterimTranscript("");
-    setIsTyping(false);
-    setMicState("idle");
-    setShowFirstUseHint(true);
-    setMicError(false);
-    setDismissedKudos(new Set());
-    setOnboardingActive(false);
-    setOnboardingSection(0);
-    setAwaitingResponse(false);
-    sessionIdRef.current = null;
-    setChatStartTime(formatTimestamp());
-    try {
-      sessionStorage.removeItem(CHAT_STATE_KEY);
-    } catch {
-      // Ignore storage errors.
-    }
-  }, []);
-
-  // Restore chat state when returning to Chat tab.
-  useEffect(() => {
-    try {
-      const raw = sessionStorage.getItem(CHAT_STATE_KEY);
-      if (!raw) return;
-      const parsed = JSON.parse(raw) as {
-        messages?: Message[];
-        sessionId?: string | null;
-        input?: string;
-        showFirstUseHint?: boolean;
-        dismissedKudos?: number[];
-        onboardingActive?: boolean;
-        onboardingSection?: number;
-        awaitingResponse?: boolean;
-        chatStartTime?: string;
-      };
-      if (Array.isArray(parsed.messages)) setMessages(parsed.messages);
-      if (typeof parsed.sessionId === "string") sessionIdRef.current = parsed.sessionId;
-      if (typeof parsed.input === "string") setInput(parsed.input);
-      if (typeof parsed.showFirstUseHint === "boolean") setShowFirstUseHint(parsed.showFirstUseHint);
-      if (Array.isArray(parsed.dismissedKudos)) setDismissedKudos(new Set(parsed.dismissedKudos));
-      if (typeof parsed.onboardingActive === "boolean") setOnboardingActive(parsed.onboardingActive);
-      if (typeof parsed.onboardingSection === "number") setOnboardingSection(parsed.onboardingSection);
-      if (typeof parsed.awaitingResponse === "boolean") setAwaitingResponse(parsed.awaitingResponse);
-      if (typeof parsed.chatStartTime === "string" && parsed.chatStartTime.trim()) {
-        setChatStartTime(parsed.chatStartTime);
-      }
-    } catch {
-      // Ignore malformed cached state.
-    }
-  }, []);
-
-  // Persist chat state so switching tabs doesn't clear conversation.
-  useEffect(() => {
-    try {
-      sessionStorage.setItem(
-        CHAT_STATE_KEY,
-        JSON.stringify({
-          messages,
-          sessionId: sessionIdRef.current,
-          input,
-          showFirstUseHint,
-          dismissedKudos: Array.from(dismissedKudos),
-          onboardingActive,
-          onboardingSection,
-          awaitingResponse,
-          chatStartTime,
-        }),
-      );
-    } catch {
-      // Ignore storage errors.
-    }
-  }, [
-    messages,
-    input,
-    showFirstUseHint,
-    dismissedKudos,
-    onboardingActive,
-    onboardingSection,
-    awaitingResponse,
-    chatStartTime,
-  ]);
+  const [completedSections, setCompletedSections] = useState<number[]>([]);
+  const [expandedReviewSection, setExpandedReviewSection] = useState<number | null>(null);
+  const [reviewChipOpen, setReviewChipOpen] = useState(false);
 
   useEffect(() => {
     if (scrollRef.current) {
@@ -419,11 +498,24 @@ const AIChatPanel = ({ isOpen, onClose, embedded = false, chatFirst = false, com
 
   // Inject completion message from voice onboarding
   useEffect(() => {
-    if (completionMessage) {
-      setMessages((prev) => [...prev, { role: "ai", content: completionMessage }]);
-      onCompletionShown?.();
-    }
-  }, [completionMessage, onCompletionShown]);
+    if (goalPlanningDemo || !completionMessage) return;
+    setMessages((prev) => [...prev, { role: "ai", content: completionMessage }]);
+    onCompletionShown?.();
+  }, [completionMessage, onCompletionShown, goalPlanningDemo]);
+
+  // Inject initial AI message (e.g. from /execute portfolio context)
+  const initialMessageSentRef = useRef(false);
+  useEffect(() => {
+    if (goalPlanningDemo || !initialAiMessage || initialMessageSentRef.current) return;
+    initialMessageSentRef.current = true;
+    setMessages((prev) => [...prev, { role: "ai", content: initialAiMessage }]);
+  }, [initialAiMessage, goalPlanningDemo]);
+
+  useEffect(() => {
+    if (!goalPlanningDemo) return;
+    goalDemoTurnRef.current = 0;
+    setDemoCheckpoint(0);
+  }, [goalPlanningDemo]);
 
   useEffect(() => {
     let mounted = true;
@@ -503,6 +595,8 @@ const AIChatPanel = ({ isOpen, onClose, embedded = false, chatFirst = false, com
   const stopOnboarding = useCallback(() => {
     setOnboardingActive(false);
     setAwaitingResponse(false);
+    setCompletedSections([]);
+    setExpandedReviewSection(null);
     setMessages((prev) => [
       ...prev,
       { role: "ai", content: "No problem — I've saved your progress. You can resume anytime by tapping **Voice onboarding** again." },
@@ -526,6 +620,7 @@ const AIChatPanel = ({ isOpen, onClose, embedded = false, chatFirst = false, com
       const kudosId = kudosCounterRef.current;
       kudosCounterRef.current += 1;
 
+      setCompletedSections((prev) => [...new Set([...prev, onboardingSection])]);
       setMessages((prev) => [
         ...prev,
         { role: "ai", content: "", type: "summary", sectionName: sName, summaryNotes: notes },
@@ -556,6 +651,79 @@ const AIChatPanel = ({ isOpen, onClose, embedded = false, chatFirst = false, com
     }, 500);
   }, [onboardingSection]);
 
+  const handleGoalDemoUserMessage = useCallback((text: string) => {
+    setMessages((prev) => [...prev, { role: "user", content: text }]);
+    setInput("");
+    setInterimTranscript("");
+    setShowFirstUseHint(false);
+
+    const t = goalDemoTurnRef.current;
+    goalDemoTurnRef.current += 1;
+
+    setIsTyping(true);
+    window.setTimeout(() => {
+      const ex = demoExpenseRef.current;
+      const mo = demoEmergencyMonthsRef.current;
+      const cushion = mo * ex;
+      const cushionStr = formatDemoINR(cushion);
+
+      if (t === 0) {
+        const short = text.length > 120 ? `${text.slice(0, 120)}…` : text;
+        setMessages((prev) => [
+          ...prev,
+          {
+            role: "ai",
+            content: `Thanks — *"${short}"* noted.\n\n**Time horizon** turns a wish into a plan: roughly **when** will you need money for these goals — within **12 months**, in **3–5 years**, or **longer**? (Different goals can have different timelines.)`,
+          },
+        ]);
+        setDemoCheckpoint(1);
+      } else if (t === 1) {
+        setMessages((prev) => [
+          ...prev,
+          {
+            role: "ai",
+            content:
+              "Before we talk allocation, let's anchor **liquidity** — your **emergency fund**. Advisory practice is often **3–12 months of expenses** (not income), sized to how stable your cash flows are.\n\nUse the sliders below — amounts update live for **you**.",
+          },
+          { role: "ai", content: "", type: "goal-demo-widget", widgetKind: "emergency-fund" },
+        ]);
+        setDemoCheckpoint(2);
+      } else if (t === 2) {
+        setMessages((prev) => [
+          ...prev,
+          {
+            role: "ai",
+            content:
+              "**Portfolio fit:** does your current mix (equity, debt, gold, cash) feel aligned with **your goals'** time horizons — and with holding **" +
+              cushionStr +
+              "** as a liquid buffer first? Anything feel off?",
+          },
+        ]);
+        setDemoCheckpoint(3);
+      } else if (t === 3) {
+        setMessages((prev) => [
+          ...prev,
+          {
+            role: "ai",
+            content:
+              `**Wrap-up (demo)** — Your suggested **emergency corpus** is **${cushionStr}** (~${mo} months × ${formatDemoINR(ex)} expenses). Typical next steps: **(1)** park the buffer in liquid / sweep options, **(2)** route SIPs toward **your goals**, **(3)** review in ~90 days. This walkthrough did not call the server — chat normally connects to your account.`,
+          },
+        ]);
+        setDemoCheckpoint(4);
+      } else {
+        setMessages((prev) => [
+          ...prev,
+          {
+            role: "ai",
+            content:
+              "That's the guided pass. Add real goals from **Goals** anytime; I'll help you stress-test funding and timeline when you use the full experience.",
+          },
+        ]);
+      }
+      setIsTyping(false);
+    }, 650);
+  }, []);
+
   const sendMessage = useCallback(async (text: string) => {
     if (!text.trim()) return;
     const trimmed = text.trim();
@@ -566,6 +734,11 @@ const AIChatPanel = ({ isOpen, onClose, embedded = false, chatFirst = false, com
       messages.forEach((m) => { if (m.type === "kudos" && m.kudosId !== undefined) next.add(m.kudosId); });
       return next;
     });
+
+    if (goalPlanningDemo) {
+      handleGoalDemoUserMessage(trimmed);
+      return;
+    }
 
     // Intercept during onboarding
     if (onboardingActive && awaitingResponse) {
@@ -591,13 +764,23 @@ const AIChatPanel = ({ isOpen, onClose, embedded = false, chatFirst = false, com
         : (err?.message ? `Request failed: ${err.message}` : "Sorry, something went wrong. Please try again.");
       setMessages((prev) => [...prev, { role: "ai", content: fallback }]);
     }
-  }, [ensureSession, clientContext, onboardingActive, awaitingResponse, handleOnboardingResponse, messages]);
+  }, [
+    ensureSession,
+    clientContext,
+    onboardingActive,
+    awaitingResponse,
+    handleOnboardingResponse,
+    messages,
+    goalPlanningDemo,
+    handleGoalDemoUserMessage,
+  ]);
 
   const sendMessageRef = useRef(sendMessage);
   sendMessageRef.current = sendMessage;
 
   // One-shot user message from Goals / other screens (queued before navigate to /chat).
   useEffect(() => {
+    if (goalPlanningDemo) return;
     try {
       const raw = sessionStorage.getItem(PENDING_CHAT_BOOTSTRAP_KEY);
       if (!raw) return;
@@ -611,7 +794,7 @@ const AIChatPanel = ({ isOpen, onClose, embedded = false, chatFirst = false, com
     } catch {
       // Ignore malformed storage.
     }
-  }, []);
+  }, [goalPlanningDemo]);
 
   const toggleListening = useCallback(() => {
     setMicError(false);
@@ -674,9 +857,11 @@ const AIChatPanel = ({ isOpen, onClose, embedded = false, chatFirst = false, com
     setShowFirstUseHint(false);
   }, [micState, sendMessage]);
 
-  const embeddedSuggestions = chatFirst
-    ? ["Review my portfolio", "Life update", "Discover"]
-    : ["Why is my portfolio up today?"];
+  const embeddedSuggestions = goalPlanningDemo
+    ? ["Retirement · 15+ years", "Home down payment", "Education fund"]
+    : chatFirst
+      ? ["Review my portfolio", "Life update", "Discover"]
+      : ["Why is my portfolio up today?"];
 
   const hasMessages = messages.length > 0 || isTyping;
 
@@ -695,11 +880,19 @@ const AIChatPanel = ({ isOpen, onClose, embedded = false, chatFirst = false, com
           transition={{ duration: 0.2 }}
         >
           {msg.type === "section-start" ? (
-            /* ── Section label pill ── */
-            <div className="flex justify-center my-1">
+            /* ── Section label pill with time estimate ── */
+            <div className="flex flex-col items-center my-1 gap-0.5">
               <span className="rounded-full bg-primary/10 px-3 py-1 text-[10px] font-semibold text-primary tracking-wide">
                 {msg.content}
               </span>
+              {(() => {
+                const sectionIdx = CHAT_ONBOARDING_SECTIONS.findIndex(s => msg.content.includes(s.name));
+                return sectionIdx >= 0 ? (
+                  <span className="text-[9px] text-muted-foreground/70 italic">
+                    takes {CHAT_ONBOARDING_SECTIONS[sectionIdx].estimate}
+                  </span>
+                ) : null;
+              })()}
             </div>
           ) : msg.type === "summary" && msg.summaryNotes ? (
             /* ── Collapsible summary card ── */
@@ -711,6 +904,20 @@ const AIChatPanel = ({ isOpen, onClose, embedded = false, chatFirst = false, com
                 <KudosBubble text={msg.content} onDismiss={() => dismissKudos(msg.kudosId!)} />
               )}
             </AnimatePresence>
+          ) : msg.type === "goal-demo-widget" && msg.widgetKind === "emergency-fund" ? (
+            <div className="flex gap-2 items-start max-w-[95%]">
+              <TillyAvatar />
+              <div className="flex-1 min-w-0">
+                <GoalDemoEmergencyWidget
+                  incomeMonthly={demoIncome}
+                  expenseMonthly={demoExpense}
+                  emergencyMonths={demoEmergencyMonths}
+                  onIncomeChange={setDemoIncome}
+                  onExpenseChange={setDemoExpense}
+                  onMonthsChange={setDemoEmergencyMonths}
+                />
+              </div>
+            </div>
           ) : msg.role === "user" ? (
             <div className="flex justify-end">
               <div className="max-w-[80%] rounded-2xl rounded-tr-sm px-3 py-2 text-[12px] leading-relaxed text-primary-foreground"
@@ -720,21 +927,41 @@ const AIChatPanel = ({ isOpen, onClose, embedded = false, chatFirst = false, com
               </div>
             </div>
           ) : (
-            <div className={`flex gap-2 items-start ${msg.content.length > 600 ? "max-w-[95%]" : "max-w-[88%]"}`}>
-              <TillyAvatar />
-              <div
-                className={`rounded-2xl rounded-tl-sm px-3 py-2 text-[12px] leading-relaxed text-foreground/90 ${
-                  msg.content.length > 600
-                    ? "max-h-[60vh] overflow-y-auto border border-border/40 shadow-sm"
-                    : ""
-                }`}
-                style={{
-                  backgroundColor: "hsl(var(--tilly-bubble))",
-                  borderLeft: "2px solid hsla(38, 45%, 54%, 0.3)",
-                }}
-              >
-                <MarkdownMessage text={msg.content} />
+            <div className="flex flex-col gap-2">
+              <div className={`flex gap-2 items-start ${msg.content.length > 600 ? "max-w-[95%]" : "max-w-[88%]"}`}>
+                <TillyAvatar />
+                <div
+                  className={`rounded-2xl rounded-tl-sm px-3 py-2 text-[12px] leading-relaxed text-foreground/90 ${
+                    msg.content.length > 600
+                      ? "max-h-[60vh] overflow-y-auto border border-border/40 shadow-sm"
+                      : ""
+                  }`}
+                  style={{
+                    backgroundColor: "hsl(var(--tilly-bubble))",
+                    borderLeft: "2px solid hsla(38, 45%, 54%, 0.3)",
+                  }}
+                >
+                  <MarkdownMessage text={msg.content} />
+                </div>
               </div>
+              {showBackToInvest && i === 0 && msg.role === "ai" && (
+                <button
+                  onClick={() => navigate("/execute")}
+                  className="ml-7 mt-2 self-start flex items-center gap-3 rounded-xl px-4 py-3 transition-opacity hover:opacity-90"
+                  style={{ backgroundColor: "hsl(220, 40%, 20%)" }}
+                >
+                  <div className="flex flex-col">
+                    <span className="text-[10px] font-medium" style={{ color: "hsl(40, 50%, 70%)" }}>Ready to invest?</span>
+                    <span className="text-[13px] font-semibold" style={{ color: "hsl(40, 55%, 80%)" }}>View your plan</span>
+                  </div>
+                  <div
+                    className="flex h-7 w-7 items-center justify-center rounded-full"
+                    style={{ backgroundColor: "hsla(40, 55%, 65%, 0.2)" }}
+                  >
+                    <ArrowRight className="h-3.5 w-3.5" style={{ color: "hsl(40, 55%, 75%)" }} />
+                  </div>
+                </button>
+              )}
             </div>
           )}
         </motion.div>
@@ -776,6 +1003,22 @@ const AIChatPanel = ({ isOpen, onClose, embedded = false, chatFirst = false, com
   if (embedded) {
     return (
       <div className="flex h-full min-h-0 flex-col bg-background">
+        {goalPlanningDemo && (
+          <div className="shrink-0 z-20 border-b border-border/50 bg-background/95 px-4 pb-3 pt-[max(0.5rem,env(safe-area-inset-top))] backdrop-blur-sm">
+            <div className="flex items-start justify-between gap-2">
+              <div>
+                <p className="font-display text-lg font-semibold leading-tight text-foreground">Goal alignment</p>
+                <p className="mt-0.5 text-[10px] text-muted-foreground">Investment goals & portfolio fit · guided demo</p>
+              </div>
+              <span className="shrink-0 rounded-full border border-border/60 bg-muted/50 px-2 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-muted-foreground">
+                Demo
+              </span>
+            </div>
+            <div className="mt-3">
+              <GoalPlanningCheckpointRail activeIndex={demoCheckpoint} />
+            </div>
+          </div>
+        )}
         <AnimatePresence mode="wait">
           {!hasMessages ? (
             <motion.div
@@ -811,17 +1054,11 @@ const AIChatPanel = ({ isOpen, onClose, embedded = false, chatFirst = false, com
               transition={{ duration: 0.25 }}
               className="flex min-h-0 flex-1 flex-col"
             >
-              <div className="px-4 pb-1 pt-3 flex items-center justify-between gap-2">
-                <p className="text-[13px] font-medium text-muted-foreground/50">Ask Tilly</p>
-                <button
-                  type="button"
-                  onClick={startNewChat}
-                  className="rounded-full border border-border/60 bg-card px-3 py-1 text-[11px] font-medium text-muted-foreground transition-colors hover:bg-muted/60"
-                >
-                  New chat
-                </button>
-              </div>
-              <div ref={scrollRef} className="flex-1 space-y-2 overflow-y-auto px-4 py-2 pb-4">
+              <div
+                ref={scrollRef}
+                className="flex-1 space-y-2 overflow-y-auto px-4 pb-4"
+                style={{ paddingTop: goalPlanningDemo ? 12 : 48 }}
+              >
                 {renderMessages()}
               </div>
             </motion.div>
@@ -832,32 +1069,125 @@ const AIChatPanel = ({ isOpen, onClose, embedded = false, chatFirst = false, com
         <div className="mt-auto shrink-0">
           {/* Onboarding exit bar */}
           {onboardingActive && (
-            <div className="flex items-center justify-between px-4 py-2 border-t border-border/30 bg-muted/30">
-              <span className="text-[10px] font-medium text-muted-foreground">
-                Section {onboardingSection + 1} of 7 · {CHAT_ONBOARDING_SECTIONS[onboardingSection].name}
-              </span>
-              <motion.button
-                onClick={stopOnboarding}
-                className="flex items-center gap-1 rounded-full px-2.5 py-1 text-[10px] font-medium transition-all"
-                style={{
-                  background: "rgba(50, 110, 230, 0.18)",
-                  color: "#7ab8ff",
-                  border: "1px solid rgba(80, 150, 255, 0.5)",
-                  boxShadow: "0 0 12px -2px rgba(80, 150, 255, 0.3)",
-                }}
-                animate={{
-                  boxShadow: [
-                    "0 0 12px -2px rgba(80, 150, 255, 0.3)",
-                    "0 0 20px -2px rgba(80, 150, 255, 0.5)",
-                    "0 0 12px -2px rgba(80, 150, 255, 0.3)",
-                  ],
-                }}
-                transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
-                whileHover={{ scale: 1.02, backgroundColor: "rgba(50, 110, 230, 0.25)" }}
-              >
-                <Square className="h-2.5 w-2.5" />
-                Stop & return to chat
-              </motion.button>
+            <div className="border-t border-border/30 bg-muted/30">
+              <div className="flex items-center justify-between px-4 py-2">
+                <div className="flex flex-col">
+                  <span className="text-[10px] font-medium text-muted-foreground">
+                    Section {onboardingSection + 1} of 7 · {CHAT_ONBOARDING_SECTIONS[onboardingSection].name}
+                  </span>
+                  <span className="text-[9px] text-muted-foreground/70 italic">
+                    takes {CHAT_ONBOARDING_SECTIONS[onboardingSection].estimate}
+                  </span>
+                </div>
+                <motion.button
+                  onClick={stopOnboarding}
+                  className="flex items-center gap-1 rounded-full px-2.5 py-1 text-[10px] font-medium transition-all"
+                  style={{
+                    background: "rgba(50, 110, 230, 0.18)",
+                    color: "#7ab8ff",
+                    border: "1px solid rgba(80, 150, 255, 0.5)",
+                    boxShadow: "0 0 12px -2px rgba(80, 150, 255, 0.3)",
+                  }}
+                  animate={{
+                    boxShadow: [
+                      "0 0 12px -2px rgba(80, 150, 255, 0.3)",
+                      "0 0 20px -2px rgba(80, 150, 255, 0.5)",
+                      "0 0 12px -2px rgba(80, 150, 255, 0.3)",
+                    ],
+                  }}
+                  transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+                  whileHover={{ scale: 1.02, backgroundColor: "rgba(50, 110, 230, 0.25)" }}
+                >
+                  <Square className="h-2.5 w-2.5" />
+                  Stop
+                </motion.button>
+              </div>
+
+            </div>
+          )}
+
+          {/* Compact completed chip between messages and input */}
+          {onboardingActive && completedSections.length > 0 && (
+            <div className="px-4 pt-2 pb-1">
+              <div className="rounded-xl border border-border/40 bg-card/80 overflow-hidden">
+                {/* Chip row */}
+                <button
+                  onClick={() => setReviewChipOpen((p) => !p)}
+                  className="flex w-full items-center justify-between px-3 py-1.5 active:scale-[0.99] transition-transform"
+                >
+                  <div className="flex items-center gap-1.5">
+                    <div className="flex h-4 w-4 items-center justify-center rounded-full bg-emerald-500/15">
+                      <Check className="h-2.5 w-2.5 text-emerald-500" />
+                    </div>
+                    <span className="text-[11px] font-medium text-foreground">
+                      {completedSections.length} of 7 done
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-0.5">
+                    <span className="text-[10px] text-primary font-medium">review</span>
+                    {reviewChipOpen ? (
+                      <ChevronUp className="h-3 w-3 text-primary" />
+                    ) : (
+                      <ChevronDown className="h-3 w-3 text-primary" />
+                    )}
+                  </div>
+                </button>
+
+                {/* Expandable review list */}
+                <AnimatePresence>
+                  {reviewChipOpen && (
+                    <motion.div
+                      initial={{ height: 0, opacity: 0 }}
+                      animate={{ height: "auto", opacity: 1 }}
+                      exit={{ height: 0, opacity: 0 }}
+                      transition={{ duration: 0.25 }}
+                      className="overflow-hidden"
+                    >
+                      <div className="border-t border-border/30 px-3 py-2 max-h-[25vh] overflow-y-auto space-y-1">
+                        {completedSections.map((idx) => (
+                          <div key={idx} className="rounded-lg bg-muted/30">
+                            <button
+                              onClick={(e) => { e.stopPropagation(); setExpandedReviewSection(expandedReviewSection === idx ? null : idx); }}
+                              className="flex w-full items-center justify-between px-2.5 py-1.5 active:scale-[0.98] transition-transform"
+                            >
+                              <div className="flex items-center gap-1.5">
+                                <div className="flex h-3.5 w-3.5 items-center justify-center rounded-full bg-emerald-500/15">
+                                  <Check className="h-2 w-2 text-emerald-500" />
+                                </div>
+                                <span className="text-[10px] font-medium text-foreground">{CHAT_ONBOARDING_SECTIONS[idx].name}</span>
+                              </div>
+                              {expandedReviewSection === idx ? (
+                                <ChevronUp className="h-2.5 w-2.5 text-muted-foreground" />
+                              ) : (
+                                <ChevronDown className="h-2.5 w-2.5 text-muted-foreground" />
+                              )}
+                            </button>
+                            <AnimatePresence>
+                              {expandedReviewSection === idx && CHAT_ONBOARDING_NOTES[idx] && (
+                                <motion.div
+                                  initial={{ height: 0, opacity: 0 }}
+                                  animate={{ height: "auto", opacity: 1 }}
+                                  exit={{ height: 0, opacity: 0 }}
+                                  transition={{ duration: 0.2 }}
+                                  className="overflow-hidden"
+                                >
+                                  <div className="px-2.5 pb-1.5 pl-7">
+                                    <ul className="space-y-0.5">
+                                      {CHAT_ONBOARDING_NOTES[idx].map((note, ni) => (
+                                        <li key={ni} className="text-[10px] text-muted-foreground leading-relaxed">• {note}</li>
+                                      ))}
+                                    </ul>
+                                  </div>
+                                </motion.div>
+                              )}
+                            </AnimatePresence>
+                          </div>
+                        ))}
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
             </div>
           )}
 
@@ -877,12 +1207,14 @@ const AIChatPanel = ({ isOpen, onClose, embedded = false, chatFirst = false, com
                   {micState === "listening" ? <MicOff className="h-4.5 w-4.5" /> : <Mic className="h-4.5 w-4.5" />}
                 </button>
                 <div className="flex flex-wrap justify-center gap-2">
-                  <button
-                    onClick={startOnboarding}
-                    className="shrink-0 whitespace-nowrap rounded-full border border-primary/30 bg-primary/10 px-3 py-1.5 text-[11px] font-medium text-primary shadow-sm transition-colors hover:bg-primary/20 flex items-center gap-1.5"
-                  >
-                    <Mic className="h-3 w-3" /> Voice onboarding
-                  </button>
+                  {!goalPlanningDemo && (
+                    <button
+                      onClick={startOnboarding}
+                      className="shrink-0 whitespace-nowrap rounded-full border border-primary/30 bg-primary/10 px-3 py-1.5 text-[11px] font-medium text-primary shadow-sm transition-colors hover:bg-primary/20 flex items-center gap-1.5"
+                    >
+                      <Mic className="h-3 w-3" /> Voice onboarding
+                    </button>
+                  )}
                   {embeddedSuggestions.map((q) => (
                     <button
                       key={q}
@@ -896,12 +1228,14 @@ const AIChatPanel = ({ isOpen, onClose, embedded = false, chatFirst = false, com
               </div>
             ) : (
               <div className="flex flex-wrap justify-center gap-2 px-4 pb-1.5">
-                <button
-                  onClick={startOnboarding}
-                  className="shrink-0 whitespace-nowrap rounded-full border border-primary/30 bg-primary/10 px-3 py-1.5 text-[11px] font-medium text-primary shadow-sm transition-colors hover:bg-primary/20 flex items-center gap-1.5"
-                >
-                  <Mic className="h-3 w-3" /> Voice onboarding
-                </button>
+                {!goalPlanningDemo && (
+                  <button
+                    onClick={startOnboarding}
+                    className="shrink-0 whitespace-nowrap rounded-full border border-primary/30 bg-primary/10 px-3 py-1.5 text-[11px] font-medium text-primary shadow-sm transition-colors hover:bg-primary/20 flex items-center gap-1.5"
+                  >
+                    <Mic className="h-3 w-3" /> Voice onboarding
+                  </button>
+                )}
                 {embeddedSuggestions.map((q) => (
                   <button
                     key={q}
@@ -926,7 +1260,9 @@ const AIChatPanel = ({ isOpen, onClose, embedded = false, chatFirst = false, com
               <input
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
-                placeholder={onboardingActive ? "Speak or type your answer…" : "Ask Tilly…"}
+                placeholder={
+                  onboardingActive ? "Speak or type your answer…" : goalPlanningDemo ? "Reply to Tilly…" : "Ask Tilly…"
+                }
                 className="flex-1 bg-transparent text-[12px] text-foreground outline-none placeholder:text-muted-foreground/40"
               />
             </div>
@@ -972,7 +1308,7 @@ const AIChatPanel = ({ isOpen, onClose, embedded = false, chatFirst = false, com
         >
           <div className="flex items-center justify-between px-5 py-4" />
 
-          <div ref={scrollRef} className="flex-1 overflow-y-auto px-4 py-4 space-y-2">
+          <div ref={scrollRef} className="flex-1 overflow-y-auto px-4 pb-4 space-y-2" style={{ paddingTop: 48 }}>
             {!hasMessages && (
               <motion.div
                 initial={{ opacity: 0 }}

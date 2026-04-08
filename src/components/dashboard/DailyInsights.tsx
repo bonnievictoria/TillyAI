@@ -84,11 +84,10 @@ const DailyInsights = () => {
 
   return (
     <>
-      <div className="mt-3">
-        <div className="flex items-center gap-1.5 mb-2">
-          <Sparkles className="h-3 w-3 text-accent" />
-          <h3 className="text-[11px] font-semibold text-foreground">Daily Insights</h3>
-          <span className="text-[9px] text-muted-foreground/60 ml-auto">Curated for you</span>
+      <div>
+        <div className="flex items-center gap-1.5 mb-3">
+          <p className="text-[10px] font-semibold tracking-[0.1em] uppercase text-muted-foreground/70">Daily Insights</p>
+          <span className="text-[9px] text-muted-foreground/40 ml-auto">Curated for you</span>
         </div>
 
         <div className="flex gap-2.5 overflow-x-auto pb-2 -mx-5 px-5 scrollbar-hide" style={{ scrollbarWidth: "none" }}>

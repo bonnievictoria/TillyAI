@@ -11,6 +11,7 @@ import {
   Calendar,
   Target,
   Wallet,
+  ShieldCheck,
 } from "lucide-react";
 import {
   Accordion,
@@ -235,6 +236,7 @@ const NewOnboardingFlow = ({ onComplete }: NewOnboardingFlowProps) => {
   const [horizon, setHorizon] = useState("");
   const [incomeRange, setIncomeRange] = useState<[number, number]>([30000000, 70000000]);
   const [expenseRange, setExpenseRange] = useState<[number, number]>([20000000, 50000000]);
+  const [investmentView, setInvestmentView] = useState("");
 
   const toggleGoal = (g: string) =>
     setSelectedGoals((prev) =>
@@ -527,6 +529,46 @@ const NewOnboardingFlow = ({ onComplete }: NewOnboardingFlowProps) => {
                     onChange={setExpenseRange}
                     subtext={`That's roughly ${expensePct}% of your income range`}
                   />
+                </AccordionContent>
+              </AccordionItem>
+
+              {/* Segment 4: Risk Assessment */}
+              <AccordionItem
+                value="risk"
+                className="border rounded-xl bg-card overflow-hidden border-border/60"
+              >
+                <AccordionTrigger className="px-4 py-3 hover:no-underline">
+                  <div className="flex items-center gap-3">
+                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-secondary">
+                      <ShieldCheck className="h-[20px] w-[20px] text-muted-foreground" />
+                    </div>
+                    <div className="text-left">
+                      <p className="text-sm font-semibold text-foreground">Risk Assessment</p>
+                    </div>
+                  </div>
+                </AccordionTrigger>
+                <AccordionContent className="px-4 pb-4">
+                  <p className="text-xs font-medium text-muted-foreground mb-2.5">
+                    What is your investment view?
+                  </p>
+                  <div className="flex flex-wrap gap-2">
+                    {["Conservative", "Moderate", "Risk Taking"].map((option) => {
+                      const isSelected = investmentView === option;
+                      return (
+                        <button
+                          key={option}
+                          onClick={() => setInvestmentView(option)}
+                          className={`px-4 py-2.5 rounded-xl text-xs font-medium text-center transition-all ${
+                            isSelected
+                              ? "bg-primary text-primary-foreground"
+                              : "bg-secondary text-secondary-foreground hover:bg-muted"
+                          }`}
+                        >
+                          {option}
+                        </button>
+                      );
+                    })}
+                  </div>
                 </AccordionContent>
               </AccordionItem>
             </Accordion>

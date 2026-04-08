@@ -2,6 +2,7 @@ import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ArrowRight, Shield, TrendingUp, Sparkles, ChevronDown, ArrowLeft, Loader2 } from "lucide-react";
 import AccountDiscoveryModal from "./AccountDiscoveryModal";
+import prozprLogo from "@/assets/prozpr-logo-v2.png";
 import { signup, login } from "@/lib/api";
 import { useAuth } from "@/context/AuthContext";
 import {
@@ -74,9 +75,6 @@ const WelcomeScreen = ({ onNext }: WelcomeScreenProps) => {
       }
     }
     await refresh();
-    sessionStorage.removeItem("completedTellUs");
-    sessionStorage.removeItem("completedLinkAccounts");
-    sessionStorage.setItem("onboardingComplete", "false");
     setLoading(false);
     setShowModal(true);
   };
@@ -158,7 +156,11 @@ const WelcomeScreen = ({ onNext }: WelcomeScreenProps) => {
             </>
           )}
         </motion.button>
-        <AccountDiscoveryModal open={showModal} onClose={() => setShowModal(false)} />
+        <AccountDiscoveryModal
+          open={showModal}
+          onClose={() => setShowModal(false)}
+          afterSyncNavigate="/link-accounts"
+        />
       </div>
     );
   }
@@ -172,18 +174,14 @@ const WelcomeScreen = ({ onNext }: WelcomeScreenProps) => {
         transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
         className="flex-1 flex flex-col"
       >
-        <h1 className="font-display text-[2.75rem] leading-[1.05] tracking-tight text-foreground mb-2">
-          Wealth, <span className="italic text-wealth-navy-light">Unified.</span>
-        </h1>
+        <div className="flex flex-col items-center text-center mb-4 mt-12">
+          <img src={prozprLogo} alt="Prozpr — Wealth, Unified." className="w-[345px] h-auto" />
+        </div>
 
-        <p className="text-muted-foreground text-sm leading-relaxed tracking-wide font-medium mb-8 max-w-[260px]">
-          Own your future, step into smarter wealth.
-        </p>
-
-        <div className="space-y-2.5 mb-auto">
+        <div className="mt-0 space-y-2.5 mb-auto">
           {[
             { icon: TrendingUp, label: "Track all investments", sub: "Mutual funds, stocks and more" },
-            { icon: Sparkles, label: "Your own AI wealth advisor", sub: "Personalized recommendations" },
+            { icon: Sparkles, label: "Tilly, your own AI wealth advisor", sub: "Personalized recommendations" },
             { icon: Shield, label: "Bank-grade security", sub: "256-bit encryption" },
           ].map((item, i) => (
             <motion.div
