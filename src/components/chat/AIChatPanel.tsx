@@ -13,6 +13,7 @@ import {
   type PortfolioDetail,
 } from "@/lib/api";
 import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 
 const PENDING_CHAT_BOOTSTRAP_KEY = "asktilly.pendingChatBootstrap.v1";
 
@@ -49,10 +50,21 @@ interface Message {
   widgetKind?: "emergency-fund";
 }
 
-const GOAL_DEMO_CHECKPOINT_LABELS = ["Goal focus", "Horizon", "Safety net", "Portfolio fit", "Wrap-up"] as const;
+const GOAL_DEMO_CHECKPOINT_LABELS = ["Goals", "Corpus", "Deadline", "Inflation", "Review", "Summary"] as const;
 
 function formatDemoINR(n: number): string {
   return `₹${Math.round(Math.max(0, n)).toLocaleString("en-IN")}`;
+}
+
+function splitGoalItems(text: string): string[] {
+  return text
+    .split(/\n|,|;/g)
+    .map((s) => s.trim())
+    .filter(Boolean);
+}
+
+function escapeTableCell(text: string): string {
+  return text.replace(/\|/g, "\\|").replace(/\n/g, " ");
 }
 
 /** Interactive emergency-fund suggestion for goal-planning demo (client-side only). */
@@ -238,6 +250,7 @@ const MarkdownMessage = ({ text }: { text: string }) => {
   return (
     <div className={isLong ? "prose-doc" : "prose-chat"}>
       <ReactMarkdown
+        remarkPlugins={[remarkGfm]}
         components={{
           h1: ({ children }) => <h1 className="text-[15px] font-bold text-foreground mt-3 mb-1.5">{children}</h1>,
           h2: ({ children }) => <h2 className="text-[14px] font-bold text-foreground mt-3 mb-1">{children}</h2>,
@@ -248,6 +261,15 @@ const MarkdownMessage = ({ text }: { text: string }) => {
           ul: ({ children }) => <ul className="list-disc list-outside pl-4 mb-2 space-y-0.5">{children}</ul>,
           ol: ({ children }) => <ol className="list-decimal list-outside pl-4 mb-2 space-y-0.5">{children}</ol>,
           li: ({ children }) => <li className="text-[12px] leading-relaxed">{children}</li>,
+          table: ({ children }) => (
+            <div className="mb-2 overflow-x-auto rounded-xl border border-border/60">
+              <table className="w-full border-collapse text-[11px]">{children}</table>
+            </div>
+          ),
+          thead: ({ children }) => <thead className="bg-muted/40">{children}</thead>,
+          tr: ({ children }) => <tr className="border-b border-border/50 last:border-0">{children}</tr>,
+          th: ({ children }) => <th className="px-2.5 py-2 text-left font-semibold text-foreground">{children}</th>,
+          td: ({ children }) => <td className="px-2.5 py-2 align-top text-foreground/90">{children}</td>,
           blockquote: ({ children }) => (
             <blockquote className="border-l-2 border-primary/40 pl-3 my-2 text-[12px] text-foreground/80 italic">
               {children}
@@ -431,9 +453,9 @@ const KudosBubble = ({ text, onDismiss }: { text: string; onDismiss: () => void 
   );
 };
 
-const GOAL_DEMO_INTRO = `Hi — I'm **Tilly**. In this guided **goal alignment** session (demo — nothing is saved yet), we'll line up what you want to achieve with how your **portfolio** can support it.
+const GOAL_DEMO_INTRO = `Hi — I'm **Tilly**. I'll help you shape a clear, investable goal plan in a few quick steps.
 
-**Goal focus:** what **financial goals** matter most to you right now — retirement, education, a home, or something else? Mention **one or several**; we'll map them together.`;
+Let's start with outcomes: what financial goals are you planning for (for example: retirement, home, education, travel, business)? You can share one or multiple goals.`;
 
 const AIChatPanel = ({
   isOpen,
@@ -467,7 +489,16 @@ const AIChatPanel = ({
   const [demoIncome, setDemoIncome] = useState(100000);
   const [demoExpense, setDemoExpense] = useState(60000);
   const [demoEmergencyMonths, setDemoEmergencyMonths] = useState(6);
-  const goalDemoTurnRef = useRef(0);
+  const goalFlowRef = useRef<{ stage: "goals" | "corpus" | "deadline" | "inflation" | "notes" | "done"; index: number }>({
+    stage: "goals",
+    index: 0,
+  });
+  const goalRowsRef = useRef<Array<{ goal: string; corpusToday: string; deadline: string }>>([]);
+  const goalInputsRef = useRef({
+    goals: "",
+    inflation: "",
+    notes: "",
+  });
   const demoIncomeRef = useRef(demoIncome);
   const demoExpenseRef = useRef(demoExpense);
   const demoEmergencyMonthsRef = useRef(demoEmergencyMonths);
@@ -513,7 +544,9 @@ const AIChatPanel = ({
 
   useEffect(() => {
     if (!goalPlanningDemo) return;
-    goalDemoTurnRef.current = 0;
+    goalFlowRef.current = { stage: "goals", index: 0 };
+    goalRowsRef.current = [];
+    goalInputsRef.current = { goals: "", inflation: "", notes: "" };
     setDemoCheckpoint(0);
   }, [goalPlanningDemo]);
 
@@ -657,68 +690,89 @@ const AIChatPanel = ({
     setInterimTranscript("");
     setShowFirstUseHint(false);
 
-    const t = goalDemoTurnRef.current;
-    goalDemoTurnRef.current += 1;
-
     setIsTyping(true);
     window.setTimeout(() => {
-      const ex = demoExpenseRef.current;
-      const mo = demoEmergencyMonthsRef.current;
-      const cushion = mo * ex;
-      const cushionStr = formatDemoINR(cushion);
-
-      if (t === 0) {
-        const short = text.length > 120 ? `${text.slice(0, 120)}…` : text;
+      const flow = goalFlowRef.current;
+      const inputs = goalInputsRef.current;
+      if (flow.stage === "goals") {
+        const items = splitGoalItems(text);
+        goalRowsRef.current = (items.length ? items : [text.trim()]).map((g) => ({
+          goal: g,
+          corpusToday: "",
+          deadline: "",
+        }));
+        inputs.goals = goalRowsRef.current.map((r) => r.goal).join(", ");
+        flow.stage = "corpus";
+        flow.index = 0;
+        const first = goalRowsRef.current[0]?.goal || "this goal";
         setMessages((prev) => [
           ...prev,
           {
             role: "ai",
-            content: `Thanks — *"${short}"* noted.\n\n**Time horizon** turns a wish into a plan: roughly **when** will you need money for these goals — within **12 months**, in **3–5 years**, or **longer**? (Different goals can have different timelines.)`,
+            content: `Great. Let's do this one by one.\n\nFor **${first}**, what corpus is needed in **today's value**?`,
           },
         ]);
         setDemoCheckpoint(1);
-      } else if (t === 1) {
+      } else if (flow.stage === "corpus") {
+        if (goalRowsRef.current[flow.index]) goalRowsRef.current[flow.index].corpusToday = text;
+        const name = goalRowsRef.current[flow.index]?.goal || "this goal";
+        flow.stage = "deadline";
         setMessages((prev) => [
           ...prev,
-          {
-            role: "ai",
-            content:
-              "Before we talk allocation, let's anchor **liquidity** — your **emergency fund**. Advisory practice is often **3–12 months of expenses** (not income), sized to how stable your cash flows are.\n\nUse the sliders below — amounts update live for **you**.",
-          },
-          { role: "ai", content: "", type: "goal-demo-widget", widgetKind: "emergency-fund" },
+          { role: "ai", content: `Noted.\n\nWhat is the **deadline (month/year)** for **${name}**?` },
         ]);
         setDemoCheckpoint(2);
-      } else if (t === 2) {
+      } else if (flow.stage === "deadline") {
+        if (goalRowsRef.current[flow.index]) goalRowsRef.current[flow.index].deadline = text;
+        if (flow.index < goalRowsRef.current.length - 1) {
+          flow.index += 1;
+          const next = goalRowsRef.current[flow.index]?.goal || "next goal";
+          flow.stage = "corpus";
+          setMessages((prev) => [
+            ...prev,
+            { role: "ai", content: `Perfect.\n\nNow for **${next}**, what corpus is needed in today's value?` },
+          ]);
+          setDemoCheckpoint(1);
+        } else {
+          flow.stage = "inflation";
+          setMessages((prev) => [
+            ...prev,
+            { role: "ai", content: `Great, captured all goals.\n\nWhat annual inflation rate should I use for planning?` },
+          ]);
+          setDemoCheckpoint(3);
+        }
+      } else if (flow.stage === "inflation") {
+        inputs.inflation = text;
+        flow.stage = "notes";
         setMessages((prev) => [
           ...prev,
-          {
-            role: "ai",
-            content:
-              "**Portfolio fit:** does your current mix (equity, debt, gold, cash) feel aligned with **your goals'** time horizons — and with holding **" +
-              cushionStr +
-              "** as a liquid buffer first? Anything feel off?",
-          },
-        ]);
-        setDemoCheckpoint(3);
-      } else if (t === 3) {
-        setMessages((prev) => [
-          ...prev,
-          {
-            role: "ai",
-            content:
-              `**Wrap-up (demo)** — Your suggested **emergency corpus** is **${cushionStr}** (~${mo} months × ${formatDemoINR(ex)} expenses). Typical next steps: **(1)** park the buffer in liquid / sweep options, **(2)** route SIPs toward **your goals**, **(3)** review in ~90 days. This walkthrough did not call the server — chat normally connects to your account.`,
-          },
+          { role: "ai", content: "Any additional details to consider? (SIPs, bonuses, constraints, risk limits)" },
         ]);
         setDemoCheckpoint(4);
+      } else if (flow.stage === "notes") {
+        inputs.notes = text;
+        const rows = goalRowsRef.current;
+        const tableRows = rows
+          .map((r, i) => {
+            const inf = i === 0 ? (inputs.inflation || "-") : "—";
+            const details = i === 0 ? (inputs.notes || "-") : "—";
+            return `| ${escapeTableCell(r.goal || "-")} | ${escapeTableCell(r.corpusToday || "-")} | ${escapeTableCell(r.deadline || "-")} | ${escapeTableCell(inf)} | ${escapeTableCell(details)} |`;
+          })
+          .join("\n");
+        const summary =
+          `Excellent. Here's your captured goal plan:\n\n` +
+          `| Goal | Target Corpus (today value) | Deadline (month/year) | Inflation Assumed | Important Details |\n` +
+          `|---|---|---|---|---|\n` +
+          `${tableRows}\n\n` +
+          `### Suggested next moves\n` +
+          `1. Convert each corpus into required monthly run-rate.\n` +
+          `2. Sequence funding by timeline.\n` +
+          `3. Review every quarter and update assumptions.`;
+        flow.stage = "done";
+        setMessages((prev) => [...prev, { role: "ai", content: summary }]);
+        setDemoCheckpoint(5);
       } else {
-        setMessages((prev) => [
-          ...prev,
-          {
-            role: "ai",
-            content:
-              "That's the guided pass. Add real goals from **Goals** anytime; I'll help you stress-test funding and timeline when you use the full experience.",
-          },
-        ]);
+        setMessages((prev) => [...prev, { role: "ai", content: "Share edits and I'll regenerate the table instantly." }]);
       }
       setIsTyping(false);
     }, 650);
@@ -1008,10 +1062,10 @@ const AIChatPanel = ({
             <div className="flex items-start justify-between gap-2">
               <div>
                 <p className="font-display text-lg font-semibold leading-tight text-foreground">Goal alignment</p>
-                <p className="mt-0.5 text-[10px] text-muted-foreground">Investment goals & portfolio fit · guided demo</p>
+                <p className="mt-0.5 text-[10px] text-muted-foreground">Investment goals & portfolio fit · guided session</p>
               </div>
               <span className="shrink-0 rounded-full border border-border/60 bg-muted/50 px-2 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-muted-foreground">
-                Demo
+                Guided
               </span>
             </div>
             <div className="mt-3">

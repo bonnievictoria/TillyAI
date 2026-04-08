@@ -1,6 +1,6 @@
 import { useState, useCallback, useMemo, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { ArrowLeft, Copy, Plus, Check, Target, Clock, Flag, Pencil, Loader2, MessageCircle, Sparkles } from "lucide-react";
+import { ArrowLeft, Copy, Plus, Check, Target, Clock, Flag, Pencil, Loader2, MessageCircle, Sparkles, Home, GraduationCap, Plane, BriefcaseBusiness, Heart, Car, Landmark, Trophy } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "@/hooks/use-toast";
 import BottomNav from "@/components/BottomNav";
@@ -62,22 +62,30 @@ const formatCompact = (v: number): string => {
   return `₹${v.toLocaleString("en-IN")}`;
 };
 
+function goalIconFromName(name: string): React.ReactNode {
+  const s = name.toLowerCase();
+  if (s.includes("home") || s.includes("house")) return <Home className="h-4 w-4" strokeWidth={2} />;
+  if (s.includes("educat") || s.includes("school") || s.includes("college")) return <GraduationCap className="h-4 w-4" strokeWidth={2} />;
+  if (s.includes("travel") || s.includes("trip") || s.includes("vacation")) return <Plane className="h-4 w-4" strokeWidth={2} />;
+  if (s.includes("retire")) return <BriefcaseBusiness className="h-4 w-4" strokeWidth={2} />;
+  if (s.includes("car") || s.includes("vehicle")) return <Car className="h-4 w-4" strokeWidth={2} />;
+  if (s.includes("wedding") || s.includes("marriage")) return <Heart className="h-4 w-4" strokeWidth={2} />;
+  if (s.includes("emergency")) return <Landmark className="h-4 w-4" strokeWidth={2} />;
+  return <Trophy className="h-4 w-4" strokeWidth={2} />;
+}
+
 const isGoalAchieved = (g: Goal): boolean =>
   Number.isFinite(g.targetAmount) && g.targetAmount > 0 && g.currentValue >= g.targetAmount;
 
-/**
- * Show the withdrawal / complete-goal flow when either:
- * - Total portfolio value is at least the goal target (you can fund completion from the portfolio), or
- * - Corpus already tracked on this goal is greater than the remaining shortfall (incl. fully funded).
- */
-const canRequestGoalAchievement = (g: Goal, portfolioTotal: number): boolean => {
-  if (!Number.isFinite(g.targetAmount) || g.targetAmount <= 0) return false;
-  const pt = Number.isFinite(portfolioTotal) && portfolioTotal >= 0 ? portfolioTotal : 0;
-  if (pt >= g.targetAmount) return true;
-  const cv = Number.isFinite(g.currentValue) ? g.currentValue : 0;
-  if (cv <= 0) return false;
-  const remaining = Math.max(0, g.targetAmount - cv);
-  return cv > remaining;
+/** Show withdrawal CTA only in the exact goal deadline month/year. */
+const isGoalDeadlineInCurrentMonth = (g: Goal): boolean => {
+  if (!g.targetDate?.trim()) return false;
+  const { month, year } = parseTargetDateParts(g.targetDate);
+  const monthIndex = months.indexOf(month);
+  const yearNum = Number(year);
+  if (monthIndex < 0 || !Number.isFinite(yearNum)) return false;
+  const now = new Date();
+  return monthIndex === now.getMonth() && yearNum === now.getFullYear();
 };
 
 const buildAchieveGoalChatMessage = (g: Goal): string => {
@@ -159,7 +167,7 @@ function goalFromApi(r: GoalResponse): Goal {
       .replace(/^-|-$/g, "") || "goal";
   return {
     id: String(r.id),
-    icon: <Target className="h-5 w-5" strokeWidth={1.75} />,
+    icon: goalIconFromName(r.name),
     label: r.name,
     slug,
     targetAmount,
@@ -333,7 +341,6 @@ const GoalPlanner = () => {
     () => computeGoalGamification(goals, userPortfolioTotal),
     [goals, userPortfolioTotal],
   );
-
   const totalInvested = goals.reduce((s, g) => s + g.investedAmount, 0);
   const totalCurrent = goals.reduce((s, g) => s + g.currentValue, 0);
   const overallGainPct = totalInvested > 0 ? ((totalCurrent - totalInvested) / totalInvested) * 100 : 0;
@@ -353,11 +360,11 @@ const GoalPlanner = () => {
 
   const openAchieveGoalInChat = useCallback(
     (goal: Goal) => {
-      if (!canRequestGoalAchievement(goal, userPortfolioTotal)) return;
+      if (!isGoalDeadlineInCurrentMonth(goal)) return;
       queueChatBootstrapMessage(buildAchieveGoalChatMessage(goal));
       navigate("/chat");
     },
-    [navigate, userPortfolioTotal],
+    [navigate],
   );
 
   const saveEdit = useCallback(async () => {
@@ -543,9 +550,9 @@ const GoalPlanner = () => {
     "w-full min-h-[48px] rounded-xl border border-input bg-background px-4 py-2.5 text-sm text-foreground shadow-sm transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring";
 
   return (
-    <div className="mobile-container min-h-screen bg-muted/40 pb-28">
+    <div className="mobile-container min-h-screen bg-background pb-28">
       {/* Sticky header */}
-      <header className="sticky top-0 z-40 border-b border-border/60 bg-background/85 backdrop-blur-md">
+      <header className="sticky top-0 z-40 border-b border-border bg-background">
         <div className="flex items-center gap-3 px-4 pt-[max(2.25rem,env(safe-area-inset-top))] pb-3">
           <button
             type="button"
@@ -570,33 +577,43 @@ const GoalPlanner = () => {
         </div>
       </header>
 
-      <main className="px-4 pt-4 space-y-5">
+      <motion.main
+        className="px-4 pt-4 space-y-5"
+        initial={{ opacity: 0, y: 8 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.35, ease: "easeOut" }}
+      >
         {/* Overview */}
-        <section className="overflow-hidden rounded-2xl border border-border/80 bg-card shadow-sm">
-          <div className="border-b border-border/60 bg-gradient-to-br from-primary/5 via-card to-card px-4 py-4 sm:px-5">
-            <p className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">Portfolio vs active targets</p>
-            <p className="mt-1 font-display text-3xl tabular-nums tracking-tight text-foreground">
-              {formatINR(gamification.displayCurrent)}
-              <span className="text-lg font-sans font-medium text-muted-foreground"> / </span>
-              <span className="text-xl font-sans font-semibold text-muted-foreground">
-                {gamification.totalTargetActive > 0
-                  ? formatINR(gamification.totalTargetActive)
-                  : goals.length === 0
-                    ? "—"
-                    : formatINR(0)}
-              </span>
-            </p>
-            <p className="mt-2 max-w-md text-xs leading-relaxed text-muted-foreground">
-              Completed goals reduce the numerator so totals reflect what you still need to allocate across open goals.
-            </p>
-          </div>
-          <div className="grid grid-cols-2 gap-px bg-border/60 sm:grid-cols-4">
-            <div className="bg-card p-4">
-              <div className="flex items-center gap-1.5 text-[11px] font-medium text-muted-foreground">
-                <Target className="h-3.5 w-3.5 opacity-70" />
-                Progress
+        <motion.section
+          className="overflow-hidden rounded-2xl border border-border bg-card"
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.32, delay: 0.05, ease: "easeOut" }}
+        >
+          <div
+            className="border-b border-border px-4 py-3"
+          >
+            <div className="flex items-start justify-between gap-2">
+              <div>
+                <p className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">Portfolio vs active target</p>
+                <p className="mt-1 font-display text-3xl tabular-nums tracking-tight text-foreground">
+                  {formatINR(gamification.displayCurrent)}
+                  <span className="text-lg font-sans font-medium text-muted-foreground"> / </span>
+                  <span className="text-xl font-sans font-semibold text-muted-foreground">
+                    {gamification.totalTargetActive > 0
+                      ? formatINR(gamification.totalTargetActive)
+                      : goals.length === 0
+                        ? "—"
+                        : formatINR(0)}
+                  </span>
+                </p>
               </div>
-              <p className="mt-1.5 text-xl font-semibold tabular-nums text-foreground">
+            </div>
+          </div>
+          <div className="grid grid-cols-4 gap-px bg-border">
+            <div className="bg-card/90 px-3 py-2.5">
+              <p className="text-[10px] text-muted-foreground">Progress</p>
+              <p className="mt-0.5 text-lg font-semibold tabular-nums text-foreground">
                 {gamification.totalTargetActive > 0
                   ? `${gamification.progressPctOverall.toFixed(1)}%`
                   : gamification.activeCount === 0 && goals.length > 0
@@ -604,66 +621,39 @@ const GoalPlanner = () => {
                     : "—"}
               </p>
             </div>
-            <div className="bg-card p-4">
-              <div className="flex items-center gap-1.5 text-[11px] font-medium text-muted-foreground">
-                <Clock className="h-3.5 w-3.5 opacity-70" />
-                Est. timeline
-              </div>
-              <p className="mt-1.5 text-sm font-semibold leading-snug text-foreground">{etaLabel(gamification)}</p>
+            <div className="bg-card/90 px-3 py-2.5">
+              <p className="text-[10px] text-muted-foreground">Status</p>
+              <p className="mt-0.5 text-sm font-semibold leading-snug text-foreground">Active</p>
             </div>
-            <div className="bg-card p-4">
-              <div className="flex items-center gap-1.5 text-[11px] font-medium text-muted-foreground">
-                <Flag className="h-3.5 w-3.5 opacity-70" />
-                Open goals
-              </div>
-              <p className="mt-1.5 text-xl font-semibold tabular-nums text-foreground">{gamification.activeCount}</p>
+            <div className="bg-card/90 px-3 py-2.5">
+              <p className="text-[10px] text-muted-foreground">Open</p>
+              <p className="mt-0.5 text-lg font-semibold tabular-nums text-foreground">{gamification.activeCount}</p>
             </div>
-            <div className="bg-card p-4">
-              <div className="flex items-center gap-1.5 text-[11px] font-medium text-muted-foreground">
-                <Check className="h-3.5 w-3.5 opacity-70" />
-                Completed
-              </div>
-              <p className="mt-1.5 text-xl font-semibold tabular-nums text-foreground">{gamification.achievedCount}</p>
+            <div className="bg-card/90 px-3 py-2.5">
+              <p className="text-[10px] text-muted-foreground">Done</p>
+              <p className="mt-0.5 text-lg font-semibold tabular-nums text-foreground">{gamification.achievedCount}</p>
             </div>
           </div>
-          <div className="h-2 bg-muted">
-            <motion.div
-              className="h-full bg-primary"
-              initial={false}
-              animate={{
-                width: `${gamification.totalTargetActive > 0 ? Math.min(100, gamification.progressPctOverall) : gamification.activeCount === 0 && goals.length > 0 ? 100 : 0}%`,
-              }}
-              transition={{ type: "spring", stiffness: 140, damping: 22 }}
-            />
-          </div>
-          {totalInvested > 0 && (
-            <div className="flex flex-wrap items-center justify-between gap-2 border-t border-border/60 px-4 py-3 text-xs text-muted-foreground">
-              <span>
-                Linked investments · <span className="font-medium text-foreground">{formatINR(totalInvested)}</span> invested →{" "}
-                <span className="font-medium text-foreground">{formatINR(totalCurrent)}</span> current
-              </span>
-              <span className={`font-semibold tabular-nums ${overallGainPct >= 0 ? "text-emerald-600 dark:text-emerald-400" : "text-destructive"}`}>
-                {overallGainPct >= 0 ? "+" : ""}
-                {overallGainPct.toFixed(1)}%
-              </span>
-            </div>
-          )}
-        </section>
+        </motion.section>
 
         {/* Goal list */}
-        <section>
-          <div className="mb-3 flex items-end justify-between gap-2">
+        <motion.section
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.32, delay: 0.1, ease: "easeOut" }}
+        >
+          <div className="mb-3 flex items-end justify-between gap-2 px-0.5">
             <h2 className="text-sm font-semibold text-foreground">Your goals</h2>
-            <span className="text-xs text-muted-foreground">{sortedGoals.length} total</span>
+            <span className="rounded-full border border-border/60 bg-card/80 px-2.5 py-0.5 text-[11px] text-muted-foreground">{sortedGoals.length} total</span>
           </div>
 
           {goalsLoading ? (
-            <div className="flex flex-col items-center justify-center rounded-2xl border border-border bg-card/60 py-16">
+            <div className="flex flex-col items-center justify-center rounded-2xl border border-border bg-card py-16">
               <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" aria-hidden />
               <p className="mt-3 text-sm text-muted-foreground">Loading your goals…</p>
             </div>
           ) : sortedGoals.length === 0 ? (
-            <div className="flex flex-col items-center rounded-2xl border border-dashed border-border bg-card/80 px-6 py-14 text-center">
+            <div className="flex flex-col items-center rounded-2xl border border-dashed border-border bg-card px-6 py-14 text-center">
               <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-muted">
                 <Target className="h-7 w-7 text-muted-foreground" strokeWidth={1.5} />
               </div>
@@ -683,18 +673,15 @@ const GoalPlanner = () => {
             <ul className="space-y-3">
               {sortedGoals.map((goal) => {
                 const achieved = isGoalAchieved(goal);
-                const showAchieve = canRequestGoalAchievement(goal, userPortfolioTotal);
+                const showAchieve = isGoalDeadlineInCurrentMonth(goal);
 
                 return (
-                  <motion.li
+                  <li
                     key={goal.id}
-                    layout
-                    initial={{ opacity: 0, y: 8 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    className={`overflow-hidden rounded-2xl border bg-card shadow-sm transition-[border-color,box-shadow] ${
+                    className={`overflow-hidden rounded-2xl border bg-card transition-colors ${
                       achieved
-                        ? "border-emerald-500/30 shadow-[0_1px_0_0_rgba(16,185,129,0.06)]"
-                        : "border-border/70"
+                        ? "border-emerald-500/30"
+                        : "border-border"
                     }`}
                   >
                     <div className="relative p-4 pb-3.5">
@@ -708,6 +695,9 @@ const GoalPlanner = () => {
                       </button>
                       <div className="pr-11">
                         <div className="flex flex-wrap items-center gap-2">
+                          <span className="grid h-7 w-7 place-items-center rounded-lg border border-border/60 bg-muted/40 text-muted-foreground">
+                            {goal.icon}
+                          </span>
                           <h3 className="font-semibold leading-snug tracking-tight text-foreground">{goal.label}</h3>
                           <span
                             className={`rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${priorityBadgeClass(goal.priority)}`}
@@ -729,11 +719,40 @@ const GoalPlanner = () => {
                             </>
                           ) : null}
                         </p>
+                        <div className="mt-2.5 flex items-center justify-between gap-2">
+                          <div className="min-w-0 flex-1 rounded-lg border border-border bg-muted/20 px-2 py-1.5">
+                            <div className="flex items-center justify-between gap-2">
+                              <span className="text-[10px] font-medium text-muted-foreground">Contribution progress</span>
+                              <span className="text-[10px] font-semibold tabular-nums text-foreground">
+                                {goal.targetAmount > 0 ? Math.round((Math.max(0, goal.investedAmount) / goal.targetAmount) * 100) : 0}%
+                              </span>
+                            </div>
+                            <div className="mt-1 h-1.5 rounded-full bg-muted">
+                              <motion.div
+                                className="h-full rounded-full"
+                                style={{ backgroundColor: "hsl(220, 52%, 28%)" }}
+                                initial={{ width: 0 }}
+                                animate={{
+                                  width: `${goal.targetAmount > 0 ? Math.min(100, Math.max(0, (goal.investedAmount / goal.targetAmount) * 100)) : 0}%`,
+                                }}
+                                transition={{ duration: 0.45, ease: "easeOut" }}
+                              />
+                            </div>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => openContribute(goal)}
+                            className="inline-flex min-h-[36px] items-center justify-center rounded-full border border-border bg-muted px-3.5 text-[11px] font-semibold text-foreground transition-colors hover:bg-muted/80"
+                            aria-label={`Contribute to goal: ${goal.label}`}
+                          >
+                            Contribute to this goal
+                          </button>
+                        </div>
                       </div>
                       {showAchieve && !achieved && (
-                        <div className="mt-3.5 rounded-xl border border-border/60 bg-muted/25 px-3 py-3">
+                        <div className="mt-3.5 rounded-2xl border border-border/60 bg-muted/35 px-3 py-3">
                           <p className="text-[11px] leading-relaxed text-muted-foreground">
-                            <span className="font-medium text-foreground/90">Portfolio can cover this target.</span>{" "}
+                            <span className="font-medium text-foreground/90">Goal deadline is this month.</span>{" "}
                             Open chat with Tilly to plan your withdrawal and close the goal.
                           </p>
                           <button
@@ -748,13 +767,13 @@ const GoalPlanner = () => {
                         </div>
                       )}
                     </div>
-                  </motion.li>
+                  </li>
                 );
               })}
             </ul>
           )}
-        </section>
-      </main>
+        </motion.section>
+      </motion.main>
 
       {/* Edit sheet */}
       <AnimatePresence>
@@ -1158,14 +1177,14 @@ const GoalPlanner = () => {
       <button
         type="button"
         onClick={() => navigate("/chat?mode=goal-planning")}
-        className="fixed bottom-[calc(5.5rem+env(safe-area-inset-bottom,0px))] right-4 z-30 flex max-w-[min(100vw-2rem,18rem)] items-center gap-2.5 rounded-full border border-primary/35 bg-primary py-3 pl-4 pr-5 text-left shadow-lg shadow-primary/25 transition-opacity hover:opacity-95 active:scale-[0.99]"
-        aria-label="Open goal alignment demo with Tilly"
+        className="fixed bottom-[calc(5.5rem+env(safe-area-inset-bottom,0px))] right-4 z-30 flex max-w-[min(100vw-2rem,18rem)] items-center gap-2.5 rounded-full border border-border bg-[#1E2D50] py-3 pl-4 pr-5 text-left transition-opacity hover:opacity-95 active:scale-[0.99]"
+        aria-label="Open goal alignment with Tilly"
       >
-        <Sparkles className="h-5 w-5 shrink-0 text-primary-foreground" aria-hidden />
+        <Sparkles className="h-5 w-5 shrink-0 text-white" aria-hidden />
         <span className="min-w-0">
-          <span className="block text-xs font-semibold leading-tight text-primary-foreground">Plan goals with Tilly</span>
-          <span className="mt-0.5 block text-[10px] font-normal leading-snug text-primary-foreground/90">
-            Goal alignment walkthrough · demo
+          <span className="block text-xs font-semibold leading-tight text-white">Plan goals with Tilly</span>
+          <span className="mt-0.5 block text-[10px] font-normal leading-snug text-white/85">
+            Goal alignment walkthrough
           </span>
         </span>
       </button>
