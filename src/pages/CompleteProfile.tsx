@@ -866,18 +866,8 @@ const CompleteProfile = () => {
 
   const renderSection = (idx: number) => {
     switch (idx) {
-      /* ── Section 0: Who are you? ── */
+      /* ── Section 0: Your financial picture ── */
       case 0:
-        return (
-          <div className="space-y-3">
-            <div><FieldLabel>Primary residence</FieldLabel><TextInput value={primaryResidence} onChange={setPrimaryResidence} placeholder="e.g. London, United Kingdom" /></div>
-            <div>
-            </div>
-          </div>
-        );
-
-      /* ── Section 1: Your financial picture ── */
-      case 1:
         return (
            <div className="space-y-3">
             {/* Family situation */}
@@ -924,7 +914,7 @@ const CompleteProfile = () => {
               )}
             </div>
 
-            {/* Income & Expenses — moved up below occupation */}
+            {/* Income & Expenses */}
             <div>
               <FieldLabel>Annual income range</FieldLabel>
               <IncomeExpenseSlider label="Income" range={incomeRange} onChange={setIncomeRange} />
@@ -1019,8 +1009,8 @@ const CompleteProfile = () => {
           </div>
         );
 
-      /* ── Section 2: What are you trying to achieve? ── */
-      case 2:
+      /* ── Section 1: What are you trying to achieve? ── */
+      case 1:
         return (
           <div className="space-y-4">
             <PrefilledBanner />
@@ -1125,8 +1115,8 @@ const CompleteProfile = () => {
           </div>
         );
 
-      /* ── Section 3: How much risk can you handle? ── */
-      case 3:
+      /* ── Section 2: How much risk can you handle? ── */
+      case 2:
         return (
           <div className="space-y-4">
             <div>
@@ -1176,56 +1166,8 @@ const CompleteProfile = () => {
           </div>
         );
 
-      /* ── Section 4: Rules & limits ── */
-      case 4:
-        return (
-          <div className="space-y-4">
-            <div>
-              <FieldLabel>Permitted asset types</FieldLabel>
-              <div className="flex flex-wrap gap-2">
-                {ASSET_TYPES.map((a) => (
-                  <Chip key={a} label={a} active={permittedAssets.includes(a)} onClick={() => toggleAsset(a)} />
-                ))}
-              </div>
-              <AnimatePresence>
-                {permittedAssets.map((asset) => (
-                  <AllocationBar
-                    key={asset}
-                    asset={asset}
-                    range={allocations[asset] || DEFAULT_ALLOCATIONS[asset]}
-                    onChange={(r) => updateAllocation(asset, r)}
-                  />
-                ))}
-              </AnimatePresence>
-              {permittedAssets.length > 0 && (
-                <div className={`mt-3 rounded-lg px-3 py-2 text-xs font-medium ${totalMaxAllocation > 100 ? "bg-destructive/10 text-destructive" : "bg-muted text-muted-foreground"}`}>
-                  {totalMaxAllocation > 100 && <AlertTriangle className="inline h-3 w-3 mr-1 -mt-0.5" />}
-                  Total max allocation: {totalMaxAllocation}%
-                  {totalMaxAllocation > 100 && " — ⚠ Total max allocation exceeds 100% — please adjust"}
-                </div>
-              )}
-            </div>
-            <div><FieldLabel>Prohibited investments</FieldLabel><TextInput value={prohibited} onChange={setProhibited} placeholder="e.g. tobacco, gambling, leveraged products" /></div>
-            <div>
-              <FieldLabel>Leverage</FieldLabel>
-              <Toggle value={leverage} onChange={setLeverage} labelA="No" labelB="Yes" />
-              {leverage && <div className="mt-2"><TextInput value={leverageNotes} onChange={setLeverageNotes} placeholder="Notes on leverage use" /></div>}
-            </div>
-            <div>
-              <FieldLabel>Derivatives</FieldLabel>
-              <Toggle value={derivatives} onChange={setDerivatives} labelA="No" labelB="Yes" />
-              {derivatives && <div className="mt-2"><TextInput value={derivativesNotes} onChange={setDerivativesNotes} placeholder="Notes on derivatives use" /></div>}
-            </div>
-            <div><FieldLabel>Diversification notes (optional)</FieldLabel><TextInput value={diversificationNotes} onChange={setDiversificationNotes} placeholder="Any specific diversification requirements" /></div>
-            <div>
-              <FieldLabel>Review frequency</FieldLabel>
-              <div className="flex flex-wrap gap-2">{REVIEW_FREQ.map((f) => <Chip key={f} label={f} active={reviewFreq === f} onClick={() => setReviewFreq(f)} />)}</div>
-            </div>
-          </div>
-        );
-
-      /* ── Section 5: Tax situation ── */
-      case 5:
+      /* ── Section 3: Tax situation ── */
+      case 3:
         return (
           <div className="space-y-3">
             <div><FieldLabel>Income tax rate</FieldLabel><TextInput value={incomeTaxRate} onChange={setIncomeTaxRate} placeholder="e.g. 30" /></div>
