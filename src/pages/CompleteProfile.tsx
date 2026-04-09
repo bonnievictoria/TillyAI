@@ -702,8 +702,8 @@ const CompleteProfile = () => {
   }, []);
 
   const confirmedCount = statuses.filter((s) => s === "confirmed").length;
-  const progressPercent = Math.round((confirmedCount / 7) * 100);
-  const allConfirmed = confirmedCount === 7;
+  const progressPercent = Math.round((confirmedCount / 4) * 100);
+  const allConfirmed = confirmedCount === 4;
 
   const totalMaxAllocation = useMemo(() => {
     return permittedAssets.reduce((sum, a) => sum + (allocations[a]?.max || 0), 0);
@@ -734,13 +734,6 @@ const CompleteProfile = () => {
     try {
       switch (idx) {
         case 0:
-          await updatePersonalInfo({
-            occupation: occupation || null,
-            family_status: `${earningMembers || "0"} earning, ${dependents || "0"} dependents`,
-            personal_values: values ? values.split(",").map((v) => v.trim()).filter(Boolean) : null,
-          });
-          break;
-        case 1:
           await updateInvestmentProfile({
             investable_assets: toNum(investableAssets),
             total_liabilities: toNum(liabilities),
@@ -759,10 +752,11 @@ const CompleteProfile = () => {
             await updatePersonalInfo({
               wealth_sources: sources.length ? sources : null,
               ...(occVal ? { occupation: occVal } : {}),
+              family_status: `${earningMembers || "0"} earning, ${dependents || "0"} dependents`,
             });
           }
           break;
-        case 2:
+        case 1:
           await updateInvestmentProfile({
             objectives: selectedObjectives.length ? selectedObjectives : null,
             detailed_goals: selectedObjectives.map((obj) => {
@@ -779,7 +773,7 @@ const CompleteProfile = () => {
             }),
           });
           break;
-        case 3:
+        case 2:
           await updateRiskProfile({
             risk_level: riskLevelIdx,
             risk_capacity: riskCapacity || null,
@@ -790,26 +784,7 @@ const CompleteProfile = () => {
             comfort_assets: comfortAssets.length ? comfortAssets : null,
           });
           break;
-        case 4:
-          await updateConstraints({
-            permitted_assets: permittedAssets.length ? permittedAssets : null,
-            prohibited_instruments: prohibited ? prohibited.split(",").map((s) => s.trim()).filter(Boolean) : null,
-            is_leverage_allowed: leverage,
-            is_derivatives_allowed: derivatives,
-            diversification_notes: diversificationNotes || null,
-            allocation_constraints: permittedAssets.map((asset) => ({
-              asset_class: asset,
-              min_allocation: allocations[asset]?.min ?? null,
-              max_allocation: allocations[asset]?.max ?? null,
-            })),
-          });
-          await updateReviewPreference({
-            frequency: reviewFreq || null,
-            triggers: null,
-            update_process: null,
-          });
-          break;
-        case 5:
+        case 3:
           await updateTaxProfile({
             income_tax_rate: incomeTaxRate ? Number(incomeTaxRate) : null,
             capital_gains_tax_rate: cgtRate ? Number(cgtRate) : null,
@@ -828,7 +803,7 @@ const CompleteProfile = () => {
       next[idx] = "confirmed";
       return next;
     });
-    if (idx < 6) setOpenSection(idx + 1);
+    if (idx < 3) setOpenSection(idx + 1);
     toast.success(`Section ${idx + 1} confirmed ✓`);
   }, [
     occupation, primaryResidence, earningMembers, dependents, values,
