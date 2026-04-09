@@ -59,11 +59,9 @@ const STATUS_COLORS: Record<SectionStatus, string> = {
 };
 
 const SECTION_TITLES = [
-  "Who are you?",
   "Your financial picture",
   "What are you trying to achieve?",
   "How much risk can you handle?",
-  "Rules & limits",
   "Tax situation",
 ];
 
@@ -518,7 +516,7 @@ const BehaviouralRiskModal = ({
 const CompleteProfile = () => {
   const navigate = useNavigate();
   const [openSection, setOpenSection] = useState(0);
-  const [statuses, setStatuses] = useState<SectionStatus[]>(Array(7).fill("not_started"));
+  const [statuses, setStatuses] = useState<SectionStatus[]>(Array(4).fill("not_started"));
   const [profileLoaded, setProfileLoaded] = useState(false);
 
   // Section 0 — Who are you?
@@ -606,22 +604,20 @@ const CompleteProfile = () => {
       try {
         const p = await getFullProfile();
         if (cancelled) return;
-        const newStatuses: SectionStatus[] = Array(7).fill("not_started");
+        const newStatuses: SectionStatus[] = Array(4).fill("not_started");
 
-        // Section 0 — personal info
+        // Load personal info data (no longer a separate section)
         if (p.personal_info) {
           const pi = p.personal_info;
           if (pi.occupation) setOccupation(pi.occupation);
           if (pi.family_status) {
-            // Try to parse structured family data
             setEarningMembers("");
             setDependents("");
           }
           if (pi.personal_values) setValues(pi.personal_values.join(", "));
-          if (pi.occupation || pi.family_status) newStatuses[0] = "confirmed";
         }
 
-        // Section 1 — financial picture (from investment profile)
+        // Section 0 — financial picture (from investment profile)
         if (p.investment_profile) {
           const ip = p.investment_profile;
           if (p.personal_info?.wealth_sources?.length) {
@@ -636,15 +632,15 @@ const CompleteProfile = () => {
           setPlannedExpenses(parseNum(ip.planned_major_expenses?.toString()));
           setEmergencyFund(parseNum(ip.emergency_fund?.toString()));
           if (ip.emergency_fund_months) setEmergencyTimeframe(ip.emergency_fund_months);
-          if (ip.investable_assets != null) newStatuses[1] = "confirmed";
+          if (ip.investable_assets != null) newStatuses[0] = "confirmed";
 
-          // Section 2 — goals
+          // Section 1 — goals
           if (ip.objectives?.length) setSelectedObjectives(ip.objectives);
-          if (ip.objectives?.length) newStatuses[2] = "confirmed";
+          if (ip.objectives?.length) newStatuses[1] = "confirmed";
 
         }
 
-        // Section 3 — risk
+        // Section 2 — risk
         if (p.risk_profile) {
           const rp = p.risk_profile;
           if (rp.risk_level != null) setRiskLevelIdx(rp.risk_level);
@@ -653,10 +649,27 @@ const CompleteProfile = () => {
           if (rp.investment_horizon) setInvestmentHorizon(rp.investment_horizon);
           if (rp.max_drawdown != null) setMaxDrawdown(String(rp.max_drawdown));
           if (rp.comfort_assets) setComfortAssets(rp.comfort_assets);
-          if (rp.risk_level != null) newStatuses[3] = "confirmed";
+          if (rp.risk_level != null) newStatuses[2] = "confirmed";
         }
 
-        // Section 4 — constraints
+        // Section 3 — tax
+        if (p.tax_profile) {
+          const tp = p.tax_profile;
+          if (tp.income_tax_rate != null) setIncomeTaxRate(String(tp.income_tax_rate));
+          if (tp.capital_gains_tax_rate != null) setCgtRate(String(tp.capital_gains_tax_rate));
+          if (tp.notes) setTaxNotes(tp.notes);
+          if (tp.income_tax_rate != null) newStatuses[3] = "confirmed";
+        }
+
+        // Load review preference data
+        if (p.review_preference) {
+          const rp = p.review_preference;
+          if (rp.frequency) setReviewFreq(rp.frequency);
+          if (rp.triggers) setReviewTriggers(rp.triggers);
+          if (rp.update_process) setUpdateProcess(rp.update_process);
+        }
+
+        // Load constraints data
         if (p.investment_constraint) {
           const ic = p.investment_constraint;
           if (ic.permitted_assets?.length) setPermittedAssets(ic.permitted_assets);
@@ -674,25 +687,6 @@ const CompleteProfile = () => {
             });
             setAllocations((prev) => ({ ...prev, ...loaded }));
           }
-          if (ic.permitted_assets?.length) newStatuses[4] = "confirmed";
-        }
-
-        // Section 5 — tax
-        if (p.tax_profile) {
-          const tp = p.tax_profile;
-          if (tp.income_tax_rate != null) setIncomeTaxRate(String(tp.income_tax_rate));
-          if (tp.capital_gains_tax_rate != null) setCgtRate(String(tp.capital_gains_tax_rate));
-          if (tp.notes) setTaxNotes(tp.notes);
-          if (tp.income_tax_rate != null) newStatuses[5] = "confirmed";
-        }
-
-        // Section 6 — review
-        if (p.review_preference) {
-          const rp = p.review_preference;
-          if (rp.frequency) setReviewFreq(rp.frequency);
-          if (rp.triggers) setReviewTriggers(rp.triggers);
-          if (rp.update_process) setUpdateProcess(rp.update_process);
-          if (rp.frequency) newStatuses[6] = "confirmed";
         }
 
         setStatuses(newStatuses);
@@ -708,8 +702,8 @@ const CompleteProfile = () => {
   }, []);
 
   const confirmedCount = statuses.filter((s) => s === "confirmed").length;
-  const progressPercent = Math.round((confirmedCount / 7) * 100);
-  const allConfirmed = confirmedCount === 7;
+  const progressPercent = Math.round((confirmedCount / 4) * 100);
+  const allConfirmed = confirmedCount === 4;
 
   const totalMaxAllocation = useMemo(() => {
     return permittedAssets.reduce((sum, a) => sum + (allocations[a]?.max || 0), 0);
@@ -740,13 +734,6 @@ const CompleteProfile = () => {
     try {
       switch (idx) {
         case 0:
-          await updatePersonalInfo({
-            occupation: occupation || null,
-            family_status: `${earningMembers || "0"} earning, ${dependents || "0"} dependents`,
-            personal_values: values ? values.split(",").map((v) => v.trim()).filter(Boolean) : null,
-          });
-          break;
-        case 1:
           await updateInvestmentProfile({
             investable_assets: toNum(investableAssets),
             total_liabilities: toNum(liabilities),
@@ -765,10 +752,11 @@ const CompleteProfile = () => {
             await updatePersonalInfo({
               wealth_sources: sources.length ? sources : null,
               ...(occVal ? { occupation: occVal } : {}),
+              family_status: `${earningMembers || "0"} earning, ${dependents || "0"} dependents`,
             });
           }
           break;
-        case 2:
+        case 1:
           await updateInvestmentProfile({
             objectives: selectedObjectives.length ? selectedObjectives : null,
             detailed_goals: selectedObjectives.map((obj) => {
@@ -785,7 +773,7 @@ const CompleteProfile = () => {
             }),
           });
           break;
-        case 3:
+        case 2:
           await updateRiskProfile({
             risk_level: riskLevelIdx,
             risk_capacity: riskCapacity || null,
@@ -796,26 +784,7 @@ const CompleteProfile = () => {
             comfort_assets: comfortAssets.length ? comfortAssets : null,
           });
           break;
-        case 4:
-          await updateConstraints({
-            permitted_assets: permittedAssets.length ? permittedAssets : null,
-            prohibited_instruments: prohibited ? prohibited.split(",").map((s) => s.trim()).filter(Boolean) : null,
-            is_leverage_allowed: leverage,
-            is_derivatives_allowed: derivatives,
-            diversification_notes: diversificationNotes || null,
-            allocation_constraints: permittedAssets.map((asset) => ({
-              asset_class: asset,
-              min_allocation: allocations[asset]?.min ?? null,
-              max_allocation: allocations[asset]?.max ?? null,
-            })),
-          });
-          await updateReviewPreference({
-            frequency: reviewFreq || null,
-            triggers: null,
-            update_process: null,
-          });
-          break;
-        case 5:
+        case 3:
           await updateTaxProfile({
             income_tax_rate: incomeTaxRate ? Number(incomeTaxRate) : null,
             capital_gains_tax_rate: cgtRate ? Number(cgtRate) : null,
@@ -834,7 +803,7 @@ const CompleteProfile = () => {
       next[idx] = "confirmed";
       return next;
     });
-    if (idx < 6) setOpenSection(idx + 1);
+    if (idx < 3) setOpenSection(idx + 1);
     toast.success(`Section ${idx + 1} confirmed ✓`);
   }, [
     occupation, primaryResidence, earningMembers, dependents, values,
@@ -897,18 +866,8 @@ const CompleteProfile = () => {
 
   const renderSection = (idx: number) => {
     switch (idx) {
-      /* ── Section 0: Who are you? ── */
+      /* ── Section 0: Your financial picture ── */
       case 0:
-        return (
-          <div className="space-y-3">
-            <div><FieldLabel>Primary residence</FieldLabel><TextInput value={primaryResidence} onChange={setPrimaryResidence} placeholder="e.g. London, United Kingdom" /></div>
-            <div>
-            </div>
-          </div>
-        );
-
-      /* ── Section 1: Your financial picture ── */
-      case 1:
         return (
            <div className="space-y-3">
             {/* Family situation */}
@@ -955,7 +914,7 @@ const CompleteProfile = () => {
               )}
             </div>
 
-            {/* Income & Expenses — moved up below occupation */}
+            {/* Income & Expenses */}
             <div>
               <FieldLabel>Annual income range</FieldLabel>
               <IncomeExpenseSlider label="Income" range={incomeRange} onChange={setIncomeRange} />
@@ -1050,8 +1009,8 @@ const CompleteProfile = () => {
           </div>
         );
 
-      /* ── Section 2: What are you trying to achieve? ── */
-      case 2:
+      /* ── Section 1: What are you trying to achieve? ── */
+      case 1:
         return (
           <div className="space-y-4">
             <PrefilledBanner />
@@ -1156,8 +1115,8 @@ const CompleteProfile = () => {
           </div>
         );
 
-      /* ── Section 3: How much risk can you handle? ── */
-      case 3:
+      /* ── Section 2: How much risk can you handle? ── */
+      case 2:
         return (
           <div className="space-y-4">
             <div>
@@ -1207,56 +1166,8 @@ const CompleteProfile = () => {
           </div>
         );
 
-      /* ── Section 4: Rules & limits ── */
-      case 4:
-        return (
-          <div className="space-y-4">
-            <div>
-              <FieldLabel>Permitted asset types</FieldLabel>
-              <div className="flex flex-wrap gap-2">
-                {ASSET_TYPES.map((a) => (
-                  <Chip key={a} label={a} active={permittedAssets.includes(a)} onClick={() => toggleAsset(a)} />
-                ))}
-              </div>
-              <AnimatePresence>
-                {permittedAssets.map((asset) => (
-                  <AllocationBar
-                    key={asset}
-                    asset={asset}
-                    range={allocations[asset] || DEFAULT_ALLOCATIONS[asset]}
-                    onChange={(r) => updateAllocation(asset, r)}
-                  />
-                ))}
-              </AnimatePresence>
-              {permittedAssets.length > 0 && (
-                <div className={`mt-3 rounded-lg px-3 py-2 text-xs font-medium ${totalMaxAllocation > 100 ? "bg-destructive/10 text-destructive" : "bg-muted text-muted-foreground"}`}>
-                  {totalMaxAllocation > 100 && <AlertTriangle className="inline h-3 w-3 mr-1 -mt-0.5" />}
-                  Total max allocation: {totalMaxAllocation}%
-                  {totalMaxAllocation > 100 && " — ⚠ Total max allocation exceeds 100% — please adjust"}
-                </div>
-              )}
-            </div>
-            <div><FieldLabel>Prohibited investments</FieldLabel><TextInput value={prohibited} onChange={setProhibited} placeholder="e.g. tobacco, gambling, leveraged products" /></div>
-            <div>
-              <FieldLabel>Leverage</FieldLabel>
-              <Toggle value={leverage} onChange={setLeverage} labelA="No" labelB="Yes" />
-              {leverage && <div className="mt-2"><TextInput value={leverageNotes} onChange={setLeverageNotes} placeholder="Notes on leverage use" /></div>}
-            </div>
-            <div>
-              <FieldLabel>Derivatives</FieldLabel>
-              <Toggle value={derivatives} onChange={setDerivatives} labelA="No" labelB="Yes" />
-              {derivatives && <div className="mt-2"><TextInput value={derivativesNotes} onChange={setDerivativesNotes} placeholder="Notes on derivatives use" /></div>}
-            </div>
-            <div><FieldLabel>Diversification notes (optional)</FieldLabel><TextInput value={diversificationNotes} onChange={setDiversificationNotes} placeholder="Any specific diversification requirements" /></div>
-            <div>
-              <FieldLabel>Review frequency</FieldLabel>
-              <div className="flex flex-wrap gap-2">{REVIEW_FREQ.map((f) => <Chip key={f} label={f} active={reviewFreq === f} onClick={() => setReviewFreq(f)} />)}</div>
-            </div>
-          </div>
-        );
-
-      /* ── Section 5: Tax situation ── */
-      case 5:
+      /* ── Section 3: Tax situation ── */
+      case 3:
         return (
           <div className="space-y-3">
             <div><FieldLabel>Income tax rate</FieldLabel><TextInput value={incomeTaxRate} onChange={setIncomeTaxRate} placeholder="e.g. 30" /></div>
@@ -1298,8 +1209,8 @@ const CompleteProfile = () => {
       {/* Progress */}
       <div className="px-5 pt-3 pb-2">
         <div className="flex items-center justify-between mb-1">
-          <span className="text-[11px] text-muted-foreground font-medium">Section {Math.min(openSection + 1, 7)} of 7</span>
-          <span className="text-[11px] text-muted-foreground">{confirmedCount}/7 confirmed</span>
+          <span className="text-[11px] text-muted-foreground font-medium">Section {Math.min(openSection + 1, 4)} of 4</span>
+          <span className="text-[11px] text-muted-foreground">{confirmedCount}/4 confirmed</span>
         </div>
         <div className="h-1.5 w-full rounded-full bg-muted overflow-hidden">
           <motion.div className="h-full rounded-full bg-accent" initial={{ width: 0 }} animate={{ width: `${progressPercent}%` }} transition={{ duration: 0.5 }} />
