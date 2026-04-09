@@ -903,6 +903,16 @@ const CompleteProfile = () => {
           <div className="space-y-3">
             <div><FieldLabel>Primary residence</FieldLabel><TextInput value={primaryResidence} onChange={setPrimaryResidence} placeholder="e.g. London, United Kingdom" /></div>
             <div>
+            </div>
+          </div>
+        );
+
+      /* ── Section 1: Your financial picture ── */
+      case 1:
+        return (
+           <div className="space-y-3">
+            {/* Family situation */}
+            <div>
               <FieldLabel>Family situation: earning members and dependents</FieldLabel>
               <div className="grid grid-cols-2 gap-3">
                 <div>
@@ -929,13 +939,7 @@ const CompleteProfile = () => {
                 </div>
               </div>
             </div>
-          </div>
-        );
 
-      /* ── Section 1: Your financial picture ── */
-      case 1:
-        return (
-          <div className="space-y-3">
             {/* Occupation */}
             <div>
               <FieldLabel>Occupation</FieldLabel>
