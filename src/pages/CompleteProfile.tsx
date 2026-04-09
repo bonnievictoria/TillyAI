@@ -59,11 +59,9 @@ const STATUS_COLORS: Record<SectionStatus, string> = {
 };
 
 const SECTION_TITLES = [
-  "Who are you?",
   "Your financial picture",
   "What are you trying to achieve?",
   "How much risk can you handle?",
-  "Rules & limits",
   "Tax situation",
 ];
 
@@ -518,7 +516,7 @@ const BehaviouralRiskModal = ({
 const CompleteProfile = () => {
   const navigate = useNavigate();
   const [openSection, setOpenSection] = useState(0);
-  const [statuses, setStatuses] = useState<SectionStatus[]>(Array(7).fill("not_started"));
+  const [statuses, setStatuses] = useState<SectionStatus[]>(Array(4).fill("not_started"));
   const [profileLoaded, setProfileLoaded] = useState(false);
 
   // Section 0 — Who are you?
@@ -606,22 +604,20 @@ const CompleteProfile = () => {
       try {
         const p = await getFullProfile();
         if (cancelled) return;
-        const newStatuses: SectionStatus[] = Array(7).fill("not_started");
+        const newStatuses: SectionStatus[] = Array(4).fill("not_started");
 
-        // Section 0 — personal info
+        // Load personal info data (no longer a separate section)
         if (p.personal_info) {
           const pi = p.personal_info;
           if (pi.occupation) setOccupation(pi.occupation);
           if (pi.family_status) {
-            // Try to parse structured family data
             setEarningMembers("");
             setDependents("");
           }
           if (pi.personal_values) setValues(pi.personal_values.join(", "));
-          if (pi.occupation || pi.family_status) newStatuses[0] = "confirmed";
         }
 
-        // Section 1 — financial picture (from investment profile)
+        // Section 0 — financial picture (from investment profile)
         if (p.investment_profile) {
           const ip = p.investment_profile;
           if (p.personal_info?.wealth_sources?.length) {
@@ -636,15 +632,15 @@ const CompleteProfile = () => {
           setPlannedExpenses(parseNum(ip.planned_major_expenses?.toString()));
           setEmergencyFund(parseNum(ip.emergency_fund?.toString()));
           if (ip.emergency_fund_months) setEmergencyTimeframe(ip.emergency_fund_months);
-          if (ip.investable_assets != null) newStatuses[1] = "confirmed";
+          if (ip.investable_assets != null) newStatuses[0] = "confirmed";
 
-          // Section 2 — goals
+          // Section 1 — goals
           if (ip.objectives?.length) setSelectedObjectives(ip.objectives);
-          if (ip.objectives?.length) newStatuses[2] = "confirmed";
+          if (ip.objectives?.length) newStatuses[1] = "confirmed";
 
         }
 
-        // Section 3 — risk
+        // Section 2 — risk
         if (p.risk_profile) {
           const rp = p.risk_profile;
           if (rp.risk_level != null) setRiskLevelIdx(rp.risk_level);
@@ -653,10 +649,27 @@ const CompleteProfile = () => {
           if (rp.investment_horizon) setInvestmentHorizon(rp.investment_horizon);
           if (rp.max_drawdown != null) setMaxDrawdown(String(rp.max_drawdown));
           if (rp.comfort_assets) setComfortAssets(rp.comfort_assets);
-          if (rp.risk_level != null) newStatuses[3] = "confirmed";
+          if (rp.risk_level != null) newStatuses[2] = "confirmed";
         }
 
-        // Section 4 — constraints
+        // Section 3 — tax
+        if (p.tax_profile) {
+          const tp = p.tax_profile;
+          if (tp.income_tax_rate != null) setIncomeTaxRate(String(tp.income_tax_rate));
+          if (tp.capital_gains_tax_rate != null) setCgtRate(String(tp.capital_gains_tax_rate));
+          if (tp.notes) setTaxNotes(tp.notes);
+          if (tp.income_tax_rate != null) newStatuses[3] = "confirmed";
+        }
+
+        // Load review preference data
+        if (p.review_preference) {
+          const rp = p.review_preference;
+          if (rp.frequency) setReviewFreq(rp.frequency);
+          if (rp.triggers) setReviewTriggers(rp.triggers);
+          if (rp.update_process) setUpdateProcess(rp.update_process);
+        }
+
+        // Load constraints data
         if (p.investment_constraint) {
           const ic = p.investment_constraint;
           if (ic.permitted_assets?.length) setPermittedAssets(ic.permitted_assets);
@@ -674,25 +687,6 @@ const CompleteProfile = () => {
             });
             setAllocations((prev) => ({ ...prev, ...loaded }));
           }
-          if (ic.permitted_assets?.length) newStatuses[4] = "confirmed";
-        }
-
-        // Section 5 — tax
-        if (p.tax_profile) {
-          const tp = p.tax_profile;
-          if (tp.income_tax_rate != null) setIncomeTaxRate(String(tp.income_tax_rate));
-          if (tp.capital_gains_tax_rate != null) setCgtRate(String(tp.capital_gains_tax_rate));
-          if (tp.notes) setTaxNotes(tp.notes);
-          if (tp.income_tax_rate != null) newStatuses[5] = "confirmed";
-        }
-
-        // Section 6 — review
-        if (p.review_preference) {
-          const rp = p.review_preference;
-          if (rp.frequency) setReviewFreq(rp.frequency);
-          if (rp.triggers) setReviewTriggers(rp.triggers);
-          if (rp.update_process) setUpdateProcess(rp.update_process);
-          if (rp.frequency) newStatuses[6] = "confirmed";
         }
 
         setStatuses(newStatuses);
