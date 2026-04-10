@@ -307,6 +307,9 @@ export interface ChatMessageInfo {
 export interface ChatSendResponse {
   user_message: ChatMessageInfo;
   assistant_message: ChatMessageInfo;
+  /** Present when chat persisted an ideal allocation — use for CTA to `/execute`. */
+  ideal_allocation_rebalancing_id?: string | null;
+  ideal_allocation_snapshot_id?: string | null;
 }
 
 export async function createChatSession(title?: string): Promise<ChatSessionInfo> {
@@ -621,6 +624,65 @@ export interface PortfolioDetail {
 /** Primary portfolio for the logged-in user (from DB). */
 export async function getMyPortfolio(): Promise<PortfolioDetail> {
   return request<PortfolioDetail>("/portfolio/");
+}
+
+/** Ideal allocation pipeline output (mirrors ``Ideal_asset_allocation.models.AllocationOutput``). */
+export interface SubgroupItem {
+  subgroup: string;
+  asset_class: string;
+  recommended_fund: string;
+  asset_class_subcategory: string;
+  isin: string;
+  pct: number;
+  amount: number;
+}
+
+export interface IdealAllocationOutput {
+  client_summary?: {
+    age: number;
+    occupation?: string | null;
+    investment_horizon: string;
+    investment_goal: string;
+    effective_risk_score: number;
+    total_corpus: number;
+  };
+  asset_class_allocation?: {
+    equities: { pct: number; amount: number };
+    debt: { pct: number; amount: number };
+    others: { pct: number; amount: number };
+  };
+  subgroup_allocation?: {
+    equity: SubgroupItem[];
+    debt: SubgroupItem[];
+    others: SubgroupItem[];
+  };
+  grand_total?: number;
+}
+
+export interface RecommendedPlanSnapshot {
+  id: string;
+  snapshot_kind: string;
+  allocation: {
+    rows?: Array<{ asset_class: string; weight_pct: number }>;
+    equity_pct?: number;
+    debt_pct?: number;
+    others_pct?: number;
+    ideal_allocation_output?: IdealAllocationOutput;
+  };
+  effective_at: string;
+  source?: string | null;
+  notes?: string | null;
+  created_at: string;
+}
+
+export interface RecommendedPlanResponse {
+  snapshot: RecommendedPlanSnapshot | null;
+  latest_rebalancing_id: string | null;
+}
+
+/** Latest persisted ideal allocation from chat or asset-allocation module (requires auth). */
+export async function getRecommendedPlan(): Promise<RecommendedPlanResponse> {
+  return request<RecommendedPlanResponse>("/portfolio/recommended-plan");
 }
 
 export interface PortfolioAllocationInput {

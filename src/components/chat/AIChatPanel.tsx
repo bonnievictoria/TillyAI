@@ -48,6 +48,8 @@ interface Message {
   kudosId?: number;
   /** Only when type === "goal-demo-widget" */
   widgetKind?: "emergency-fund";
+  /** Backend saved an ideal rebalancing plan — show CTA to open `/execute`. */
+  showViewExecutePlan?: boolean;
 }
 
 const GOAL_DEMO_CHECKPOINT_LABELS = ["Goals", "Corpus", "Deadline", "Inflation", "Review", "Summary"] as const;
@@ -810,7 +812,17 @@ const AIChatPanel = ({
       const sid = await ensureSession();
       const resp = await sendChatMessage(sid, trimmed, clientContext ?? undefined);
       setIsTyping(false);
-      setMessages((prev) => [...prev, { role: "ai", content: resp.assistant_message.content }]);
+      const hasSavedPlan = Boolean(
+        resp.ideal_allocation_rebalancing_id ?? resp.ideal_allocation_snapshot_id
+      );
+      setMessages((prev) => [
+        ...prev,
+        {
+          role: "ai",
+          content: resp.assistant_message.content,
+          ...(hasSavedPlan ? { showViewExecutePlan: true } : {}),
+        },
+      ]);
     } catch (err: any) {
       setIsTyping(false);
       const fallback = err?.message?.includes("401") || err?.message?.includes("Not authenticated")
@@ -1016,6 +1028,21 @@ const AIChatPanel = ({
                   </div>
                 </button>
               )}
+              {msg.showViewExecutePlan ? (
+                <button
+                  type="button"
+                  onClick={() => navigate("/execute")}
+                  className="ml-7 mt-2 self-start flex items-center gap-3 rounded-xl px-4 py-3 transition-opacity hover:opacity-90 border border-primary/25 bg-primary/5"
+                >
+                  <div className="flex flex-col text-left">
+                    <span className="text-[10px] font-medium text-muted-foreground">Rebalancing plan ready</span>
+                    <span className="text-[13px] font-semibold text-foreground">View recommended plan</span>
+                  </div>
+                  <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/15">
+                    <ArrowRight className="h-4 w-4 text-primary" />
+                  </div>
+                </button>
+              ) : null}
             </div>
           )}
         </motion.div>

@@ -3,7 +3,13 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { ArrowRight, Check, RotateCcw, AlertTriangle, Mic } from "lucide-react";
 import BottomNav from "@/components/BottomNav";
-import { getMyPortfolio, type PortfolioDetail } from "@/lib/api";
+import {
+  getMyPortfolio,
+  getRecommendedPlan,
+  type IdealAllocationOutput,
+  type PortfolioDetail,
+  type SubgroupItem,
+} from "@/lib/api";
 
 /* ── ETF Data (original) ── */
 interface ETF {
@@ -167,6 +173,100 @@ function generateSummary(allocations: number[]): string {
   return parts.join(" ");
 }
 
+type AssetBucket = "equity" | "debt" | "others";
+
+function idealOutputToETFsAndBuckets(out: IdealAllocationOutput): {
+  etfs: ETF[];
+  buckets: AssetBucket[];
+  houseRecs: number[];
+} | null {
+  const sg = out.subgroup_allocation;
+  if (!sg) return null;
+  const pairs: { item: SubgroupItem; bucket: AssetBucket }[] = [];
+  (sg.equity ?? []).forEach((item) => pairs.push({ item, bucket: "equity" }));
+  (sg.debt ?? []).forEach((item) => pairs.push({ item, bucket: "debt" }));
+  (sg.others ?? []).forEach((item) => pairs.push({ item, bucket: "others" }));
+  if (pairs.length === 0) return null;
+  const ROW_COLORS = [
+    "#1B3A6B",
+    "#4A7FA5",
+    "#8BA7BC",
+    "#C4B99A",
+    "#D4AF70",
+    "#10b981",
+    "#f59e0b",
+    "#6366f1",
+    "#ec4899",
+    "#14b8a6",
+  ];
+  const etfs: ETF[] = pairs.map(({ item }, i) => ({
+    name: item.recommended_fund,
+    shortName:
+      item.recommended_fund.length > 22
+        ? `${item.recommended_fund.slice(0, 20)}…`
+        : item.recommended_fund,
+    description: [item.subgroup, item.asset_class_subcategory].filter(Boolean).join(" · ") || item.asset_class,
+    allocation: item.pct,
+    amount: 0,
+    category: item.asset_class_subcategory || item.asset_class,
+    color: ROW_COLORS[i % ROW_COLORS.length],
+    exchange: "—",
+    houseRec: true,
+    returns1Y: "—",
+    returns2Y: "—",
+    returns3Y: "—",
+    expenseRatio: "—",
+    exitLoad: "—",
+    minInvestment: "—",
+  }));
+  return {
+    etfs,
+    buckets: pairs.map((p) => p.bucket),
+    houseRecs: pairs.map((p) => p.item.pct),
+  };
+}
+
+function generateAiSummary(out: IdealAllocationOutput, allocations: number[], buckets: AssetBucket[]): string {
+  let eq = 0;
+  let debt = 0;
+  let oth = 0;
+  allocations.forEach((a, i) => {
+    const b = buckets[i];
+    if (b === "equity") eq += a;
+    else if (b === "debt") debt += a;
+    else oth += a;
+  });
+  const cs = out.client_summary;
+  const parts: string[] = [];
+  if (cs) {
+    parts.push(
+      `Plan from your latest AI session: **${cs.investment_goal}**, horizon **${cs.investment_horizon}**, risk score **${cs.effective_risk_score}**.`
+    );
+  }
+  parts.push(`Your sliders show **equity ${eq}%**, **debt ${debt}%**, **others ${oth}%**.`);
+  return parts.join(" ");
+}
+
+function donutFromAiBuckets(
+  allocations: number[],
+  buckets: AssetBucket[]
+): { label: string; value: number; color: string }[] {
+  let eq = 0;
+  let debt = 0;
+  let oth = 0;
+  allocations.forEach((a, i) => {
+    const b = buckets[i];
+    if (b === "equity") eq += a;
+    else if (b === "debt") debt += a;
+    else oth += a;
+  });
+  return [
+    { label: "Equity", value: eq, color: CAT_COLORS["India Equity"] },
+    { label: "Debt", value: debt, color: CAT_COLORS["Bonds"] },
+    { label: "Others", value: oth, color: CAT_COLORS["Gold"] },
+  ].filter((d) => d.value > 0);
+}
+
 function renderBoldText(text: string) {
   const parts = text.split(/(\*\*[^*]+\*\*)/g);
   return parts.map((part, i) => {
@@ -230,7 +330,17 @@ const ALLOC_ASSETS: AllocAsset[] = [
 
 const houseDefaults = ALLOC_ASSETS.map((a) => a.houseRec);
 
-const DB_ALLOC_COLORS = ["#1B3A6B", "#4A7FA5", "#8BA7BC", "#C4B99A", "#D4AF70", "#10b981", "#f59e0b", "#6366f1", "#ec4899"];
+const DB_ALLOC_COLORS = [
+  "#1B3A6B",
+  "#4A7FA5",
+  "#8BA7BC",
+  "#C4B99A",
+  "#D4AF70",
+  "#10b981",
+  "#f59e0b",
+  "#6366f1",
+  "#ec4899",
+];
 
 function portfolioToDonutData(p: PortfolioDetail): { label: string; value: number; color: string }[] {
   const raw = p.allocations.map((a, i) => ({
@@ -247,20 +357,81 @@ function portfolioToDonutData(p: PortfolioDetail): { label: string; value: numbe
 /* ── Page ── */
 const Execute = () => {
   const navigate = useNavigate();
-  const houseAllocations = defaultETFs.map((e) => e.allocation);
+  const [useAiPlan, setUseAiPlan] = useState(false);
+  const [idealPlanOutput, setIdealPlanOutput] = useState<IdealAllocationOutput | null>(null);
+  const [aiBuckets, setAiBuckets] = useState<AssetBucket[]>([]);
+  const [aiHouseRec, setAiHouseRec] = useState<number[]>([]);
+  const [recommendedPlanMeta, setRecommendedPlanMeta] = useState<{
+    effectiveAt: string;
+    rebalancingId: string | null;
+  } | null>(null);
+  const [planLoading, setPlanLoading] = useState(true);
+
   const [allocations, setAllocations] = useState<number[]>([...houseDefaults]);
   const [totalInvestment, setTotalInvestment] = useState<number>(TOTAL);
   const [portfolioDb, setPortfolioDb] = useState<PortfolioDetail | null>(null);
   const [selectedETF, setSelectedETF] = useState<number | null>(null);
   const [showTillyPill, setShowTillyPill] = useState(true);
 
+  const etfList = useMemo(() => {
+    if (useAiPlan && idealPlanOutput) {
+      const built = idealOutputToETFsAndBuckets(idealPlanOutput);
+      if (built?.etfs.length) return built.etfs;
+    }
+    return defaultETFs;
+  }, [useAiPlan, idealPlanOutput]);
+
+  const allocAssetsForSliders = useMemo(() => {
+    if (useAiPlan && etfList.length > 0) {
+      return etfList.map((e, i) => ({
+        name: e.name,
+        shortName: e.shortName,
+        houseRec: aiHouseRec[i] ?? e.allocation ?? 0,
+      }));
+    }
+    return ALLOC_ASSETS;
+  }, [useAiPlan, etfList, aiHouseRec]);
+
   useEffect(() => {
-    getMyPortfolio()
-      .then((p) => {
-        setPortfolioDb(p);
-        if (p.total_value > 0) setTotalInvestment(Math.round(p.total_value));
-      })
-      .catch(() => setPortfolioDb(null));
+    let cancelled = false;
+    (async () => {
+      try {
+        const p = await getMyPortfolio();
+        if (!cancelled) {
+          setPortfolioDb(p);
+          if (p.total_value > 0) setTotalInvestment(Math.round(p.total_value));
+        }
+      } catch {
+        if (!cancelled) setPortfolioDb(null);
+      }
+      try {
+        const rec = await getRecommendedPlan();
+        if (cancelled) return;
+        const out = rec.snapshot?.allocation?.ideal_allocation_output;
+        const built = out ? idealOutputToETFsAndBuckets(out) : null;
+        if (out && built?.houseRecs.length) {
+          setIdealPlanOutput(out);
+          setUseAiPlan(true);
+          setAiBuckets(built.buckets);
+          setAiHouseRec(built.houseRecs);
+          setAllocations([...built.houseRecs]);
+          setRecommendedPlanMeta({
+            effectiveAt: rec.snapshot!.effective_at,
+            rebalancingId: rec.latest_rebalancing_id,
+          });
+          if (typeof out.grand_total === "number" && out.grand_total > 0) {
+            setTotalInvestment(Math.round(out.grand_total));
+          }
+        }
+      } catch {
+        /* no saved plan — keep demo */
+      } finally {
+        if (!cancelled) setPlanLoading(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   useEffect(() => {
@@ -270,15 +441,25 @@ const Execute = () => {
 
   const totalAlloc = allocations.reduce((s, a) => s + a, 0);
   const isValid = totalAlloc === 100;
-  const summary = useMemo(() => generateSummary(allocations), [allocations]);
+  const maxSliderPct = useAiPlan ? 100 : 50;
 
-  const updateAllocation = useCallback((idx: number, val: number) => {
-    setAllocations((prev) => {
-      const next = [...prev];
-      next[idx] = Math.max(0, Math.min(50, val));
-      return next;
-    });
-  }, []);
+  const summary = useMemo(() => {
+    if (useAiPlan && idealPlanOutput && aiBuckets.length > 0 && aiBuckets.length === allocations.length) {
+      return generateAiSummary(idealPlanOutput, allocations, aiBuckets);
+    }
+    return generateSummary(allocations);
+  }, [useAiPlan, idealPlanOutput, aiBuckets, allocations]);
+
+  const updateAllocation = useCallback(
+    (idx: number, val: number) => {
+      setAllocations((prev) => {
+        const next = [...prev];
+        next[idx] = Math.max(0, Math.min(maxSliderPct, val));
+        return next;
+      });
+    },
+    [maxSliderPct]
+  );
 
   const updateFromRupee = useCallback(
     (idx: number, rupeeVal: number) => {
@@ -289,23 +470,43 @@ const Execute = () => {
     [totalInvestment, updateAllocation]
   );
 
-  const resetToHouse = () => setAllocations([...houseDefaults]);
+  const resetToHouse = useCallback(() => {
+    if (useAiPlan && aiHouseRec.length > 0) setAllocations([...aiHouseRec]);
+    else setAllocations([...houseDefaults]);
+  }, [useAiPlan, aiHouseRec]);
 
-  // Build donut data by grouping categories (or from DB allocations when available)
-  const categoryMap = new Map<string, { value: number; color: string }>();
-  defaultETFs.forEach((etf, i) => {
-    const existing = categoryMap.get(etf.category);
-    if (existing) {
-      existing.value += allocations[i];
-    } else {
-      categoryMap.set(etf.category, { value: allocations[i], color: etf.color });
+  const donutFromSliders = useMemo(() => {
+    const categoryMap = new Map<string, { value: number; color: string }>();
+    etfList.forEach((etf, i) => {
+      const existing = categoryMap.get(etf.category);
+      const val = allocations[i] ?? 0;
+      if (existing) {
+        existing.value += val;
+      } else {
+        categoryMap.set(etf.category, { value: val, color: etf.color });
+      }
+    });
+    return Array.from(categoryMap.entries()).map(([label, d]) => ({
+      label,
+      value: d.value,
+      color: d.color,
+    }));
+  }, [etfList, allocations]);
+
+  const donutData = useMemo(() => {
+    if (
+      useAiPlan &&
+      allocations.length > 0 &&
+      aiBuckets.length === allocations.length &&
+      aiBuckets.length > 0
+    ) {
+      return donutFromAiBuckets(allocations, aiBuckets);
     }
-  });
-  const donutFromSliders = Array.from(categoryMap.entries()).map(([label, d]) => ({
-    label, value: d.value, color: d.color,
-  }));
-  const donutData =
-    portfolioDb && portfolioDb.allocations.length > 0 ? portfolioToDonutData(portfolioDb) : donutFromSliders;
+    if (portfolioDb && portfolioDb.allocations.length > 0 && !useAiPlan) {
+      return portfolioToDonutData(portfolioDb);
+    }
+    return donutFromSliders;
+  }, [useAiPlan, allocations, aiBuckets, portfolioDb, donutFromSliders]);
 
   const donutCenterLabel =
     portfolioDb && portfolioDb.total_value > 0
@@ -320,25 +521,41 @@ const Execute = () => {
           ? `₹${(totalInvestment / 100000).toFixed(1)}L`
           : `₹${Math.round(totalInvestment).toLocaleString("en-IN")}`;
 
-  const activeETF = selectedETF !== null ? defaultETFs[selectedETF] : null;
-
-  // suppress unused var warnings
-  void houseAllocations;
+  const activeETF = selectedETF !== null ? etfList[selectedETF] : null;
 
   return (
     <div className="mobile-container bg-background min-h-screen pb-20">
       {/* Header */}
       <div className="px-5 pt-12 pb-1">
         <h1 className="text-xl font-bold text-foreground">Recommended investment plan</h1>
+        {planLoading ? (
+          <p className="text-xs text-muted-foreground mt-1">Loading your saved plan…</p>
+        ) : null}
         <p className="text-sm text-foreground/80 mt-0.5">
           {portfolioDb && portfolioDb.total_value > 0
             ? `Your portfolio · ${formatINR(portfolioDb.total_value)}`
             : `Recommended portfolio · ${formatINR(totalInvestment)}`}
         </p>
+        {recommendedPlanMeta && useAiPlan ? (
+          <p className="text-xs text-muted-foreground mt-0.5">
+            AI plan from{" "}
+            {new Date(recommendedPlanMeta.effectiveAt).toLocaleString(undefined, {
+              dateStyle: "medium",
+              timeStyle: "short",
+            })}
+            {recommendedPlanMeta.rebalancingId
+              ? ` · Ref ${recommendedPlanMeta.rebalancingId.slice(0, 8)}…`
+              : ""}
+          </p>
+        ) : null}
         <p className="text-xs text-muted-foreground mt-0.5">
           {portfolioDb && portfolioDb.allocations.length > 0
-            ? "Allocation from your linked account — adjust below to explore scenarios"
-            : "Built around your goals and risk profile"}
+            ? useAiPlan
+              ? "AI recommended plan — adjust below to explore scenarios"
+              : "Allocation from your linked account — adjust below to explore scenarios"
+            : useAiPlan
+              ? "Loaded from your latest Ask Tilly allocation"
+              : "Built around your goals and risk profile"}
         </p>
       </div>
 
@@ -363,11 +580,13 @@ const Execute = () => {
 
         {/* ETF Cards */}
         <div className="px-5 mb-6">
-          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-widest mb-3">Recommended ETF Allocation</p>
+          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-widest mb-3">
+            {useAiPlan ? "Your AI-recommended funds" : "Recommended ETF Allocation"}
+          </p>
           <div className="space-y-2.5">
-            {defaultETFs.map((etf, i) => (
+            {etfList.map((etf, i) => (
               <motion.button
-                key={etf.name}
+                key={`${etf.name}-${i}`}
                 initial={{ opacity: 0, y: 8 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: i * 0.04 }}
@@ -443,15 +662,15 @@ const Execute = () => {
 
         {/* Asset Allocation Cards */}
         <div className="px-5 space-y-2.5">
-          {ALLOC_ASSETS.map((asset, i) => {
-            const pct = allocations[i];
+          {allocAssetsForSliders.map((asset, i) => {
+            const pct = allocations[i] ?? 0;
             const rupee = Math.round((totalInvestment * pct) / 100);
             const fillColor = sliderFillColor(pct);
-            const fillPct = (pct / 50) * 100;
+            const fillPct = (pct / maxSliderPct) * 100;
 
             return (
               <div
-                key={asset.shortName}
+                key={`${asset.shortName}-${i}`}
                 className="bg-card rounded-xl"
                 style={{ border: "0.5px solid hsl(var(--border))", padding: "14px 16px" }}
               >
@@ -487,11 +706,18 @@ const Execute = () => {
                   <div className="absolute left-0 h-2 rounded-full transition-all" style={{ width: `${fillPct}%`, backgroundColor: fillColor }} />
                   <div
                     className="absolute h-4 w-0.5 rounded-full z-10"
-                    style={{ left: `${(asset.houseRec / 50) * 100}%`, transform: "translateX(-50%)", backgroundColor: "#9CA3AF" }}
+                    style={{
+                      left: `${(asset.houseRec / maxSliderPct) * 100}%`,
+                      transform: "translateX(-50%)",
+                      backgroundColor: "#9CA3AF",
+                    }}
                     title={`Rec: ${asset.houseRec}%`}
                   />
                   <input
-                    type="range" min={0} max={50} value={pct}
+                    type="range"
+                    min={0}
+                    max={maxSliderPct}
+                    value={pct}
                     onChange={(e) => updateAllocation(i, Number(e.target.value))}
                     className="alloc-slider absolute inset-x-0 h-6 w-full appearance-none bg-transparent cursor-pointer z-20
                       [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:h-5 [&::-webkit-slider-thumb]:w-5 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:border-2 [&::-webkit-slider-thumb]:bg-card [&::-webkit-slider-thumb]:shadow-sm
@@ -586,7 +812,12 @@ const Execute = () => {
               </div>
               <div className="rounded-xl bg-[#1B3A6B]/5 border border-[#1B3A6B]/10 p-3.5 mb-5">
                 <p className="text-[9px] font-semibold text-muted-foreground uppercase tracking-widest mb-1.5">Tilly's view</p>
-                <p className="text-xs text-foreground/80 leading-relaxed">{TILLY_RATIONALE[activeETF.name] || "Recommended based on your risk profile and investment goals."}</p>
+                <p className="text-xs text-foreground/80 leading-relaxed">
+                  {TILLY_RATIONALE[activeETF.name] ||
+                    (useAiPlan
+                      ? "Recommended in your personalised allocation plan from Ask Tilly."
+                      : "Recommended based on your risk profile and investment goals.")}
+                </p>
               </div>
               <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-widest mb-2">Performance</p>
               <div className="space-y-0">
