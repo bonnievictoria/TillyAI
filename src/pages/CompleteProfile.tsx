@@ -898,36 +898,23 @@ const CompleteProfile = () => {
               </div>
             </div>
 
-            {/* Occupation */}
-            <div>
-              <FieldLabel>Occupation</FieldLabel>
-              <div className="flex flex-wrap gap-1.5">
-                {OCCUPATION_OPTIONS.map((o) => (
-                  <Chip key={o} label={o} active={occupationType === o} onClick={() => setOccupationType(occupationType === o ? "" : o)} />
-                ))}
-              </div>
-              {occupationType === "Other" && (
-                <div className="mt-2">
-                  <TextInput value={occupationOtherText} onChange={setOccupationOtherText} placeholder="Enter your occupation" />
-                </div>
-              )}
-            </div>
-
             {/* Income & Expenses */}
             <div>
               <FieldLabel>Annual income range</FieldLabel>
+              <p className="text-[10px] text-muted-foreground -mt-0.5 mb-1">Includes salary and regular income (e.g. rental income)</p>
               <IncomeExpenseSlider label="Income" range={incomeRange} onChange={setIncomeRange} />
             </div>
             <div>
               <FieldLabel>Annual expense range</FieldLabel>
+              <p className="text-[10px] text-muted-foreground -mt-0.5 mb-1">Excludes all debt obligations (e.g. loans)</p>
               <IncomeExpenseSlider label="Expenses" range={expenseRange} onChange={setExpenseRange} />
             </div>
 
-            {/* Primary Wealth Source — multi-select */}
+            {/* What makes up your income? — multi-select */}
             <div>
-              <FieldLabel>Primary wealth source</FieldLabel>
+              <FieldLabel>What makes up your income?</FieldLabel>
               <div className="flex flex-wrap gap-1.5">
-                {PRIMARY_WEALTH_SOURCES.map((s) => (
+                {INCOME_SOURCE_OPTIONS.map((s) => (
                   <Chip
                     key={s}
                     label={s}
@@ -940,9 +927,9 @@ const CompleteProfile = () => {
                   />
                 ))}
               </div>
-              {primaryWealthSource.includes("Other") && (
+              {primaryWealthSource.includes("Others") && (
                 <div className="mt-2">
-                  <TextInput value={wealthSourceOtherText} onChange={setWealthSourceOtherText} placeholder="Specify other wealth source" />
+                  <TextInput value={wealthSourceOtherText} onChange={setWealthSourceOtherText} placeholder="Specify other income source" />
                 </div>
               )}
             </div>
