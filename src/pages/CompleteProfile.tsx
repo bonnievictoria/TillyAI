@@ -62,7 +62,6 @@ const SECTION_TITLES = [
   "Your financial picture",
   "What are you trying to achieve?",
   "How much risk can you handle?",
-  "Tax situation",
 ];
 
 const OBJECTIVES = [
@@ -515,7 +514,7 @@ const BehaviouralRiskModal = ({
 const CompleteProfile = () => {
   const navigate = useNavigate();
   const [openSection, setOpenSection] = useState(0);
-  const [statuses, setStatuses] = useState<SectionStatus[]>(Array(4).fill("not_started"));
+  const [statuses, setStatuses] = useState<SectionStatus[]>(Array(3).fill("not_started"));
   const [profileLoaded, setProfileLoaded] = useState(false);
 
   // Section 0 — Who are you?
@@ -610,7 +609,7 @@ const CompleteProfile = () => {
       try {
         const p = await getFullProfile();
         if (cancelled) return;
-        const newStatuses: SectionStatus[] = Array(4).fill("not_started");
+        const newStatuses: SectionStatus[] = Array(3).fill("not_started");
 
         // Load personal info data (no longer a separate section)
         if (p.personal_info) {
@@ -658,14 +657,6 @@ const CompleteProfile = () => {
           if (rp.risk_level != null) newStatuses[2] = "confirmed";
         }
 
-        // Section 3 — tax
-        if (p.tax_profile) {
-          const tp = p.tax_profile;
-          if (tp.income_tax_rate != null) setIncomeTaxRate(String(tp.income_tax_rate));
-          if (tp.capital_gains_tax_rate != null) setCgtRate(String(tp.capital_gains_tax_rate));
-          if (tp.notes) setTaxNotes(tp.notes);
-          if (tp.income_tax_rate != null) newStatuses[3] = "confirmed";
-        }
 
         // Load review preference data
         if (p.review_preference) {
@@ -708,8 +699,8 @@ const CompleteProfile = () => {
   }, []);
 
   const confirmedCount = statuses.filter((s) => s === "confirmed").length;
-  const progressPercent = Math.round((confirmedCount / 4) * 100);
-  const allConfirmed = confirmedCount === 4;
+  const progressPercent = Math.round((confirmedCount / 3) * 100);
+  const allConfirmed = confirmedCount === 3;
 
   const totalMaxAllocation = useMemo(() => {
     return permittedAssets.reduce((sum, a) => sum + (allocations[a]?.max || 0), 0);
@@ -788,13 +779,6 @@ const CompleteProfile = () => {
             comfort_assets: comfortAssets.length ? comfortAssets : null,
           });
           break;
-        case 3:
-          await updateTaxProfile({
-            income_tax_rate: incomeTaxRate ? Number(incomeTaxRate) : null,
-            capital_gains_tax_rate: cgtRate ? Number(cgtRate) : null,
-            notes: taxNotes || null,
-          });
-          break;
       }
     } catch (err) {
       if (err instanceof BackendOfflineError) return;
@@ -807,7 +791,7 @@ const CompleteProfile = () => {
       next[idx] = "confirmed";
       return next;
     });
-    if (idx < 3) setOpenSection(idx + 1);
+    if (idx < 2) setOpenSection(idx + 1);
     toast.success(`Section ${idx + 1} confirmed ✓`);
   }, [
     occupation, primaryResidence, earningMembers, dependents, values,
@@ -1208,15 +1192,6 @@ const CompleteProfile = () => {
           </div>
         );
 
-      /* ── Section 3: Tax situation ── */
-      case 3:
-        return (
-          <div className="space-y-3">
-            <div><FieldLabel>Income tax rate</FieldLabel><TextInput value={incomeTaxRate} onChange={setIncomeTaxRate} placeholder="e.g. 30" /></div>
-            <div><FieldLabel>Capital gains tax rate</FieldLabel><TextInput value={cgtRate} onChange={setCgtRate} placeholder="e.g. 15 (LTCG) / 20 (STCG)" /></div>
-            <div><FieldLabel>Additional notes (optional)</FieldLabel><TextInput value={taxNotes} onChange={setTaxNotes} placeholder="e.g. NRI status, HUF structure" /></div>
-          </div>
-        );
 
 
       default:
@@ -1251,8 +1226,8 @@ const CompleteProfile = () => {
       {/* Progress */}
       <div className="px-5 pt-3 pb-2">
         <div className="flex items-center justify-between mb-1">
-          <span className="text-[11px] text-muted-foreground font-medium">Section {Math.min(openSection + 1, 4)} of 4</span>
-          <span className="text-[11px] text-muted-foreground">{confirmedCount}/4 confirmed</span>
+          <span className="text-[11px] text-muted-foreground font-medium">Section {Math.min(openSection + 1, 3)} of 3</span>
+          <span className="text-[11px] text-muted-foreground">{confirmedCount}/3 confirmed</span>
         </div>
         <div className="h-1.5 w-full rounded-full bg-muted overflow-hidden">
           <motion.div className="h-full rounded-full bg-accent" initial={{ width: 0 }} animate={{ width: `${progressPercent}%` }} transition={{ duration: 0.5 }} />
