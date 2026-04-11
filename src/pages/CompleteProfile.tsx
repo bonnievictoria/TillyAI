@@ -486,9 +486,9 @@ const BehaviouralRiskModal = ({
   );
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center">
+    <div className="fixed inset-0 z-50 flex items-center justify-center">
       <div className="absolute inset-0 bg-black/50" onClick={onClose} />
-      <div className="relative w-full max-w-md max-h-[85vh] bg-background rounded-t-2xl sm:rounded-2xl overflow-hidden flex flex-col">
+      <div className="relative w-full max-w-md max-h-[85vh] bg-background rounded-2xl overflow-hidden flex flex-col mx-4">
         <div className="flex items-center justify-between px-5 pt-5 pb-3 border-b border-border">
           <div>
             <h3 className="text-sm font-semibold text-foreground">Behavioural Risk Assessment</h3>
@@ -1062,32 +1062,7 @@ const CompleteProfile = () => {
                     onClick={() => toggleChipArray(selectedObjectives, o, setSelectedObjectives)}
                   />
                 ))}
-                <Chip
-                  label="Other"
-                  active={showGoalOtherInput}
-                  onClick={() => setShowGoalOtherInput((prev) => !prev)}
-                />
               </div>
-              {showGoalOtherInput && (
-                <div className="mt-2">
-                  <input
-                    value={goalOtherText}
-                    onChange={(e) => setGoalOtherText(e.target.value)}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter" && goalOtherText.trim()) {
-                        const g = goalOtherText.trim();
-                        if (!customGoals.includes(g) && !selectedObjectives.includes(g)) {
-                          setCustomGoals((prev) => [...prev, g]);
-                          setSelectedObjectives((prev) => [...prev, g]);
-                        }
-                        setGoalOtherText("");
-                      }
-                    }}
-                    placeholder="Type a custom goal and press Enter"
-                    className="w-full rounded-lg border border-border bg-card px-3 py-2 text-sm text-foreground outline-none focus:border-accent transition-colors placeholder:text-muted-foreground/50"
-                  />
-                </div>
-              )}
             </div>
 
             {/* Custom goals */}
