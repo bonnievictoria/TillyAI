@@ -66,10 +66,10 @@ const SECTION_TITLES = [
 
 const OBJECTIVES = [
   "Wealth growth",
-  "Retirement planning",
+  "Retirement",
   "Child's education",
+  "Wedding",
   "Home purchase",
-  "Income generation",
   "Estate planning",
 ];
 
@@ -258,6 +258,13 @@ const RISK_TAGLINES = [
   "Maximum growth, maximum swings",
 ];
 
+const EXPERIENCE_TAGLINES: Record<string, string> = {
+  Beginner: "New to investing, still learning the basics",
+  Intermediate: "Comfortable with common instruments and market cycles",
+  Advanced: "Confident with complex strategies and portfolio construction",
+  Expert: "Deep expertise across asset classes and risk frameworks",
+};
+
 /* ── Circular Donut Risk Dial (30% smaller) ── */
 const RiskDial = ({ level, onChangeLevel }: { level: number; onChangeLevel: (l: number) => void }) => {
   const size = 154;
@@ -437,7 +444,7 @@ const IncomeExpenseSlider = ({ label, range, onChange }: {
   );
 };
 
-/* ── Behavioural Risk Modal ── */
+/* ── Behavioural Risk Modal (step-by-step) ── */
 const BehaviouralRiskModal = ({
   open, onClose, q1, setQ1, q2, setQ2, q3, setQ3,
 }: {
@@ -446,8 +453,26 @@ const BehaviouralRiskModal = ({
   q2: string; setQ2: (v: string) => void;
   q3: string; setQ3: (v: string) => void;
 }) => {
+  const [step, setStep] = useState(0);
+
+  const questions = [
+    { label: "If your portfolio dropped 20%+ in one month, what would you do?", options: BEHAV_Q1_OPTIONS, value: q1, setter: setQ1 },
+    { label: "Which would keep you up more at night?", options: BEHAV_Q2_OPTIONS, value: q2, setter: setQ2 },
+    { label: "Which scenario best describes your "Risk Range"?", options: BEHAV_Q3_OPTIONS, value: q3, setter: setQ3 },
+  ];
+
+  const totalQuestions = questions.length;
+  const current = questions[step];
+  const isLast = step === totalQuestions - 1;
+
+  const handleSelect = (option: string) => {
+    current.setter(option);
+    if (!isLast) {
+      setTimeout(() => setStep((s) => s + 1), 300);
+    }
+  };
+
   if (!open) return null;
-  const canSave = q1 !== "" && q2 !== "" && q3 !== "";
 
   const OptionCard = ({ label, selected, onClick }: { label: string; selected: boolean; onClick: () => void }) => (
     <button
@@ -467,43 +492,50 @@ const BehaviouralRiskModal = ({
         <div className="flex items-center justify-between px-5 pt-5 pb-3 border-b border-border">
           <div>
             <h3 className="text-sm font-semibold text-foreground">Behavioural Risk Assessment</h3>
-            <p className="text-[10px] text-muted-foreground mt-0.5">Understanding your behaviour</p>
+            <p className="text-[10px] text-muted-foreground mt-0.5">Question {step + 1} of {totalQuestions}</p>
           </div>
           <button onClick={onClose} className="flex h-7 w-7 items-center justify-center rounded-full bg-muted hover:bg-muted/80">
             <X className="h-3.5 w-3.5 text-foreground" />
           </button>
         </div>
-        <div className="flex-1 overflow-y-auto px-5 py-4 space-y-6">
-          {/* Q1 */}
-          <div className="space-y-2">
-            <p className="text-xs font-semibold text-foreground">1. If your portfolio dropped 20%+ in one month, what would you do?</p>
-            <div className="space-y-1.5">
-              {BEHAV_Q1_OPTIONS.map((o) => <OptionCard key={o} label={o} selected={q1 === o} onClick={() => setQ1(o)} />)}
-            </div>
-          </div>
-          {/* Q2 */}
-          <div className="space-y-2">
-            <p className="text-xs font-semibold text-foreground">2. Which would keep you up more at night?</p>
-            <div className="space-y-1.5">
-              {BEHAV_Q2_OPTIONS.map((o) => <OptionCard key={o} label={o} selected={q2 === o} onClick={() => setQ2(o)} />)}
-            </div>
-          </div>
-          {/* Q3 */}
-          <div className="space-y-2">
-            <p className="text-xs font-semibold text-foreground">3. Which scenario best describes your "Risk Range"?</p>
-            <div className="space-y-1.5">
-              {BEHAV_Q3_OPTIONS.map((o) => <OptionCard key={o} label={o} selected={q3 === o} onClick={() => setQ3(o)} />)}
-            </div>
+        <div className="px-5 pt-3 pb-1">
+          <div className="h-1 w-full rounded-full bg-muted overflow-hidden">
+            <div className="h-full rounded-full bg-accent transition-all duration-300" style={{ width: `${((step + 1) / totalQuestions) * 100}%` }} />
           </div>
         </div>
-        <div className="px-5 py-4 border-t border-border">
+        <div className="flex-1 overflow-y-auto px-5 py-4 space-y-3">
+          <p className="text-xs font-semibold text-foreground">{current.label}</p>
+          <div className="space-y-1.5">
+            {current.options.map((o) => (
+              <OptionCard key={o} label={o} selected={current.value === o} onClick={() => handleSelect(o)} />
+            ))}
+          </div>
+        </div>
+        <div className="px-5 py-4 border-t border-border flex items-center justify-between">
           <button
-            onClick={onClose}
-            disabled={!canSave}
-            className={`w-full rounded-xl py-3 text-sm font-semibold transition-all ${canSave ? "bg-foreground text-background hover:opacity-90" : "bg-muted text-muted-foreground cursor-not-allowed"}`}
+            onClick={() => setStep((s) => Math.max(0, s - 1))}
+            disabled={step === 0}
+            className={`rounded-lg px-3 py-2 text-xs font-medium transition-all ${step === 0 ? "text-muted-foreground/40 cursor-not-allowed" : "text-foreground hover:bg-muted"}`}
           >
-            Save responses
+            ← Back
           </button>
+          {isLast ? (
+            <button
+              onClick={onClose}
+              disabled={!current.value}
+              className={`rounded-xl px-5 py-2 text-xs font-semibold transition-all ${current.value ? "bg-foreground text-background hover:opacity-90" : "bg-muted text-muted-foreground cursor-not-allowed"}`}
+            >
+              Done
+            </button>
+          ) : (
+            <button
+              onClick={() => setStep((s) => Math.min(totalQuestions - 1, s + 1))}
+              disabled={!current.value}
+              className={`rounded-lg px-3 py-2 text-xs font-medium transition-all ${current.value ? "text-foreground hover:bg-muted" : "text-muted-foreground/40 cursor-not-allowed"}`}
+            >
+              Next →
+            </button>
+          )}
         </div>
       </div>
     </div>
@@ -547,6 +579,7 @@ const CompleteProfile = () => {
   const [largeIncomeAmount, setLargeIncomeAmount] = useState("");
   const [largeIncomeCurrency, setLargeIncomeCurrency] = useState("INR");
   const [largeIncomeYear, setLargeIncomeYear] = useState("");
+  const [largeIncomeDescription, setLargeIncomeDescription] = useState("");
   const [emergencyFund, setEmergencyFund] = useState("");
   const [emergencyTimeframe, setEmergencyTimeframe] = useState("6 months");
 
@@ -931,7 +964,7 @@ const CompleteProfile = () => {
               </div>
             </div>
             <div>
-              <FieldLabel>Total liabilities / debts</FieldLabel>
+              <FieldLabel>Liabilities / debts</FieldLabel>
               <p className="text-[10px] text-muted-foreground -mt-0.5 mb-1">Excludes mortgage repayment</p>
               <TextInput value={liabilities} onChange={setLiabilities} prefix="₹" placeholder="e.g. 5,00,000" />
             </div>
@@ -1002,7 +1035,8 @@ const CompleteProfile = () => {
             <div>
               <FieldLabel>Expected large income</FieldLabel>
               <p className="text-[10px] text-muted-foreground -mt-0.5 mb-1">e.g. bonus, inheritance, property sale</p>
-              <div className="grid grid-cols-2 gap-2">
+              <div className="grid grid-cols-3 gap-2">
+                <div><label className="text-[10px] text-muted-foreground">Description</label><TextInput value={largeIncomeDescription} onChange={setLargeIncomeDescription} placeholder="e.g. Bonus" /></div>
                 <div><label className="text-[10px] text-muted-foreground">Year</label><TextInput value={largeIncomeYear} onChange={setLargeIncomeYear} placeholder="e.g. 2026" /></div>
                 <div><label className="text-[10px] text-muted-foreground">Amount</label><TextInput value={largeIncomeAmount} onChange={setLargeIncomeAmount} prefix="₹" placeholder="e.g. 25,00,000" /></div>
               </div>
@@ -1152,6 +1186,9 @@ const CompleteProfile = () => {
                   <Chip key={e} label={e} active={investmentExperience === e} onClick={() => setInvestmentExperience(e)} />
                 ))}
               </div>
+              {investmentExperience && (
+                <p className="text-[10px] text-muted-foreground mt-1.5 italic">{EXPERIENCE_TAGLINES[investmentExperience]}</p>
+              )}
             </div>
 
             <div>
@@ -1163,16 +1200,6 @@ const CompleteProfile = () => {
               </div>
             </div>
 
-            <div>
-              <FieldLabel>Any specifics you'd like to share about your investment horizon?</FieldLabel>
-              <textarea
-                value={horizonNotes}
-                onChange={(e) => setHorizonNotes(e.target.value)}
-                placeholder="e.g. I plan to retire in 10 years but may need some funds in 3 years for a home purchase..."
-                rows={3}
-                className="w-full rounded-lg border border-border bg-card px-3 py-2 text-sm text-foreground outline-none focus:border-accent transition-colors placeholder:text-[12px] resize-none"
-              />
-            </div>
 
             {/* Behavioural Risk Assessment — opens modal */}
             <div>
