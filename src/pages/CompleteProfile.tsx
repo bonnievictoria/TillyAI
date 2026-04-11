@@ -458,7 +458,7 @@ const BehaviouralRiskModal = ({
   const questions = [
     { label: "If your portfolio dropped 20%+ in one month, what would you do?", options: BEHAV_Q1_OPTIONS, value: q1, setter: setQ1 },
     { label: "Which would keep you up more at night?", options: BEHAV_Q2_OPTIONS, value: q2, setter: setQ2 },
-    { label: "Which scenario best describes your "Risk Range"?", options: BEHAV_Q3_OPTIONS, value: q3, setter: setQ3 },
+    { label: 'Which scenario best describes your "Risk Range"?', options: BEHAV_Q3_OPTIONS, value: q3, setter: setQ3 },
   ];
 
   const totalQuestions = questions.length;
