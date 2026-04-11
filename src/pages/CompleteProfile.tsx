@@ -540,7 +540,10 @@ const CompleteProfile = () => {
   const [properties, setProperties] = useState<Property[]>([{ value: "", mortgage: "", monthlyRepayment: "", yearPurchased: "" }]);
   const [plannedExpenseYear, setPlannedExpenseYear] = useState("");
   const [plannedExpenseAmount, setPlannedExpenseAmount] = useState("");
+  const [plannedExpenseDescription, setPlannedExpenseDescription] = useState("");
+  const [plannedExpenseAsGoal, setPlannedExpenseAsGoal] = useState(false);
   const [otherAssetsValue, setOtherAssetsValue] = useState("");
+  const [otherAssetDescription, setOtherAssetDescription] = useState("");
   const [expectingLargeIncome, setExpectingLargeIncome] = useState(false);
   const [largeIncomeAmount, setLargeIncomeAmount] = useState("");
   const [largeIncomeCurrency, setLargeIncomeCurrency] = useState("INR");
@@ -552,6 +555,9 @@ const CompleteProfile = () => {
   const [selectedObjectives, setSelectedObjectives] = useState<string[]>([]);
   const [goalDetails, setGoalDetails] = useState<Record<string, GoalDetail>>({});
   const [customGoals, setCustomGoals] = useState<string[]>([]);
+  const [customGoalInput, setCustomGoalInput] = useState("");
+  const [showGoalOtherInput, setShowGoalOtherInput] = useState(false);
+  const [goalOtherText, setGoalOtherText] = useState("");
   const [customGoalInput, setCustomGoalInput] = useState("");
 
   // Section 3 — How much risk?
