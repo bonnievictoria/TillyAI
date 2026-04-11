@@ -744,13 +744,11 @@ const CompleteProfile = () => {
           });
           {
             const sources = [...primaryWealthSource];
-            if (sources.includes("Other") && wealthSourceOtherText.trim()) {
-              sources[sources.indexOf("Other")] = wealthSourceOtherText.trim();
+            if (sources.includes("Others") && wealthSourceOtherText.trim()) {
+              sources[sources.indexOf("Others")] = wealthSourceOtherText.trim();
             }
-            const occVal = occupationType === "Other" ? occupationOtherText.trim() || "Other" : occupationType;
             await updatePersonalInfo({
               wealth_sources: sources.length ? sources : null,
-              ...(occVal ? { occupation: occVal } : {}),
               family_status: `${earningMembers || "0"} earning, ${dependents || "0"} dependents`,
             });
           }
