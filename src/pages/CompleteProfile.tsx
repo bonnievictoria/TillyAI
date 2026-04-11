@@ -630,7 +630,7 @@ const CompleteProfile = () => {
             setOwnsHome(true);
             setProperties([{ value: parseNum(ip.property_value?.toString()), mortgage: parseNum(ip.mortgage_amount?.toString()), monthlyRepayment: "", yearPurchased: "" }]);
           }
-          setPlannedExpenses(parseNum(ip.planned_major_expenses?.toString()));
+          // plannedExpenses removed — now structured fields
           setEmergencyFund(parseNum(ip.emergency_fund?.toString()));
           if (ip.emergency_fund_months) setEmergencyTimeframe(ip.emergency_fund_months);
           if (ip.investable_assets != null) newStatuses[0] = "confirmed";
@@ -740,7 +740,7 @@ const CompleteProfile = () => {
             total_liabilities: toNum(liabilities),
             property_value: ownsHome ? toNum(properties[0]?.value) : null,
             mortgage_amount: ownsHome ? toNum(properties[0]?.mortgage) : null,
-            planned_major_expenses: toNum(plannedExpenses),
+            planned_major_expenses: plannedExpenseAmount ? toNum(plannedExpenseAmount) : null,
             emergency_fund: toNum(emergencyFund),
             emergency_fund_months: emergencyTimeframe || null,
           });
@@ -806,7 +806,7 @@ const CompleteProfile = () => {
     toast.success(`Section ${idx + 1} confirmed ✓`);
   }, [
     occupation, primaryResidence, earningMembers, dependents, values,
-    primaryWealthSource, investableAssets, liabilities, properties, plannedExpenses, emergencyFund, emergencyTimeframe, otherAssets, ownsHome, expectingLargeIncome, largeIncomeAmount, largeIncomeCurrency, largeIncomeYear,
+    primaryWealthSource, investableAssets, liabilities, properties, plannedExpenseYear, plannedExpenseAmount, emergencyFund, emergencyTimeframe, otherAssets, otherAssetsValue, ownsHome, expectingLargeIncome, largeIncomeAmount, largeIncomeCurrency, largeIncomeYear,
     selectedObjectives, goalDetails,
     riskLevelIdx, riskCapacity, investmentExperience, investmentHorizon, horizonNotes, behavQ1, behavQ2, behavQ3, maxDrawdown, comfortAssets,
     permittedAssets, allocations, prohibited, leverage, derivatives, diversificationNotes,
