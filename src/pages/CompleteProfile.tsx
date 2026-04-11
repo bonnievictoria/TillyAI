@@ -558,7 +558,6 @@ const CompleteProfile = () => {
   const [customGoalInput, setCustomGoalInput] = useState("");
   const [showGoalOtherInput, setShowGoalOtherInput] = useState(false);
   const [goalOtherText, setGoalOtherText] = useState("");
-  const [customGoalInput, setCustomGoalInput] = useState("");
 
   // Section 3 — How much risk?
   const [riskLevelIdx, setRiskLevelIdx] = useState(2);
