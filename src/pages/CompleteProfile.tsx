@@ -83,7 +83,7 @@ const GOAL_PURPOSES = [
 
 const CURRENCIES = ["INR", "USD", "GBP"];
 
-const INCOME_SOURCE_OPTIONS = ["Salary", "Business", "Family supported", "Investments", "Retired", "Others"];
+const INCOME_SOURCE_OPTIONS = ["Salary", "Business", "Family supported", "Investments", "Pension", "Others"];
 
 const RISK_LEVELS = [...RISK_CATEGORIES];
 
@@ -538,7 +538,9 @@ const CompleteProfile = () => {
   const [otherAssets, setOtherAssets] = useState<OtherAsset[]>([]);
   const [ownsHome, setOwnsHome] = useState(false);
   const [properties, setProperties] = useState<Property[]>([{ value: "", mortgage: "", monthlyRepayment: "", yearPurchased: "" }]);
-  const [plannedExpenses, setPlannedExpenses] = useState("");
+  const [plannedExpenseYear, setPlannedExpenseYear] = useState("");
+  const [plannedExpenseAmount, setPlannedExpenseAmount] = useState("");
+  const [otherAssetsValue, setOtherAssetsValue] = useState("");
   const [expectingLargeIncome, setExpectingLargeIncome] = useState(false);
   const [largeIncomeAmount, setLargeIncomeAmount] = useState("");
   const [largeIncomeCurrency, setLargeIncomeCurrency] = useState("INR");
