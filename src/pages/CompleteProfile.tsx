@@ -66,12 +66,12 @@ const SECTION_TITLES = [
 ];
 
 const OBJECTIVES = [
-  "Wealth Growth",
-  "Retirement Planning",
-  "Child's Education",
-  "Home Purchase",
-  "Income Generation",
-  "Estate Planning",
+  "Wealth growth",
+  "Retirement planning",
+  "Child's education",
+  "Home purchase",
+  "Income generation",
+  "Estate planning",
 ];
 
 const GOAL_PURPOSES = [
@@ -540,7 +540,10 @@ const CompleteProfile = () => {
   const [properties, setProperties] = useState<Property[]>([{ value: "", mortgage: "", monthlyRepayment: "", yearPurchased: "" }]);
   const [plannedExpenseYear, setPlannedExpenseYear] = useState("");
   const [plannedExpenseAmount, setPlannedExpenseAmount] = useState("");
+  const [plannedExpenseDescription, setPlannedExpenseDescription] = useState("");
+  const [plannedExpenseAsGoal, setPlannedExpenseAsGoal] = useState(false);
   const [otherAssetsValue, setOtherAssetsValue] = useState("");
+  const [otherAssetDescription, setOtherAssetDescription] = useState("");
   const [expectingLargeIncome, setExpectingLargeIncome] = useState(false);
   const [largeIncomeAmount, setLargeIncomeAmount] = useState("");
   const [largeIncomeCurrency, setLargeIncomeCurrency] = useState("INR");
@@ -553,6 +556,8 @@ const CompleteProfile = () => {
   const [goalDetails, setGoalDetails] = useState<Record<string, GoalDetail>>({});
   const [customGoals, setCustomGoals] = useState<string[]>([]);
   const [customGoalInput, setCustomGoalInput] = useState("");
+  const [showGoalOtherInput, setShowGoalOtherInput] = useState(false);
+  const [goalOtherText, setGoalOtherText] = useState("");
 
   // Section 3 — How much risk?
   const [riskLevelIdx, setRiskLevelIdx] = useState(2);
@@ -909,9 +914,9 @@ const CompleteProfile = () => {
               <IncomeExpenseSlider label="Expenses" range={expenseRange} onChange={setExpenseRange} />
             </div>
 
-            {/* What makes up your income? — multi-select */}
+            {/* What makes up your primary income? — multi-select */}
             <div>
-              <FieldLabel>What makes up your income?</FieldLabel>
+              <FieldLabel>What makes up your primary income?</FieldLabel>
               <div className="flex flex-wrap gap-1.5">
                 {INCOME_SOURCE_OPTIONS.map((s) => (
                   <Chip
@@ -936,7 +941,10 @@ const CompleteProfile = () => {
             <div>
               <FieldLabel>Other assets</FieldLabel>
               <p className="text-[10px] text-muted-foreground -mt-0.5 mb-1">Includes any unlisted shares, gold and other assets</p>
-              <TextInput value={otherAssetsValue} onChange={setOtherAssetsValue} prefix="₹" placeholder="e.g. 10,00,000" />
+              <div className="grid grid-cols-2 gap-2">
+                <div><label className="text-[10px] text-muted-foreground">Asset (description)</label><TextInput value={otherAssetDescription} onChange={setOtherAssetDescription} placeholder="e.g. Gold, Unlisted shares" /></div>
+                <div><label className="text-[10px] text-muted-foreground">Amount</label><TextInput value={otherAssetsValue} onChange={setOtherAssetsValue} prefix="₹" placeholder="e.g. 10,00,000" /></div>
+              </div>
             </div>
             <div>
               <FieldLabel>Total liabilities / debts</FieldLabel>
@@ -980,10 +988,30 @@ const CompleteProfile = () => {
             {/* Planned large expense */}
             <div>
               <FieldLabel>Planned large expense</FieldLabel>
-              <div className="grid grid-cols-2 gap-2">
+              <div className="grid grid-cols-3 gap-2">
+                <div><label className="text-[10px] text-muted-foreground">Description</label><TextInput value={plannedExpenseDescription} onChange={setPlannedExpenseDescription} placeholder="e.g. Wedding" /></div>
                 <div><label className="text-[10px] text-muted-foreground">Year</label><TextInput value={plannedExpenseYear} onChange={setPlannedExpenseYear} placeholder="e.g. 2026" /></div>
-                <div><label className="text-[10px] text-muted-foreground">Amount</label><TextInput value={plannedExpenseAmount} onChange={setPlannedExpenseAmount} prefix="₹" placeholder="e.g. 25,00,000" /></div>
+                <div><label className="text-[10px] text-muted-foreground">Amount</label><TextInput value={plannedExpenseAmount} onChange={setPlannedExpenseAmount} prefix="₹" placeholder="e.g. 25L" /></div>
               </div>
+              {plannedExpenseDescription.trim() && (
+                <div className="mt-2 rounded-lg border border-border bg-card/50 px-3 py-2">
+                  <p className="text-[10px] text-muted-foreground mb-1">Would you like to add this as a goal so we can plan for it?</p>
+                  <Toggle value={plannedExpenseAsGoal} onChange={(v) => {
+                    setPlannedExpenseAsGoal(v);
+                    if (v && plannedExpenseDescription.trim()) {
+                      const goalName = plannedExpenseDescription.trim();
+                      if (!selectedObjectives.includes(goalName)) {
+                        setSelectedObjectives((prev) => [...prev, goalName]);
+                        setCustomGoals((prev) => prev.includes(goalName) ? prev : [...prev, goalName]);
+                        updateGoalDetail(goalName, {
+                          amount: plannedExpenseAmount,
+                          year: plannedExpenseYear,
+                        });
+                      }
+                    }
+                  }} labelA="No" labelB="Yes" />
+                </div>
+              )}
             </div>
 
             {/* Expected large income */}
@@ -997,10 +1025,6 @@ const CompleteProfile = () => {
             </div>
 
 
-            <div className="flex gap-3">
-              <div className="flex-1"><FieldLabel>Emergency fund target</FieldLabel><TextInput value={emergencyFund} onChange={setEmergencyFund} prefix="₹" placeholder="e.g. 3,00,000" /></div>
-              <div className="w-32"><FieldLabel>Timeframe</FieldLabel><SelectInput value={emergencyTimeframe} onChange={setEmergencyTimeframe} options={EMERGENCY_TIMEFRAMES} /></div>
-            </div>
           </div>
         );
 
@@ -1020,7 +1044,32 @@ const CompleteProfile = () => {
                     onClick={() => toggleChipArray(selectedObjectives, o, setSelectedObjectives)}
                   />
                 ))}
+                <Chip
+                  label="Other"
+                  active={showGoalOtherInput}
+                  onClick={() => setShowGoalOtherInput((prev) => !prev)}
+                />
               </div>
+              {showGoalOtherInput && (
+                <div className="mt-2">
+                  <input
+                    value={goalOtherText}
+                    onChange={(e) => setGoalOtherText(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" && goalOtherText.trim()) {
+                        const g = goalOtherText.trim();
+                        if (!customGoals.includes(g) && !selectedObjectives.includes(g)) {
+                          setCustomGoals((prev) => [...prev, g]);
+                          setSelectedObjectives((prev) => [...prev, g]);
+                        }
+                        setGoalOtherText("");
+                      }
+                    }}
+                    placeholder="Type a custom goal and press Enter"
+                    className="w-full rounded-lg border border-border bg-card px-3 py-2 text-sm text-foreground outline-none focus:border-accent transition-colors placeholder:text-muted-foreground/50"
+                  />
+                </div>
+              )}
             </div>
 
             {/* Custom goals */}
