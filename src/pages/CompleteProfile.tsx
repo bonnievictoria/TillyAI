@@ -869,9 +869,8 @@ const CompleteProfile = () => {
       case 0:
         return (
            <div className="space-y-3">
-            {/* Family situation */}
+            {/* Family situation — no heading */}
             <div>
-              <FieldLabel>Family situation: earning members and dependents</FieldLabel>
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="text-[10px] text-muted-foreground">Earning members</label>
@@ -933,8 +932,17 @@ const CompleteProfile = () => {
                 </div>
               )}
             </div>
-            <div><FieldLabel>Financial and liquid assets</FieldLabel><TextInput value={investableAssets} onChange={setInvestableAssets} prefix="₹" placeholder="e.g. 42,00,000" /></div>
-            <div><FieldLabel>Total liabilities / debts</FieldLabel><TextInput value={liabilities} onChange={setLiabilities} prefix="₹" placeholder="e.g. 5,00,000" /></div>
+            <div><FieldLabel>Cash and financial assets</FieldLabel><TextInput value={investableAssets} onChange={setInvestableAssets} prefix="₹" placeholder="e.g. 42,00,000" /></div>
+            <div>
+              <FieldLabel>Other assets</FieldLabel>
+              <p className="text-[10px] text-muted-foreground -mt-0.5 mb-1">Includes any unlisted shares, gold and other assets</p>
+              <TextInput value={otherAssetsValue} onChange={setOtherAssetsValue} prefix="₹" placeholder="e.g. 10,00,000" />
+            </div>
+            <div>
+              <FieldLabel>Total liabilities / debts</FieldLabel>
+              <p className="text-[10px] text-muted-foreground -mt-0.5 mb-1">Excludes mortgage repayment</p>
+              <TextInput value={liabilities} onChange={setLiabilities} prefix="₹" placeholder="e.g. 5,00,000" />
+            </div>
 
 
             {/* Property */}
@@ -969,22 +977,23 @@ const CompleteProfile = () => {
               )}
             </div>
 
-            <div><FieldLabel>Planned large expenses</FieldLabel><TextInput value={plannedExpenses} onChange={setPlannedExpenses} placeholder="e.g. school fees from 2026, property purchase" /></div>
+            {/* Planned large expense */}
+            <div>
+              <FieldLabel>Planned large expense</FieldLabel>
+              <div className="grid grid-cols-2 gap-2">
+                <div><label className="text-[10px] text-muted-foreground">Year</label><TextInput value={plannedExpenseYear} onChange={setPlannedExpenseYear} placeholder="e.g. 2026" /></div>
+                <div><label className="text-[10px] text-muted-foreground">Amount</label><TextInput value={plannedExpenseAmount} onChange={setPlannedExpenseAmount} prefix="₹" placeholder="e.g. 25,00,000" /></div>
+              </div>
+            </div>
 
             {/* Expected large income */}
             <div>
-              <FieldLabel>Are you expecting any large income in the future?</FieldLabel>
-              <p className="text-[10px] text-muted-foreground mb-1.5">e.g. bonus, inheritance, property sale</p>
-              <Toggle value={expectingLargeIncome} onChange={setExpectingLargeIncome} labelA="No" labelB="Yes" />
-              {expectingLargeIncome && (
-                <div className="mt-3 space-y-2 pl-1 border-l-2 border-accent/20 ml-1">
-                  <div className="grid grid-cols-2 gap-2">
-                    <div><label className="text-[10px] text-muted-foreground">Amount</label><TextInput value={largeIncomeAmount} onChange={setLargeIncomeAmount} placeholder="e.g. 25,00,000" /></div>
-                    <div><label className="text-[10px] text-muted-foreground">Currency</label><SelectInput value={largeIncomeCurrency} onChange={setLargeIncomeCurrency} options={CURRENCIES} /></div>
-                  </div>
-                  <div><label className="text-[10px] text-muted-foreground">Expected year</label><TextInput value={largeIncomeYear} onChange={setLargeIncomeYear} placeholder="e.g. 2026" /></div>
-                </div>
-              )}
+              <FieldLabel>Expected large income</FieldLabel>
+              <p className="text-[10px] text-muted-foreground -mt-0.5 mb-1">e.g. bonus, inheritance, property sale</p>
+              <div className="grid grid-cols-2 gap-2">
+                <div><label className="text-[10px] text-muted-foreground">Year</label><TextInput value={largeIncomeYear} onChange={setLargeIncomeYear} placeholder="e.g. 2026" /></div>
+                <div><label className="text-[10px] text-muted-foreground">Amount</label><TextInput value={largeIncomeAmount} onChange={setLargeIncomeAmount} prefix="₹" placeholder="e.g. 25,00,000" /></div>
+              </div>
             </div>
 
 
