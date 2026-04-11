@@ -89,24 +89,26 @@ const RISK_LEVELS = [...RISK_CATEGORIES];
 const HORIZON_OPTIONS = ["< 2 years", "2 – 7 years", "7+ years"];
 
 const BEHAV_Q1_OPTIONS = [
-  "Cut losses immediately and liquidate all investments. Capital preservation is paramount.",
-  "Cut your losses and transfer investments to safer asset classes.",
-  "You would be worried, but would give your investments a little more time.",
-  "You accept volatility and decline in portfolio value as a part of investing. You would keep your investments as is.",
-  "You would add to your investments to bring the average buying price lower. You are confident about your investments and are not perturbed by notional losses.",
+  "I am a novice. I am new to investing and financial markets.",
+  "I have a basic understanding of investing. I understand basic investment concepts like diversification and risks.",
+  "I am enthusiastic about investing. I understand how markets fluctuate and the pros and cons of different investment classes.",
+  "I am an experienced investor. I have invested in different markets and understand different investment strategies. I have developed my own investment philosophy.",
 ];
 
 const BEHAV_Q2_OPTIONS = [
-  "Knowing you missed a 20%+ market gain",
-  "Knowing you lost 15%+ of your capital",
+  "Preferably guaranteed returns, before tax efficiency.",
+  "Stable, reliable returns, minimal tax efficiency.",
+  "Some variability in returns, some tax efficiency.",
+  "Moderate variability in returns, reasonable tax efficiency.",
+  "Unstable, but potentially higher returns, maximizing tax efficiency.",
 ];
 
 const BEHAV_Q3_OPTIONS = [
-  "A — Worst -2% / Best 11%",
-  "B — Worst -6% / Best 18%",
-  "C — Worst -13% / Best 24%",
-  "D — Worst -20% / Best 30%",
-  "E — Worst -27% / Best 37%",
+  "Capital preservation is paramount. Cut losses immediately and liquidate all investments.",
+  "Transfer investments to safer asset classes to prevent further loss.",
+  "Would feel worried but would wait to give your investments a little more time.",
+  "Accept volatility and dips in portfolio value as part of investing. Will keep investments as they are.",
+  "Buy the dip to bring the average buying price lower. Comfortable sitting with lower portfolio values and waiting for the market to recover in the long term.",
 ];
 
 const ASSET_COMFORT = ["Equities", "Bonds", "Real Estate", "Gold", "Crypto", "International Markets"];
@@ -456,9 +458,9 @@ const BehaviouralRiskModal = ({
   const [step, setStep] = useState(0);
 
   const questions = [
-    { label: "If your portfolio dropped 20%+ in one month, what would you do?", options: BEHAV_Q1_OPTIONS, value: q1, setter: setQ1 },
-    { label: "Which would keep you up more at night?", options: BEHAV_Q2_OPTIONS, value: q2, setter: setQ2 },
-    { label: 'Which scenario best describes your "Risk Range"?', options: BEHAV_Q3_OPTIONS, value: q3, setter: setQ3 },
+    { label: "How would you describe your investment experience?", options: BEHAV_Q1_OPTIONS, value: q1, setter: setQ1 },
+    { label: "How would you describe your investment focus?", options: BEHAV_Q2_OPTIONS, value: q2, setter: setQ2 },
+    { label: "If in the current year the value of your investments declines by ~20%, what would you do?", options: BEHAV_Q3_OPTIONS, value: q3, setter: setQ3 },
   ];
 
   const totalQuestions = questions.length;
@@ -1154,18 +1156,6 @@ const CompleteProfile = () => {
       case 2:
         return (
           <div className="space-y-4">
-            <div>
-              <FieldLabel>Investment experience</FieldLabel>
-              <div className="flex flex-wrap gap-1.5">
-                {["Beginner", "Intermediate", "Advanced", "Expert"].map((e) => (
-                  <Chip key={e} label={e} active={investmentExperience === e} onClick={() => setInvestmentExperience(e)} />
-                ))}
-              </div>
-              {investmentExperience && (
-                <p className="text-[10px] text-muted-foreground mt-1.5 italic">{EXPERIENCE_TAGLINES[investmentExperience]}</p>
-              )}
-            </div>
-
             <div>
               <FieldLabel>Investment horizon</FieldLabel>
               <div className="flex flex-wrap gap-1.5">
