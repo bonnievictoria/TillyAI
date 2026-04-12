@@ -45,7 +45,7 @@ const suggestedQuestions = [
 const CHAT_ONBOARDING_SECTIONS = [
   { name: "Your financial picture", prompt: "Let's talk about your finances. Walk me through your income, savings, assets, any property you own, and any large expenses coming up.", estimate: "~3 minutes" },
   { name: "What are you trying to achieve?", prompt: "What are your main investment goals? Think about what you're saving for, how much you need, and when you'll need the money.", estimate: "~2 minutes" },
-  { name: "How much risk can you handle?", prompt: "Let's talk about risk. How would you describe your investment experience, and how would you react if your portfolio dropped 20% in a month?", estimate: "~2 minutes" },
+  { name: "Your investment preference and focus", prompt: "Let's talk about risk. How would you describe your investment experience, and how would you react if your portfolio dropped 20% in a month?", estimate: "~2 minutes" },
 ];
 
 const CHAT_ONBOARDING_NOTES: Record<number, string[]> = {

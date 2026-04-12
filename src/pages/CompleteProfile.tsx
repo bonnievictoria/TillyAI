@@ -61,7 +61,7 @@ const STATUS_COLORS: Record<SectionStatus, string> = {
 const SECTION_TITLES = [
   "Your financial picture",
   "What are you trying to achieve?",
-  "How much risk can you handle?",
+  "Your investment preference and focus",
 ];
 
 const OBJECTIVES = [
@@ -1152,7 +1152,7 @@ const CompleteProfile = () => {
           </div>
         );
 
-      /* ── Section 2: How much risk can you handle? ── */
+      /* ── Section 2: Your investment preference and focus ── */
       case 2:
         return (
           <div className="space-y-4">

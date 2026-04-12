@@ -77,7 +77,7 @@ function buildSections(p: FullProfileResponse | null, userName: string): IpsSect
       ],
     },
     {
-      title: "How much risk can you handle?",
+      title: "Your investment preference and focus",
       fields: [
         {
           label: "Risk tolerance",
