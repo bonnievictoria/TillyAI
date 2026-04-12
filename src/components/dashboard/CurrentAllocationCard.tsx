@@ -233,10 +233,14 @@ const CurrentAllocationCard = ({ portfolio, riskCategory, horizonLabel }: Curren
                           className="overflow-hidden"
                         >
                           <div className="ml-6 mb-3 rounded-lg bg-muted/30 p-3 space-y-2">
-                            <div className="flex justify-between text-[11px]">
-                              <span className="text-muted-foreground">Current value</span>
-                              <span className="font-medium text-foreground">{formatInrCompact(row.currentValue)}</span>
-                            </div>
+                            {row.returnPct !== null && (
+                              <div className="flex justify-between text-[11px]">
+                                <span className="text-muted-foreground">1Y Performance</span>
+                                <span className="font-medium" style={{ color: returnColor }}>
+                                  {returnText}
+                                </span>
+                              </div>
+                            )}
                             {row.avgCost && (
                               <div className="flex justify-between text-[11px]">
                                 <span className="text-muted-foreground">Invested</span>
