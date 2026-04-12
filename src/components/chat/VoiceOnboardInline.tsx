@@ -100,7 +100,7 @@ const VoiceOnboardInline = ({ onComplete }: VoiceOnboardInlineProps) => {
               <span className="text-[8px] text-muted-foreground/70 leading-tight text-center truncate w-full">
                 {s.name}
               </span>
-              <span className="text-[7px] text-muted-foreground/50">~5 min</span>
+              <span className="text-[7px] text-muted-foreground/50">{i < 2 ? "~5 min" : "~1 min"}</span>
             </div>
           ))}
         </div>
