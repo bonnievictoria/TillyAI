@@ -43,23 +43,15 @@ const suggestedQuestions = [
 
 /* ── Onboarding sections (matches /profile/complete) ── */
 const CHAT_ONBOARDING_SECTIONS = [
-  { name: "Who are you?", prompt: "Let's start with the basics — tell me about yourself. Where do you live, what's your family situation, and who depends on you financially?", estimate: "~2 minutes" },
-  { name: "Your financial picture", prompt: "Now let's talk about your finances. Walk me through your income, savings, assets, any property you own, and any large expenses coming up.", estimate: "~3 minutes" },
+  { name: "Your financial picture", prompt: "Let's talk about your finances. Walk me through your income, savings, assets, any property you own, and any large expenses coming up.", estimate: "~3 minutes" },
   { name: "What are you trying to achieve?", prompt: "What are your main investment goals? Think about what you're saving for, how much you need, and when you'll need the money.", estimate: "~2 minutes" },
-  { name: "How much risk can you handle?", prompt: "Let's talk about risk. How much investing experience do you have, and how would you react if your portfolio dropped 20% in a month?", estimate: "~2 minutes" },
-  { name: "Rules & limits", prompt: "Are there any rules or constraints for your investments? For example, asset classes to avoid, ethical preferences, or minimum allocations you'd like.", estimate: "~3 minutes" },
-  { name: "Tax situation", prompt: "Tell me about your tax situation — your tax residency, approximate bracket, and whether you use any tax-advantaged accounts.", estimate: "~2 minutes" },
-  { name: "Staying involved", prompt: "Last one — how hands-on do you want to be? How often would you like portfolio reviews and what's your preferred way to stay updated?", estimate: "~1 minute" },
+  { name: "How much risk can you handle?", prompt: "Let's talk about risk. How would you describe your investment experience, and how would you react if your portfolio dropped 20% in a month?", estimate: "~2 minutes" },
 ];
 
 const CHAT_ONBOARDING_NOTES: Record<number, string[]> = {
-  0: ["Primary residence: Mumbai", "Married, spouse also earning", "Two dependents (children)", "Age 38, mid-career professional"],
-  1: ["Monthly income ₹1.8L", "Expenses around ₹90K/month", "Existing FD of ₹12L", "Property valued at ₹85L, no major liabilities"],
-  2: ["Retirement by 55 — primary goal", "Children's education fund in 8 years", "Target corpus: ₹2Cr", "Secondary: vacation fund"],
-  3: ["Moderate experience with mutual funds", "Comfortable with 15-20% drawdowns", "Prefers steady growth over quick gains", "10-15 year horizon"],
-  4: ["No crypto or speculative assets", "Prefers ESG-compliant options", "Minimum 20% in fixed income", "Open to international diversification"],
-  5: ["Indian tax resident", "30% tax bracket", "Has PPF and NPS accounts", "Interested in ELSS for tax saving"],
-  6: ["Quarterly review preferred", "Email updates are fine", "Wants alerts for major rebalancing", "Comfortable with advisor-led decisions"],
+  0: ["Monthly income ₹1.8L", "Expenses around ₹90K/month", "Existing FD of ₹12L", "Property valued at ₹85L, no major liabilities"],
+  1: ["Retirement by 55 — primary goal", "Children's education fund in 8 years", "Target corpus: ₹2Cr", "Secondary: vacation fund"],
+  2: ["Moderate experience with mutual funds", "Comfortable with 15-20% drawdowns", "Prefers steady growth over quick gains", "10-15 year horizon"],
 };
 
 const KUDOS_MESSAGES = [
@@ -402,7 +394,7 @@ const AIChatPanel = ({ isOpen, onClose, embedded = false, chatFirst = false, com
       const section = CHAT_ONBOARDING_SECTIONS[0];
       setMessages((prev) => [
         ...prev,
-        { role: "ai", content: `Section 1 of 7 · ${section.name}`, type: "section-start", sectionName: section.name },
+        { role: "ai", content: `Section 1 of 3 · ${section.name}`, type: "section-start", sectionName: section.name },
         { role: "ai", content: section.prompt },
       ]);
       setAwaitingResponse(true);
@@ -453,7 +445,7 @@ const AIChatPanel = ({ isOpen, onClose, embedded = false, chatFirst = false, com
           const section = CHAT_ONBOARDING_SECTIONS[next];
           setMessages((prev) => [
             ...prev,
-            { role: "ai", content: `Section ${next + 1} of 7 · ${section.name}`, type: "section-start", sectionName: section.name },
+            { role: "ai", content: `Section ${next + 1} of 3 · ${section.name}`, type: "section-start", sectionName: section.name },
             { role: "ai", content: section.prompt },
           ]);
         } else {
@@ -746,7 +738,7 @@ const AIChatPanel = ({ isOpen, onClose, embedded = false, chatFirst = false, com
               <div className="flex items-center justify-between px-4 py-2">
                 <div className="flex flex-col">
                   <span className="text-[10px] font-medium text-muted-foreground">
-                    Section {onboardingSection + 1} of 7 · {CHAT_ONBOARDING_SECTIONS[onboardingSection].name}
+                    Section {onboardingSection + 1} of 3 · {CHAT_ONBOARDING_SECTIONS[onboardingSection].name}
                   </span>
                   <span className="text-[9px] text-muted-foreground/70 italic">
                     takes {CHAT_ONBOARDING_SECTIONS[onboardingSection].estimate}
@@ -793,7 +785,7 @@ const AIChatPanel = ({ isOpen, onClose, embedded = false, chatFirst = false, com
                       <Check className="h-2.5 w-2.5 text-emerald-500" />
                     </div>
                     <span className="text-[11px] font-medium text-foreground">
-                      {completedSections.length} of 7 done
+                      {completedSections.length} of 3 done
                     </span>
                   </div>
                   <div className="flex items-center gap-0.5">
