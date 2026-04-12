@@ -247,23 +247,13 @@ const CurrentAllocationCard = ({ portfolio, riskCategory, horizonLabel }: Curren
                                 <span className="font-medium text-foreground">{formatInrCompact(row.avgCost)}</span>
                               </div>
                             )}
-                            {row.returnPct !== null && (
-                              <>
-                                <div className="flex justify-between text-[11px]">
-                                  <span className="text-muted-foreground">Return (YoY)</span>
-                                  <span className="font-medium" style={{ color: returnColor }}>
-                                    {returnText}
-                                  </span>
-                                </div>
-                                <div className="flex justify-between text-[11px]">
-                                  <span className="text-muted-foreground">Gain / Loss</span>
-                                  <span className="font-medium" style={{ color: returnColor }}>
-                                    {row.currentValue - (row.avgCost || 0) >= 0 ? "+" : ""}
-                                    {formatInrCompact(Math.abs(row.currentValue - (row.avgCost || 0)))}
-                                  </span>
-                                </div>
-                              </>
-                            )}
+                            <div className="flex justify-between text-[11px]">
+                              <span className="text-muted-foreground">Gain / Loss</span>
+                              <span className="font-medium" style={{ color: returnColor }}>
+                                {row.currentValue - (row.avgCost || 0) >= 0 ? "+" : ""}
+                                {formatInrCompact(Math.abs(row.currentValue - (row.avgCost || 0)))}
+                              </span>
+                            </div>
                             {row.pct && (
                               <div className="flex justify-between text-[11px]">
                                 <span className="text-muted-foreground">Portfolio weight</span>
