@@ -233,33 +233,27 @@ const CurrentAllocationCard = ({ portfolio, riskCategory, horizonLabel }: Curren
                           className="overflow-hidden"
                         >
                           <div className="ml-6 mb-3 rounded-lg bg-muted/30 p-3 space-y-2">
-                            <div className="flex justify-between text-[11px]">
-                              <span className="text-muted-foreground">Current value</span>
-                              <span className="font-medium text-foreground">{formatInrCompact(row.currentValue)}</span>
-                            </div>
+                            {row.returnPct !== null && (
+                              <div className="flex justify-between text-[11px]">
+                                <span className="text-muted-foreground">1Y Performance</span>
+                                <span className="font-medium" style={{ color: returnColor }}>
+                                  {returnText}
+                                </span>
+                              </div>
+                            )}
                             {row.avgCost && (
                               <div className="flex justify-between text-[11px]">
                                 <span className="text-muted-foreground">Invested</span>
                                 <span className="font-medium text-foreground">{formatInrCompact(row.avgCost)}</span>
                               </div>
                             )}
-                            {row.returnPct !== null && (
-                              <>
-                                <div className="flex justify-between text-[11px]">
-                                  <span className="text-muted-foreground">Return (YoY)</span>
-                                  <span className="font-medium" style={{ color: returnColor }}>
-                                    {returnText}
-                                  </span>
-                                </div>
-                                <div className="flex justify-between text-[11px]">
-                                  <span className="text-muted-foreground">Gain / Loss</span>
-                                  <span className="font-medium" style={{ color: returnColor }}>
-                                    {row.currentValue - (row.avgCost || 0) >= 0 ? "+" : ""}
-                                    {formatInrCompact(Math.abs(row.currentValue - (row.avgCost || 0)))}
-                                  </span>
-                                </div>
-                              </>
-                            )}
+                            <div className="flex justify-between text-[11px]">
+                              <span className="text-muted-foreground">Gain / Loss</span>
+                              <span className="font-medium" style={{ color: returnColor }}>
+                                {row.currentValue - (row.avgCost || 0) >= 0 ? "+" : ""}
+                                {formatInrCompact(Math.abs(row.currentValue - (row.avgCost || 0)))}
+                              </span>
+                            </div>
                             {row.pct && (
                               <div className="flex justify-between text-[11px]">
                                 <span className="text-muted-foreground">Portfolio weight</span>
