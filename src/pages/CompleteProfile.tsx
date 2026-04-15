@@ -46,6 +46,13 @@ interface AllocationRange {
   max: number;
 }
 
+interface PlannedExpense {
+  description: string;
+  year: string;
+  amount: string;
+  addAsGoal: boolean;
+}
+
 const STATUS_LABELS: Record<SectionStatus, string> = {
   not_started: "Not started",
   in_progress: "In progress",
