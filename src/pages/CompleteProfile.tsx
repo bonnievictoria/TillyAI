@@ -834,7 +834,7 @@ const CompleteProfile = () => {
     toast.success(`Section ${idx + 1} confirmed ✓`);
   }, [
     occupation, primaryResidence, earningMembers, dependents, values,
-    primaryWealthSource, investableAssets, liabilities, properties, plannedExpenseYear, plannedExpenseAmount, emergencyFund, emergencyTimeframe, otherAssets, otherAssetsValue, ownsHome, expectingLargeIncome, largeIncomeAmount, largeIncomeCurrency, largeIncomeYear,
+    primaryWealthSource, investableAssets, liabilities, properties, plannedExpenses, emergencyFund, emergencyTimeframe, otherAssets, otherAssetsValue, ownsHome, expectingLargeIncome, largeIncomeAmount, largeIncomeCurrency, largeIncomeYear,
     selectedObjectives, goalDetails,
     riskLevelIdx, riskCapacity, investmentExperience, investmentHorizon, horizonNotes, behavQ1, behavQ2, behavQ3, maxDrawdown, comfortAssets,
     permittedAssets, allocations, prohibited, leverage, derivatives, diversificationNotes,
