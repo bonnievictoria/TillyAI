@@ -212,7 +212,7 @@ const DEFAULT_GOALS = [
 ];
 
 const HORIZON_OPTIONS = [
-  { label: "Short term", sub: "Less than 2 years" },
+  { label: "Short term", sub: "< 2 years" },
   { label: "Medium term", sub: "2–5 years" },
   { label: "Long term", sub: "5+ years" },
 ];

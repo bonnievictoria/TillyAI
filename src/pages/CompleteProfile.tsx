@@ -93,7 +93,7 @@ const INCOME_SOURCE_OPTIONS = ["Salary", "Business", "Family supported", "Invest
 
 const RISK_LEVELS = [...RISK_CATEGORIES];
 
-const HORIZON_OPTIONS = ["Less than 2 years", "2–5 years", "5+ years"];
+const HORIZON_OPTIONS = ["< 2 years", "2–5 years", "5+ years"];
 
 const BEHAV_Q1_OPTIONS = [
   "I am a novice. I am new to investing and financial markets.",
