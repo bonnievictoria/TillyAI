@@ -46,6 +46,13 @@ interface AllocationRange {
   max: number;
 }
 
+interface PlannedExpense {
+  description: string;
+  year: string;
+  amount: string;
+  addAsGoal: boolean;
+}
+
 const STATUS_LABELS: Record<SectionStatus, string> = {
   not_started: "Not started",
   in_progress: "In progress",
@@ -86,7 +93,7 @@ const INCOME_SOURCE_OPTIONS = ["Salary", "Business", "Family supported", "Invest
 
 const RISK_LEVELS = [...RISK_CATEGORIES];
 
-const HORIZON_OPTIONS = ["< 2 years", "2 – 7 years", "7+ years"];
+const HORIZON_OPTIONS = ["Less than 2 years", "2–5 years", "5+ years"];
 
 const BEHAV_Q1_OPTIONS = [
   "I am a novice. I am new to investing and financial markets.",
@@ -571,10 +578,7 @@ const CompleteProfile = () => {
   const [otherAssets, setOtherAssets] = useState<OtherAsset[]>([]);
   const [ownsHome, setOwnsHome] = useState(false);
   const [properties, setProperties] = useState<Property[]>([{ value: "", mortgage: "", monthlyRepayment: "", yearPurchased: "" }]);
-  const [plannedExpenseYear, setPlannedExpenseYear] = useState("");
-  const [plannedExpenseAmount, setPlannedExpenseAmount] = useState("");
-  const [plannedExpenseDescription, setPlannedExpenseDescription] = useState("");
-  const [plannedExpenseAsGoal, setPlannedExpenseAsGoal] = useState(false);
+  const [plannedExpenses, setPlannedExpenses] = useState<PlannedExpense[]>([{ description: "", year: "", amount: "", addAsGoal: false }]);
   const [otherAssetsValue, setOtherAssetsValue] = useState("");
   const [otherAssetDescription, setOtherAssetDescription] = useState("");
   const [expectingLargeIncome, setExpectingLargeIncome] = useState(false);
@@ -771,7 +775,7 @@ const CompleteProfile = () => {
             total_liabilities: toNum(liabilities),
             property_value: ownsHome ? toNum(properties[0]?.value) : null,
             mortgage_amount: ownsHome ? toNum(properties[0]?.mortgage) : null,
-            planned_major_expenses: plannedExpenseAmount ? toNum(plannedExpenseAmount) : null,
+            planned_major_expenses: plannedExpenses.reduce((sum, e) => sum + (toNum(e.amount) ?? 0), 0) || null,
             emergency_fund: toNum(emergencyFund),
             emergency_fund_months: emergencyTimeframe || null,
           });
@@ -830,7 +834,7 @@ const CompleteProfile = () => {
     toast.success(`Section ${idx + 1} confirmed ✓`);
   }, [
     occupation, primaryResidence, earningMembers, dependents, values,
-    primaryWealthSource, investableAssets, liabilities, properties, plannedExpenseYear, plannedExpenseAmount, emergencyFund, emergencyTimeframe, otherAssets, otherAssetsValue, ownsHome, expectingLargeIncome, largeIncomeAmount, largeIncomeCurrency, largeIncomeYear,
+    primaryWealthSource, investableAssets, liabilities, properties, plannedExpenses, emergencyFund, emergencyTimeframe, otherAssets, otherAssetsValue, ownsHome, expectingLargeIncome, largeIncomeAmount, largeIncomeCurrency, largeIncomeYear,
     selectedObjectives, goalDetails,
     riskLevelIdx, riskCapacity, investmentExperience, investmentHorizon, horizonNotes, behavQ1, behavQ2, behavQ3, maxDrawdown, comfortAssets,
     permittedAssets, allocations, prohibited, leverage, derivatives, diversificationNotes,
@@ -1004,33 +1008,45 @@ const CompleteProfile = () => {
               )}
             </div>
 
-            {/* Planned large expense */}
+            {/* Planned large expenses */}
             <div>
-              <FieldLabel>Planned large expense</FieldLabel>
-              <div className="grid grid-cols-3 gap-2">
-                <div><label className="text-[10px] text-muted-foreground">Description</label><TextInput value={plannedExpenseDescription} onChange={setPlannedExpenseDescription} placeholder="e.g. Wedding" /></div>
-                <div><label className="text-[10px] text-muted-foreground">Year</label><TextInput value={plannedExpenseYear} onChange={setPlannedExpenseYear} placeholder="e.g. 2026" /></div>
-                <div><label className="text-[10px] text-muted-foreground">Amount</label><TextInput value={plannedExpenseAmount} onChange={setPlannedExpenseAmount} prefix="₹" placeholder="e.g. 25L" /></div>
-              </div>
-              {plannedExpenseDescription.trim() && (
-                <div className="mt-2 rounded-lg border border-border bg-card/50 px-3 py-2">
-                  <p className="text-[10px] text-muted-foreground mb-1">Would you like to add this as a goal so we can plan for it?</p>
-                  <Toggle value={plannedExpenseAsGoal} onChange={(v) => {
-                    setPlannedExpenseAsGoal(v);
-                    if (v && plannedExpenseDescription.trim()) {
-                      const goalName = plannedExpenseDescription.trim();
-                      if (!selectedObjectives.includes(goalName)) {
-                        setSelectedObjectives((prev) => [...prev, goalName]);
-                        setCustomGoals((prev) => prev.includes(goalName) ? prev : [...prev, goalName]);
-                        updateGoalDetail(goalName, {
-                          amount: plannedExpenseAmount,
-                          year: plannedExpenseYear,
-                        });
-                      }
-                    }
-                  }} labelA="No" labelB="Yes" />
+              <FieldLabel>Planned large expenses</FieldLabel>
+              {plannedExpenses.map((expense, idx) => (
+                <div key={idx} className="mb-3">
+                  <div className="grid grid-cols-3 gap-2">
+                    <div><label className="text-[10px] text-muted-foreground">Description</label><TextInput value={expense.description} onChange={(v) => { const next = [...plannedExpenses]; next[idx] = { ...next[idx], description: v }; setPlannedExpenses(next); }} placeholder="e.g. Wedding" /></div>
+                    <div><label className="text-[10px] text-muted-foreground">Year</label><TextInput value={expense.year} onChange={(v) => { const next = [...plannedExpenses]; next[idx] = { ...next[idx], year: v }; setPlannedExpenses(next); }} placeholder="e.g. 2026" /></div>
+                    <div className="relative"><label className="text-[10px] text-muted-foreground">Amount</label><TextInput value={expense.amount} onChange={(v) => { const next = [...plannedExpenses]; next[idx] = { ...next[idx], amount: v }; setPlannedExpenses(next); }} prefix="₹" placeholder="e.g. 25L" /></div>
+                  </div>
+                  {expense.description.trim() && (
+                    <div className="mt-2 rounded-lg border border-border bg-card/50 px-3 py-2">
+                      <p className="text-[10px] text-muted-foreground mb-1">Would you like to add this as a goal so we can plan for it?</p>
+                      <Toggle value={expense.addAsGoal} onChange={(v) => {
+                        const next = [...plannedExpenses];
+                        next[idx] = { ...next[idx], addAsGoal: v };
+                        setPlannedExpenses(next);
+                        if (v && expense.description.trim()) {
+                          const goalName = expense.description.trim();
+                          if (!selectedObjectives.includes(goalName)) {
+                            setSelectedObjectives((prev) => [...prev, goalName]);
+                            setCustomGoals((prev) => prev.includes(goalName) ? prev : [...prev, goalName]);
+                            updateGoalDetail(goalName, {
+                              amount: expense.amount,
+                              year: expense.year,
+                            });
+                          }
+                        }
+                      }} labelA="No" labelB="Yes" />
+                    </div>
+                  )}
+                  {plannedExpenses.length > 1 && (
+                    <button onClick={() => setPlannedExpenses(plannedExpenses.filter((_, i) => i !== idx))} className="mt-1.5 text-[10px] text-destructive hover:underline">Remove</button>
+                  )}
                 </div>
-              )}
+              ))}
+              <button onClick={() => setPlannedExpenses([...plannedExpenses, { description: "", year: "", amount: "", addAsGoal: false }])} className="flex items-center gap-1 text-xs text-accent hover:underline mt-1">
+                <Plus className="h-3 w-3" /> Add another expense
+              </button>
             </div>
 
             {/* Expected large income */}
