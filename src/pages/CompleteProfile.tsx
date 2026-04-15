@@ -779,6 +779,7 @@ const CompleteProfile = () => {
             emergency_fund: toNum(emergencyFund),
             emergency_fund_months: emergencyTimeframe || null,
           });
+          {
             const sources = [...primaryWealthSource];
             if (sources.includes("Others") && wealthSourceOtherText.trim()) {
               sources[sources.indexOf("Others")] = wealthSourceOtherText.trim();
