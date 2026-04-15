@@ -775,11 +775,10 @@ const CompleteProfile = () => {
             total_liabilities: toNum(liabilities),
             property_value: ownsHome ? toNum(properties[0]?.value) : null,
             mortgage_amount: ownsHome ? toNum(properties[0]?.mortgage) : null,
-            planned_major_expenses: plannedExpenseAmount ? toNum(plannedExpenseAmount) : null,
+            planned_major_expenses: plannedExpenses.reduce((sum, e) => sum + (toNum(e.amount) ?? 0), 0) || null,
             emergency_fund: toNum(emergencyFund),
             emergency_fund_months: emergencyTimeframe || null,
           });
-          {
             const sources = [...primaryWealthSource];
             if (sources.includes("Others") && wealthSourceOtherText.trim()) {
               sources[sources.indexOf("Others")] = wealthSourceOtherText.trim();
